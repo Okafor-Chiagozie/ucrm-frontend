@@ -20,7 +20,7 @@ import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
-import { Search, ArrowUpDown, ArrowUp, ArrowDown, Eye, ShoppingCart } from 'lucide-react'
+import { Search, ArrowUpDown, ArrowUp, ArrowDown, Eye, ShoppingCart, Download } from 'lucide-react'
 
 const ORDER_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned']
 
@@ -89,9 +89,28 @@ export default function OrdersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Orders</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">Track and manage customer orders</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Orders</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">Track and manage customer orders</p>
+        </div>
+        <Button variant="outline" className="w-full sm:w-auto h-10" onClick={async () => {
+          try {
+            const params = new URLSearchParams()
+            if (businessFilter) params.set('business_id', businessFilter)
+            if (statusFilter) params.set('status', statusFilter)
+            const { data } = await api.get(`/orders-export?${params}`, { responseType: 'blob' })
+            const url = URL.createObjectURL(data)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`
+            a.click()
+            URL.revokeObjectURL(url)
+            toast.success('Export downloaded')
+          } catch { toast.error('Failed to export') }
+        }}>
+          <Download className="mr-1.5 h-4 w-4" /> Export CSV
+        </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-end gap-3">
