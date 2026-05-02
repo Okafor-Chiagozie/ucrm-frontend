@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { Check } from 'lucide-react'
+import LoadingState from '@/components/LoadingState'
 
 export default function RolesPage() {
   const [roles, setRoles] = useState<Role[]>([])
@@ -51,10 +52,7 @@ export default function RolesPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-32 text-muted-foreground gap-2">
-          <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          Loading roles...
-        </div>
+        <LoadingState text="Loading roles..." />
       ) : (
         <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {roles.map((role) => (

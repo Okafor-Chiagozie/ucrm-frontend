@@ -22,7 +22,9 @@ import {
 import { Separator } from '@/components/ui/separator'
 import Pagination from '@/components/Pagination'
 import { toast } from 'sonner'
-import { Plus, Search, Pencil, XCircle, ArrowUpDown, ArrowUp, ArrowDown, Trash2 } from 'lucide-react'
+import { Plus, Search, Pencil, XCircle, ArrowUpDown, ArrowUp, ArrowDown, Trash2, Package } from 'lucide-react'
+import LoadingState from '@/components/LoadingState'
+import EmptyState from '@/components/EmptyState'
 
 type SortField = 'name' | 'created_at'
 type SortDir = 'asc' | 'desc'
@@ -135,11 +137,9 @@ export default function ProductsPage() {
       {/* Mobile cards */}
       <div className="md:hidden space-y-3">
         {loading ? (
-          <div className="flex items-center justify-center h-32 text-muted-foreground gap-2">
-            <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> Loading...
-          </div>
+          <LoadingState text="Loading products..." />
         ) : products.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">No products found</div>
+          <EmptyState icon={Package} title="No products found" description="Add a product to start managing your inventory" />
         ) : products.map((p) => (
           <div key={p.id} className="rounded-md border bg-card p-4 space-y-3">
             <div className="flex items-center justify-between">
@@ -183,9 +183,9 @@ export default function ProductsPage() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={7} className="h-32 text-center text-muted-foreground">Loading...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7}><LoadingState text="Loading products..." /></TableCell></TableRow>
             ) : products.length === 0 ? (
-              <TableRow><TableCell colSpan={7} className="h-32 text-center text-muted-foreground">No products found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7}><EmptyState icon={Package} title="No products found" description="Add a product to start managing your inventory" /></TableCell></TableRow>
             ) : products.map((p) => (
               <TableRow key={p.id}>
                 <TableCell className="font-medium">{p.name}</TableCell>

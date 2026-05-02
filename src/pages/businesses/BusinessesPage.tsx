@@ -27,7 +27,9 @@ import {
 import { Separator } from '@/components/ui/separator'
 import Pagination from '@/components/Pagination'
 import { toast } from 'sonner'
-import { Plus, Search, Pencil, XCircle } from 'lucide-react'
+import { Plus, Search, Pencil, XCircle, Store } from 'lucide-react'
+import LoadingState from '@/components/LoadingState'
+import EmptyState from '@/components/EmptyState'
 
 export default function BusinessesPage() {
   const { hasPermission } = useAuth()
@@ -94,12 +96,9 @@ export default function BusinessesPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-32 text-muted-foreground gap-2">
-          <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          Loading businesses...
-        </div>
+        <LoadingState text="Loading businesses..." />
       ) : businesses.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">No businesses found</div>
+        <EmptyState icon={Store} title="No businesses found" description="Create your first business to get started" />
       ) : (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {businesses.map((b) => (

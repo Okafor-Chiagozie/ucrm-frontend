@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
 import { ToggleLeft, ToggleRight } from 'lucide-react'
+import LoadingState from '@/components/LoadingState'
 
 const settingsMeta: Record<string, { label: string; description: string; type: 'toggle' | 'text' }> = {
   super_admin_registration_enabled: {
@@ -69,10 +70,7 @@ export default function SettingsPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-32 text-muted-foreground gap-2">
-          <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          Loading settings...
-        </div>
+        <LoadingState text="Loading settings..." />
       ) : (
       <div className="max-w-2xl rounded-md border bg-card">
         {Object.entries(settings).map(([key, value], index) => {

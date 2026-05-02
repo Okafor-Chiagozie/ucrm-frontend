@@ -41,7 +41,9 @@ import {
 import { Separator } from '@/components/ui/separator'
 import Pagination from '@/components/Pagination'
 import { toast } from 'sonner'
-import { Plus, Search, ArrowUpDown, ArrowUp, ArrowDown, Pencil, UserX, Eye, EyeOff } from 'lucide-react'
+import { Plus, Search, ArrowUpDown, ArrowUp, ArrowDown, Pencil, UserX, Eye, EyeOff, Users } from 'lucide-react'
+import LoadingState from '@/components/LoadingState'
+import EmptyState from '@/components/EmptyState'
 
 type SortField = 'name' | 'email' | 'created_at'
 type SortDir = 'asc' | 'desc'
@@ -191,12 +193,9 @@ export default function UsersPage() {
       {/* Mobile card list */}
       <div className="md:hidden space-y-3">
         {loading ? (
-          <div className="flex items-center justify-center h-32 text-muted-foreground gap-2">
-            <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            Loading...
-          </div>
+          <LoadingState text="Loading users..." />
         ) : users.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">No users found</div>
+          <EmptyState icon={Users} title="No users found" description="Try adjusting your search or filters" />
         ) : (
           users.map((u) => (
             <div key={u.id} className="rounded-md border bg-card p-4 space-y-3">
@@ -257,17 +256,11 @@ export default function UsersPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                    Loading users...
-                  </div>
-                </TableCell>
+                <TableCell colSpan={7}><LoadingState text="Loading users..." /></TableCell>
               </TableRow>
             ) : users.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
-                  No users found
+                <TableCell colSpan={7}><EmptyState icon={Users} title="No users found" description="Try adjusting your search or filters" />
                 </TableCell>
               </TableRow>
             ) : (

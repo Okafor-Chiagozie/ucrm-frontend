@@ -22,7 +22,9 @@ import {
 import { Separator } from '@/components/ui/separator'
 import Pagination from '@/components/Pagination'
 import { toast } from 'sonner'
-import { Plus, Search, Pencil, XCircle, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Plus, Search, Pencil, XCircle, ArrowUpDown, ArrowUp, ArrowDown, Tag } from 'lucide-react'
+import LoadingState from '@/components/LoadingState'
+import EmptyState from '@/components/EmptyState'
 
 type SortField = 'name' | 'created_at'
 type SortDir = 'asc' | 'desc'
@@ -131,11 +133,9 @@ export default function CategoriesPage() {
       {/* Mobile cards */}
       <div className="md:hidden space-y-3">
         {loading ? (
-          <div className="flex items-center justify-center h-32 text-muted-foreground gap-2">
-            <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" /> Loading...
-          </div>
+          <LoadingState text="Loading categories..." />
         ) : categories.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">No categories found</div>
+          <EmptyState icon={Tag} title="No categories found" description="Create a category to organize your products" />
         ) : categories.map((c) => (
           <div key={c.id} className="rounded-md border bg-card p-4 space-y-2">
             <div className="flex items-center justify-between">
@@ -175,9 +175,9 @@ export default function CategoriesPage() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={6} className="h-32 text-center text-muted-foreground">Loading...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6}><LoadingState text="Loading categories..." /></TableCell></TableRow>
             ) : categories.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="h-32 text-center text-muted-foreground">No categories found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6}><EmptyState icon={Tag} title="No categories found" description="Create a category to organize your products" /></TableCell></TableRow>
             ) : categories.map((c) => (
               <TableRow key={c.id}>
                 <TableCell className="font-medium">{c.name}</TableCell>
