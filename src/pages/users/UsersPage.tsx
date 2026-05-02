@@ -28,6 +28,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Separator } from '@/components/ui/separator'
 import Pagination from '@/components/Pagination'
 import { toast } from 'sonner'
@@ -51,6 +61,7 @@ export default function UsersPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
   const [editUser, setEditUser] = useState<User | null>(null)
+  const [deactivateUser, setDeactivateUser] = useState<User | null>(null)
 
   const fetchUsers = useCallback(async () => {
     setLoading(true)
@@ -97,11 +108,12 @@ export default function UsersPage() {
       : <ArrowDown className="ml-1 h-3.5 w-3.5 text-primary" />
   }
 
-  const handleDeactivate = async (user: User) => {
-    if (!confirm(`Deactivate ${user.name}?`)) return
+  const handleDeactivate = async () => {
+    if (!deactivateUser) return
     try {
-      await api.delete(`/users/${user.id}`)
+      await api.delete(`/users/${deactivateUser.id}`)
       toast.success('User deactivated')
+      setDeactivateUser(null)
       fetchUsers()
     } catch {
       toast.error('Failed to deactivate user')
@@ -194,7 +206,7 @@ export default function UsersPage() {
                     </Button>
                   )}
                   {hasPermission('users.delete') && u.is_active && (
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDeactivate(u)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeactivateUser(u)}>
                       <UserX className="h-3.5 w-3.5" />
                     </Button>
                   )}
@@ -277,7 +289,7 @@ export default function UsersPage() {
                         </Button>
                       )}
                       {hasPermission('users.delete') && u.is_active && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDeactivate(u)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeactivateUser(u)}>
                           <UserX className="h-3.5 w-3.5" />
                         </Button>
                       )}
@@ -294,6 +306,23 @@ export default function UsersPage() {
 
       <CreateUserDialog open={showCreate} onClose={() => setShowCreate(false)} roles={roles} onSuccess={fetchUsers} />
       {editUser && <EditUserDialog open={showEdit} onClose={() => { setShowEdit(false); setEditUser(null) }} user={editUser} roles={roles} onSuccess={fetchUsers} />}
+
+      <AlertDialog open={!!deactivateUser} onOpenChange={(open) => { if (!open) setDeactivateUser(null) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deactivate {deactivateUser?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will prevent the user from logging in. Their account data will be preserved and can be reactivated later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeactivate} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Deactivate
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
