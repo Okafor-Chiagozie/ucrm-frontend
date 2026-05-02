@@ -165,14 +165,14 @@ function PermissionsDialog({ role, onClose, onSaved }: { role: Role; onClose: ()
                         key={perm}
                         type="button"
                         onClick={() => toggle(perm)}
-                        className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-all ${
+                        className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition-all cursor-pointer ${
                           active
-                            ? 'border-primary/30 bg-primary/5 text-foreground'
-                            : 'border-border bg-background text-muted-foreground hover:border-primary/20 hover:bg-muted/50'
+                            ? 'border-primary/40 bg-primary/5 text-foreground'
+                            : 'border-border bg-card text-foreground hover:border-primary hover:bg-primary/5'
                         }`}
                       >
                         <div className={`h-4 w-4 rounded-sm border flex items-center justify-center shrink-0 ${
-                          active ? 'bg-primary border-primary' : 'border-muted-foreground/30'
+                          active ? 'bg-primary border-primary' : 'border-border bg-background'
                         }`}>
                           {active && <Check className="h-3 w-3 text-primary-foreground" />}
                         </div>
