@@ -103,6 +103,88 @@ export interface Product {
   updated_at?: string
 }
 
+export interface OrderItem {
+  id: string
+  product_name: string
+  variation_name: string
+  price: string
+  quantity: number
+  total: string
+  is_bump: boolean
+}
+
+export interface Order {
+  id: string
+  order_number: string
+  business_id: string
+  business_name: string | null
+  customer_name: string
+  customer_phone: string
+  customer_whatsapp: string | null
+  customer_address: string
+  customer_state: string
+  customer_email: string | null
+  ip_address: string | null
+  source_url: string | null
+  subtotal: string
+  delivery_fee: string
+  discount: string
+  total: string
+  coupon_code: string | null
+  status: string
+  notes: string | null
+  assigned_agent: { id: string; name: string } | null
+  items: OrderItem[]
+  items_count: number
+  created_at: string
+  updated_at?: string
+}
+
+export interface FlaggedIp {
+  id: string
+  ip_address: string
+  reason: string | null
+  flagged_by: string | null
+  is_active: boolean
+  created_at: string
+}
+
+export interface DeliveryFee {
+  id: string
+  business_id: string
+  business_name: string | null
+  state: string
+  fee: string
+  is_active: boolean
+}
+
+export interface Coupon {
+  id: string
+  business_id: string
+  business_name: string | null
+  code: string
+  type: 'fixed' | 'percentage'
+  value: string
+  max_uses: number | null
+  times_used: number
+  expires_at: string | null
+  is_active: boolean
+  is_valid: boolean
+  created_at: string
+}
+
+export interface PartialOrderData {
+  id: string
+  business_id: string
+  business_name: string | null
+  phone: string
+  name: string | null
+  ip_address: string | null
+  source_url: string | null
+  converted: boolean
+  created_at: string
+}
+
 export interface ApiError {
   message: string
   errors?: Record<string, string[]>

@@ -11,14 +11,24 @@ import {
   Store,
   Tag,
   Package,
+  ShoppingCart,
+  Truck,
+  Ticket,
+  ShieldBan,
+  PhoneMissed,
 } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard.view' },
+  { to: '/orders', label: 'Orders', icon: ShoppingCart, permission: 'orders.view' },
   { to: '/businesses', label: 'Businesses', icon: Store, permission: 'businesses.view' },
   { to: '/categories', label: 'Categories', icon: Tag, permission: 'categories.view' },
   { to: '/products', label: 'Products', icon: Package, permission: 'products.view' },
+  { to: '/delivery-fees', label: 'Delivery Fees', icon: Truck, permission: 'delivery_fees.view' },
+  { to: '/coupons', label: 'Coupons', icon: Ticket, permission: 'coupons.view' },
+  { to: '/flagged-ips', label: 'Flagged IPs', icon: ShieldBan, permission: 'flagged_ips.view' },
+  { to: '/partial-orders', label: 'Partial Orders', icon: PhoneMissed, permission: 'partial_orders.view' },
   { to: '/users', label: 'Users', icon: Users, permission: 'users.view' },
   { to: '/roles', label: 'Roles & Permissions', icon: Shield, permission: 'roles.manage' },
   { to: '/settings', label: 'Settings', icon: Settings, permission: 'settings.view' },
