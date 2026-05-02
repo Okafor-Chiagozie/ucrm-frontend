@@ -115,7 +115,11 @@ export default function CategoriesPage() {
         <div>
           <label className="block text-xs font-medium text-muted-foreground mb-1.5">Business</label>
           <Select value={businessFilter || 'all'} onValueChange={(v) => { setBusinessFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
-            <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="All Businesses" /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="All Businesses">
+                {businesses.find((b) => b.id === businessFilter)?.name ?? 'All Businesses'}
+              </SelectValue>
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Businesses</SelectItem>
               {businesses.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
@@ -273,7 +277,11 @@ function CategoryDialog({ open, category, businesses, onClose, onSuccess }: { op
             <div className="space-y-1.5">
               <Label>Business</Label>
               <Select value={businessId} onValueChange={(v) => setBusinessId(v ?? '')}>
-                <SelectTrigger className="h-10"><SelectValue placeholder="Select business" /></SelectTrigger>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Select business">
+                    {businesses.find((b) => b.id === businessId)?.name ?? 'Select business'}
+                  </SelectValue>
+                </SelectTrigger>
                 <SelectContent>
                   {businesses.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
                 </SelectContent>

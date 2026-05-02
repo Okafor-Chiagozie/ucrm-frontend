@@ -119,7 +119,11 @@ export default function ProductsPage() {
         <div>
           <label className="block text-xs font-medium text-muted-foreground mb-1.5">Business</label>
           <Select value={businessFilter || 'all'} onValueChange={(v) => { setBusinessFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
-            <SelectTrigger className="w-full sm:w-48"><SelectValue placeholder="All Businesses" /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="All Businesses">
+                {businesses.find((b) => b.id === businessFilter)?.name ?? 'All Businesses'}
+              </SelectValue>
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Businesses</SelectItem>
               {businesses.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
@@ -184,16 +188,7 @@ export default function ProductsPage() {
               <TableRow><TableCell colSpan={7} className="h-32 text-center text-muted-foreground">No products found</TableCell></TableRow>
             ) : products.map((p) => (
               <TableRow key={p.id}>
-                <TableCell>
-                  <div className="flex items-center gap-2.5">
-                    {p.image ? (
-                      <img src={p.image} alt="" className="h-8 w-8 rounded-md object-cover shrink-0" />
-                    ) : (
-                      <div className="h-8 w-8 rounded-md bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">{p.name.charAt(0)}</div>
-                    )}
-                    <span className="font-medium">{p.name}</span>
-                  </div>
-                </TableCell>
+                <TableCell className="font-medium">{p.name}</TableCell>
                 <TableCell className="text-muted-foreground">{p.business_name}</TableCell>
                 <TableCell className="text-muted-foreground">{p.category_name || '—'}</TableCell>
                 <TableCell>
@@ -352,7 +347,11 @@ function ProductDialog({ open, product, businesses, onClose, onSuccess }: { open
               <div className="space-y-1.5">
                 <Label>Business</Label>
                 <Select value={businessId} onValueChange={(v) => { setBusinessId(v ?? ''); setCategoryId('') }}>
-                  <SelectTrigger className="h-10"><SelectValue placeholder="Select business" /></SelectTrigger>
+                  <SelectTrigger className="h-10">
+                    <SelectValue placeholder="Select business">
+                      {businesses.find((b) => b.id === businessId)?.name ?? 'Select business'}
+                    </SelectValue>
+                  </SelectTrigger>
                   <SelectContent>
                     {businesses.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
                   </SelectContent>
@@ -362,7 +361,11 @@ function ProductDialog({ open, product, businesses, onClose, onSuccess }: { open
             <div className="space-y-1.5">
               <Label>Category</Label>
               <Select value={categoryId || 'none'} onValueChange={(v) => setCategoryId(v === 'none' ? '' : v ?? '')}>
-                <SelectTrigger className="h-10"><SelectValue placeholder="Select category" /></SelectTrigger>
+                <SelectTrigger className="h-10">
+                  <SelectValue placeholder="Select category">
+                    {categories.find((c) => c.id === categoryId)?.name ?? 'No category'}
+                  </SelectValue>
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No category</SelectItem>
                   {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}

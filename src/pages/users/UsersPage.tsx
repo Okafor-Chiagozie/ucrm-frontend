@@ -162,7 +162,11 @@ export default function UsersPage() {
         <div>
           <label className="block text-xs font-medium text-muted-foreground mb-1.5">Status</label>
           <Select value={statusFilter || 'all'} onValueChange={(v) => { setStatusFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
-            <SelectTrigger className="w-full sm:w-36"><SelectValue placeholder="All Status" /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-36">
+              <SelectValue placeholder="All Status">
+                {statusFilter === 'true' ? 'Active' : statusFilter === 'false' ? 'Inactive' : 'All Status'}
+              </SelectValue>
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="true">Active</SelectItem>
