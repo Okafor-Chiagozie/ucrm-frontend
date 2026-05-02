@@ -41,7 +41,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import Pagination from '@/components/Pagination'
 import { toast } from 'sonner'
-import { Plus, Search, ArrowUpDown, ArrowUp, ArrowDown, UserPlus, Pencil, UserX, Eye, EyeOff } from 'lucide-react'
+import { Plus, Search, ArrowUpDown, ArrowUp, ArrowDown, Pencil, UserX, Eye, EyeOff } from 'lucide-react'
 
 type SortField = 'name' | 'email' | 'created_at'
 type SortDir = 'asc' | 'desc'
@@ -143,19 +143,19 @@ export default function UsersPage() {
             placeholder="Search name, email, phone..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-            className="pl-9 h-9"
+            className="pl-9 h-10"
           />
         </div>
         <div className="flex gap-3">
           <Select value={roleFilter || 'all'} onValueChange={(v) => { setRoleFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
-            <SelectTrigger className="w-full sm:w-40 h-9"><SelectValue placeholder="All Roles" /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-40 h-10"><SelectValue placeholder="All Roles" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Roles</SelectItem>
               {roles.map((r) => <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={statusFilter || 'all'} onValueChange={(v) => { setStatusFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
-            <SelectTrigger className="w-full sm:w-32 h-9"><SelectValue placeholder="All Status" /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-32 h-10"><SelectValue placeholder="All Status" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="true">Active</SelectItem>
@@ -363,15 +363,8 @@ function CreateUserDialog({ open, onClose, roles, onSuccess }: { open: boolean; 
     <Dialog open={open} onOpenChange={() => { reset(); onClose() }}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center">
-              <UserPlus className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <DialogTitle>Create New User</DialogTitle>
-              <DialogDescription>Add a new staff member to the system</DialogDescription>
-            </div>
-          </div>
+          <DialogTitle>Create New User</DialogTitle>
+          <DialogDescription>Add a new staff member. They will be required to change their password on first login.</DialogDescription>
         </DialogHeader>
         <Separator />
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
@@ -464,15 +457,8 @@ function EditUserDialog({ open, onClose, user, roles, onSuccess }: { open: boole
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
-              {user.name.charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <DialogTitle>Edit User</DialogTitle>
-              <DialogDescription>{user.email}</DialogDescription>
-            </div>
-          </div>
+          <DialogTitle>Edit User</DialogTitle>
+          <DialogDescription>Editing {user.name} ({user.email})</DialogDescription>
         </DialogHeader>
         <Separator />
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">

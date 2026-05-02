@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
-import { Settings2, ToggleLeft, ToggleRight, Save } from 'lucide-react'
+import { ToggleLeft, ToggleRight } from 'lucide-react'
 
 const settingsMeta: Record<string, { label: string; description: string; type: 'toggle' | 'text' }> = {
   super_admin_registration_enabled: {
@@ -74,7 +74,7 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">Manage system configuration and preferences</p>
+        <p className="text-sm text-muted-foreground mt-0.5">Manage system configuration</p>
       </div>
 
       <div className="max-w-2xl rounded-md border bg-card">
@@ -83,15 +83,10 @@ export default function SettingsPage() {
           return (
             <div key={key}>
               {index > 0 && <Separator />}
-              <div className="flex items-center justify-between gap-6 p-5">
-                <div className="flex items-start gap-3 flex-1 min-w-0">
-                  <div className="h-9 w-9 rounded-md bg-muted flex items-center justify-center shrink-0 mt-0.5">
-                    <Settings2 className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium">{meta.label}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{meta.description}</p>
-                  </div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">{meta.label}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{meta.description}</p>
                 </div>
                 <div className="shrink-0">
                   {meta.type === 'toggle' ? (
@@ -102,9 +97,9 @@ export default function SettingsPage() {
                       onClick={() => updateSetting(key, value === 'true' ? 'false' : 'true')}
                     >
                       {value === 'true' ? (
-                        <ToggleRight className="h-8 w-8 text-primary" />
+                        <ToggleRight className="h-7 w-7 text-primary" />
                       ) : (
-                        <ToggleLeft className="h-8 w-8 text-muted-foreground" />
+                        <ToggleLeft className="h-7 w-7 text-muted-foreground" />
                       )}
                     </button>
                   ) : (
@@ -113,11 +108,11 @@ export default function SettingsPage() {
                         value={value}
                         onChange={(e) => setSettings((prev) => ({ ...prev, [key]: e.target.value }))}
                         disabled={!canEdit}
-                        className="h-9 w-28 text-sm"
+                        className="h-10 w-32 text-sm"
                       />
                       {canEdit && (
-                        <Button size="sm" variant="outline" className="h-9" onClick={() => updateSetting(key, value)}>
-                          <Save className="h-3.5 w-3.5" />
+                        <Button size="sm" className="h-10" onClick={() => updateSetting(key, value)}>
+                          Save
                         </Button>
                       )}
                     </div>

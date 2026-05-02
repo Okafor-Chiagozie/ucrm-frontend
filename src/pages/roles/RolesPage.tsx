@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import { Shield, Key, Check } from 'lucide-react'
+import { Check } from 'lucide-react'
 
 export default function RolesPage() {
   const [roles, setRoles] = useState<Role[]>([])
@@ -64,18 +64,14 @@ export default function RolesPage() {
               onClick={() => openPermissions(role)}
             >
               <CardContent className="p-5">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center">
-                    <Shield className="h-5 w-5 text-primary" />
-                  </div>
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="font-semibold">{role.name}</h3>
                   <Badge variant="secondary" className="font-normal text-xs">
-                    <Key className="h-3 w-3 mr-1" />
                     {role.permissions_count}
                   </Badge>
                 </div>
-                <h3 className="font-semibold text-base">{role.name}</h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {role.permissions_count} permission{role.permissions_count !== 1 ? 's' : ''} assigned
+                <p className="text-xs text-muted-foreground">
+                  {role.permissions_count} permission{role.permissions_count !== 1 ? 's' : ''} — click to manage
                 </p>
               </CardContent>
             </Card>
@@ -139,15 +135,8 @@ function PermissionsDialog({ role, onClose, onSaved }: { role: Role; onClose: ()
     <Dialog open onOpenChange={onClose}>
       <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col">
         <DialogHeader>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center">
-              <Shield className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <DialogTitle>{role.name}</DialogTitle>
-              <DialogDescription>{selected.size} of {allPermissions.length} permissions selected</DialogDescription>
-            </div>
-          </div>
+          <DialogTitle>{role.name} — Permissions</DialogTitle>
+          <DialogDescription>{selected.size} of {allPermissions.length} permissions selected</DialogDescription>
         </DialogHeader>
         <Separator />
         <div className="flex-1 overflow-y-auto space-y-5 py-2">
