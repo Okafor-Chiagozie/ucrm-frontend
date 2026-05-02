@@ -129,7 +129,7 @@ export default function UsersPage() {
           <p className="text-sm text-muted-foreground mt-0.5">Manage staff accounts and permissions</p>
         </div>
         {hasPermission('users.create') && (
-          <Button onClick={() => setShowCreate(true)} size="sm" className="w-full sm:w-auto">
+          <Button onClick={() => setShowCreate(true)} className="w-full sm:w-auto h-10">
             <Plus className="mr-1.5 h-4 w-4" /> Add User
           </Button>
         )}
