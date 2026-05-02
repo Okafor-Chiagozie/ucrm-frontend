@@ -8,8 +8,11 @@ export default function AppLayout() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-muted-foreground">Loading...</div>
+      <div className="flex h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-muted-foreground">Loading...</p>
+        </div>
       </div>
     )
   }
@@ -23,12 +26,14 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen bg-background">
       <Sidebar />
-      <main className="flex-1 overflow-auto bg-background p-6">
-        <Outlet />
-      </main>
-      <Toaster />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <main className="flex-1 overflow-auto p-8">
+          <Outlet />
+        </main>
+      </div>
+      <Toaster richColors position="top-right" />
     </div>
   )
 }
