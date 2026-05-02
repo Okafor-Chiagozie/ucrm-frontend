@@ -61,15 +61,6 @@ export default function SettingsPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-32 text-muted-foreground gap-2">
-        <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        Loading settings...
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-6">
       <div>
@@ -77,6 +68,12 @@ export default function SettingsPage() {
         <p className="text-sm text-muted-foreground mt-0.5">Manage system configuration</p>
       </div>
 
+      {loading ? (
+        <div className="flex items-center justify-center h-32 text-muted-foreground gap-2">
+          <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          Loading settings...
+        </div>
+      ) : (
       <div className="max-w-2xl rounded-md border bg-card">
         {Object.entries(settings).map(([key, value], index) => {
           const meta = settingsMeta[key] || { label: key, description: '', type: 'text' }
@@ -123,6 +120,7 @@ export default function SettingsPage() {
           )
         })}
       </div>
+      )}
     </div>
   )
 }
