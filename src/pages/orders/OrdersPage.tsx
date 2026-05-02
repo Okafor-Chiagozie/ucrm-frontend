@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import api from '@/lib/api'
-import type { Order, Business, PaginationMeta, User } from '@/types'
+import type { Order, Business, PaginationMeta } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -41,7 +41,6 @@ export default function OrdersPage() {
   const { hasPermission } = useAuth()
   const [orders, setOrders] = useState<Order[]>([])
   const [businesses, setBusinesses] = useState<Business[]>([])
-  const [agents, setAgents] = useState<User[]>([])
   const [meta, setMeta] = useState<PaginationMeta | null>(null)
   const [search, setSearch] = useState('')
   const [businessFilter, setBusinessFilter] = useState('')
@@ -73,7 +72,6 @@ export default function OrdersPage() {
 
   useEffect(() => {
     api.get('/businesses?per_page=100').then(({ data }) => setBusinesses(data.data.data)).catch(() => {})
-    api.get('/users?role=Agent&per_page=100').then(({ data }) => setAgents(data.data.data)).catch(() => {})
   }, [])
 
   const toggleSort = (field: SortField) => {
@@ -205,7 +203,6 @@ export default function OrdersPage() {
       {viewOrder && (
         <OrderDetailDialog
           order={viewOrder}
-          agents={agents}
           canUpdateStatus={hasPermission('orders.update_status')}
           canAssignAgent={hasPermission('orders.assign_agent')}
           onClose={() => setViewOrder(null)}
@@ -216,12 +213,21 @@ export default function OrdersPage() {
   )
 }
 
-function OrderDetailDialog({ order, agents, canUpdateStatus, canAssignAgent, onClose, onUpdated }: {
-  order: Order; agents: User[]; canUpdateStatus: boolean; canAssignAgent: boolean; onClose: () => void; onUpdated: () => void
+function OrderDetailDialog({ order, canUpdateStatus, canAssignAgent, onClose, onUpdated }: {
+  order: Order; canUpdateStatus: boolean; canAssignAgent: boolean; onClose: () => void; onUpdated: () => void
 }) {
   const [status, setStatus] = useState(order.status)
   const [agentId, setAgentId] = useState(order.assigned_agent?.id ?? '')
+  const [agents, setAgents] = useState<{ id: string; name: string }[]>([])
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (order.business_id) {
+      api.get(`/businesses/${order.business_id}/staff`).then(({ data }) => {
+        setAgents(data.data.filter((s: any) => s.role === 'Agent').map((s: any) => ({ id: s.id, name: s.name })))
+      }).catch(() => {})
+    }
+  }, [order.business_id])
 
   const formatPrice = (price: string | number) =>
     new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(Number(price))
