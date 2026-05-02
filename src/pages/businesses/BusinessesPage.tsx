@@ -41,6 +41,7 @@ export default function BusinessesPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [editBiz, setEditBiz] = useState<Business | null>(null)
   const [deactivateBiz, setDeactivateBiz] = useState<Business | null>(null)
+  const [staffBiz, setStaffBiz] = useState<Business | null>(null)
 
   const fetchBusinesses = useCallback(async () => {
     setLoading(true)
@@ -136,7 +137,7 @@ export default function BusinessesPage() {
                 {b.description && (
                   <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{b.description}</p>
                 )}
-                <div className="flex gap-4 text-sm">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
                   <div>
                     <span className="text-muted-foreground">Categories: </span>
                     <span className="font-medium">{b.categories_count}</span>
@@ -145,7 +146,16 @@ export default function BusinessesPage() {
                     <span className="text-muted-foreground">Products: </span>
                     <span className="font-medium">{b.products_count}</span>
                   </div>
+                  <div>
+                    <span className="text-muted-foreground">Staff: </span>
+                    <span className="font-medium">{b.staff_count}</span>
+                  </div>
                 </div>
+                {hasPermission('businesses.edit') && (
+                  <Button variant="outline" size="sm" className="mt-3 w-full" onClick={(e) => { e.stopPropagation(); setStaffBiz(b) }}>
+                    Manage Staff
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ))}
@@ -169,7 +179,106 @@ export default function BusinessesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {staffBiz && <StaffDialog business={staffBiz} onClose={() => { setStaffBiz(null); fetchBusinesses() }} />}
     </div>
+  )
+}
+
+function StaffDialog({ business, onClose }: { business: Business; onClose: () => void }) {
+  const [currentStaff, setCurrentStaff] = useState<{ id: string; name: string; email: string; role: string | null }[]>([])
+  const [allUsers, setAllUsers] = useState<{ id: string; name: string; email: string; role: string | null }[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    Promise.all([
+      api.get(`/businesses/${business.id}/staff`),
+      api.get('/users?per_page=100'),
+    ]).then(([staffRes, usersRes]) => {
+      setCurrentStaff(staffRes.data.data)
+      setAllUsers(usersRes.data.data.data.map((u: any) => ({ id: u.id, name: u.name, email: u.email, role: u.role })))
+    }).catch(() => toast.error('Failed to load staff'))
+    .finally(() => setLoading(false))
+  }, [business.id])
+
+  const staffIds = new Set(currentStaff.map((s) => s.id))
+  const availableUsers = allUsers.filter((u) => !staffIds.has(u.id))
+
+  const addStaff = async (userId: string) => {
+    setSaving(true)
+    try {
+      await api.post(`/businesses/${business.id}/staff`, { user_ids: [userId] })
+      const user = allUsers.find((u) => u.id === userId)
+      if (user) setCurrentStaff([...currentStaff, user])
+      toast.success('Staff assigned')
+    } catch { toast.error('Failed') }
+    finally { setSaving(false) }
+  }
+
+  const removeStaff = async (userId: string) => {
+    setSaving(true)
+    try {
+      await api.delete(`/businesses/${business.id}/staff`, { data: { user_ids: [userId] } })
+      setCurrentStaff(currentStaff.filter((s) => s.id !== userId))
+      toast.success('Staff removed')
+    } catch { toast.error('Failed') }
+    finally { setSaving(false) }
+  }
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-lg max-h-[80vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Manage Staff</DialogTitle>
+          <DialogDescription>{business.name} — assign or remove staff members</DialogDescription>
+        </DialogHeader>
+        <Separator />
+        {loading ? (
+          <LoadingState text="Loading staff..." />
+        ) : (
+          <div className="flex-1 overflow-y-auto space-y-4 py-2 custom-scrollbar">
+            <div>
+              <h4 className="text-sm font-semibold mb-2">Assigned Staff ({currentStaff.length})</h4>
+              {currentStaff.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">No staff assigned</p>
+              ) : (
+                <div className="space-y-2">
+                  {currentStaff.map((s) => (
+                    <div key={s.id} className="flex items-center justify-between rounded-md border p-3">
+                      <div>
+                        <p className="text-sm font-medium">{s.name}</p>
+                        <p className="text-xs text-muted-foreground">{s.email} {s.role && `· ${s.role}`}</p>
+                      </div>
+                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => removeStaff(s.id)} disabled={saving}>Remove</Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Separator />
+            <div>
+              <h4 className="text-sm font-semibold mb-2">Available Staff ({availableUsers.length})</h4>
+              {availableUsers.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">All users are already assigned</p>
+              ) : (
+                <div className="space-y-2">
+                  {availableUsers.map((u) => (
+                    <div key={u.id} className="flex items-center justify-between rounded-md border p-3">
+                      <div>
+                        <p className="text-sm font-medium">{u.name}</p>
+                        <p className="text-xs text-muted-foreground">{u.email} {u.role && `· ${u.role}`}</p>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => addStaff(u.id)} disabled={saving}>Assign</Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
   )
 }
 

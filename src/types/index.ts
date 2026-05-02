@@ -59,6 +59,7 @@ export interface Business {
   is_active: boolean
   categories_count: number
   products_count: number
+  staff_count: number
   created_by: string | null
   created_at: string
   updated_at?: string
