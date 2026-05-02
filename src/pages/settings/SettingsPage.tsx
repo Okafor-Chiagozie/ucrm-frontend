@@ -4,15 +4,31 @@ import api from '@/lib/api'
 import type { Setting } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
+import { Settings2, ToggleLeft, ToggleRight, Save } from 'lucide-react'
 
-const settingLabels: Record<string, { label: string; type: 'toggle' | 'text' }> = {
-  super_admin_registration_enabled: { label: 'Super Admin Registration', type: 'toggle' },
-  staff_business_assignment_enabled: { label: 'Staff Business Assignment', type: 'toggle' },
-  default_low_stock_threshold: { label: 'Low Stock Threshold', type: 'text' },
-  order_number_prefix: { label: 'Order Number Prefix', type: 'text' },
+const settingsMeta: Record<string, { label: string; description: string; type: 'toggle' | 'text' }> = {
+  super_admin_registration_enabled: {
+    label: 'Super Admin Registration',
+    description: 'Allow new Super Admin accounts to be created via the registration endpoint',
+    type: 'toggle',
+  },
+  staff_business_assignment_enabled: {
+    label: 'Staff Business Assignment',
+    description: 'Restrict staff members to only see businesses they are assigned to',
+    type: 'toggle',
+  },
+  default_low_stock_threshold: {
+    label: 'Low Stock Threshold',
+    description: 'Number of units below which a product is flagged as low stock',
+    type: 'text',
+  },
+  order_number_prefix: {
+    label: 'Order Number Prefix',
+    description: 'Prefix added to all generated order numbers (e.g. ORD-00001)',
+    type: 'text',
+  },
 }
 
 export default function SettingsPage() {
@@ -45,58 +61,70 @@ export default function SettingsPage() {
     }
   }
 
-  if (loading) return <p className="text-muted-foreground">Loading...</p>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-32 text-muted-foreground gap-2">
+        <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        Loading settings...
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
-        <p className="text-muted-foreground">System configuration</p>
+        <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
+        <p className="text-sm text-muted-foreground mt-0.5">Manage system configuration and preferences</p>
       </div>
 
-      <div className="grid gap-4 max-w-2xl">
-        {Object.entries(settings).map(([key, value]) => {
-          const config = settingLabels[key] || { label: key, type: 'text' }
+      <div className="max-w-2xl rounded-md border bg-card">
+        {Object.entries(settings).map(([key, value], index) => {
+          const meta = settingsMeta[key] || { label: key, description: '', type: 'text' }
           return (
-            <Card key={key}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">{config.label}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {config.type === 'toggle' ? (
-                  <div className="flex items-center gap-3">
+            <div key={key}>
+              {index > 0 && <Separator />}
+              <div className="flex items-center justify-between gap-6 p-5">
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <div className="h-9 w-9 rounded-md bg-muted flex items-center justify-center shrink-0 mt-0.5">
+                    <Settings2 className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">{meta.label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{meta.description}</p>
+                  </div>
+                </div>
+                <div className="shrink-0">
+                  {meta.type === 'toggle' ? (
                     <button
                       type="button"
                       disabled={!canEdit}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        value === 'true' ? 'bg-primary' : 'bg-muted'
-                      } ${!canEdit ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                      className={`transition-colors ${!canEdit ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                       onClick={() => updateSetting(key, value === 'true' ? 'false' : 'true')}
                     >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          value === 'true' ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
+                      {value === 'true' ? (
+                        <ToggleRight className="h-8 w-8 text-primary" />
+                      ) : (
+                        <ToggleLeft className="h-8 w-8 text-muted-foreground" />
+                      )}
                     </button>
-                    <span className="text-sm text-muted-foreground">{value === 'true' ? 'Enabled' : 'Disabled'}</span>
-                  </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <Input
-                      value={value}
-                      onChange={(e) => setSettings((prev) => ({ ...prev, [key]: e.target.value }))}
-                      disabled={!canEdit}
-                    />
-                    {canEdit && (
-                      <Button size="sm" onClick={() => updateSetting(key, value)}>
-                        Save
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={value}
+                        onChange={(e) => setSettings((prev) => ({ ...prev, [key]: e.target.value }))}
+                        disabled={!canEdit}
+                        className="h-9 w-28 text-sm"
+                      />
+                      {canEdit && (
+                        <Button size="sm" variant="outline" className="h-9" onClick={() => updateSetting(key, value)}>
+                          <Save className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           )
         })}
       </div>

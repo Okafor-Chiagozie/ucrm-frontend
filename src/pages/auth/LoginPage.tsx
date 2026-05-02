@@ -50,7 +50,7 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-[oklch(0.45_0.2_260)] flex items-center justify-center">
+              <div className="w-10 h-10 rounded-md bg-[oklch(0.45_0.2_260)] flex items-center justify-center">
                 <Lock className="w-5 h-5 text-white" />
               </div>
               <span className="text-2xl font-bold tracking-tight">UCRM</span>
@@ -77,7 +77,7 @@ export default function LoginPage() {
         <div className="w-full max-w-sm space-y-8">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-3 justify-center mb-4">
-            <div className="w-10 h-10 rounded-xl bg-[oklch(0.45_0.2_260)] flex items-center justify-center">
+            <div className="w-10 h-10 rounded-md bg-[oklch(0.45_0.2_260)] flex items-center justify-center">
               <Lock className="w-5 h-5 text-white" />
             </div>
             <span className="text-2xl font-bold tracking-tight text-[oklch(0.12_0.02_250)]">UCRM</span>
@@ -90,7 +90,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-700">
+              <div className="flex items-center gap-2 rounded-md bg-red-50 border border-red-200 p-4 text-sm text-red-700">
                 <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
                 {error}
               </div>
@@ -104,7 +104,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@company.com"
                 required
-                className="h-12 text-base px-4 rounded-xl border-[oklch(0.88_0.01_250)] focus-visible:ring-[oklch(0.45_0.2_260)] focus-visible:border-[oklch(0.45_0.2_260)]"
+                className="h-12 text-base px-4 rounded-md border-[oklch(0.88_0.01_250)] focus-visible:ring-[oklch(0.45_0.2_260)] focus-visible:border-[oklch(0.45_0.2_260)]"
               />
             </div>
             <div className="space-y-2">
@@ -117,7 +117,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
                   required
-                  className="h-12 text-base px-4 pr-12 rounded-xl border-[oklch(0.88_0.01_250)] focus-visible:ring-[oklch(0.45_0.2_260)] focus-visible:border-[oklch(0.45_0.2_260)]"
+                  className="h-12 text-base px-4 pr-12 rounded-md border-[oklch(0.88_0.01_250)] focus-visible:ring-[oklch(0.45_0.2_260)] focus-visible:border-[oklch(0.45_0.2_260)]"
                 />
                 <button
                   type="button"
@@ -131,7 +131,7 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={submitting}
-              className="w-full h-12 text-base font-semibold rounded-xl bg-[oklch(0.45_0.2_260)] hover:bg-[oklch(0.4_0.22_260)] transition-all duration-200 shadow-lg shadow-[oklch(0.45_0.2_260)]/25"
+              className="w-full h-12 text-base font-semibold rounded-md bg-[oklch(0.45_0.2_260)] hover:bg-[oklch(0.4_0.22_260)] transition-all duration-200 shadow-lg shadow-[oklch(0.45_0.2_260)]/25"
             >
               {submitting ? (
                 <span className="flex items-center gap-2">

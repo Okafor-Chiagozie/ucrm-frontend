@@ -49,7 +49,7 @@ export default function DashboardPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-sm font-medium text-muted-foreground">{stat.label}</span>
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.color}`}>
+                <div className={`w-10 h-10 rounded-md flex items-center justify-center ${stat.color}`}>
                   <stat.icon className="w-5 h-5" />
                 </div>
               </div>
