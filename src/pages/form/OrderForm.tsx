@@ -28,8 +28,20 @@ interface DeliveryFeeData {
   fee: string
 }
 
+interface FormSettingsData {
+  heading: string
+  subheading: string
+  button_text: string
+  button_color: string
+  success_message: string
+  show_whatsapp: boolean
+  show_email: boolean
+  show_coupon: boolean
+}
+
 interface FormData {
   product: { id: string; name: string; description: string | null; business_name: string | null }
+  form_settings: FormSettingsData
   variations: Variation[]
   delivery_fees: DeliveryFeeData[]
   bump_offers: BumpOfferData[]
@@ -178,7 +190,7 @@ export default function OrderForm() {
           <p style={{ color: '#6b7280', fontSize: 14, margin: '0 0 16px' }}>Your order number is:</p>
           <p style={{ fontSize: 20, fontWeight: 700, color: '#2563eb', fontFamily: 'monospace', margin: '0 0 8px' }}>{submitted.order_number}</p>
           <p style={{ fontSize: 18, fontWeight: 600, color: '#111827' }}>Total: {formatPrice(Number(submitted.total))}</p>
-          <p style={{ color: '#6b7280', fontSize: 13, marginTop: 16 }}>We will contact you shortly to confirm your order.</p>
+          <p style={{ color: '#6b7280', fontSize: 13, marginTop: 16 }}>{formData.form_settings.success_message}</p>
         </div>
       </div>
     )
@@ -188,8 +200,8 @@ export default function OrderForm() {
     <div style={styles.container}>
       <div style={styles.card}>
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', margin: '0 0 4px' }}>Place Your Order</h2>
-          <p style={{ color: '#6b7280', fontSize: 13, margin: 0 }}>Fill the form below to order. Ensure your phone number is correct.</p>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', margin: '0 0 4px' }}>{formData.form_settings.heading}</h2>
+          <p style={{ color: '#6b7280', fontSize: 13, margin: 0 }}>{formData.form_settings.subheading}</p>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -213,6 +225,7 @@ export default function OrderForm() {
           </div>
 
           {/* WhatsApp */}
+          {formData.form_settings.show_whatsapp && (
           <div style={styles.fieldGroup}>
             <label style={styles.label}>WhatsApp Number</label>
             <div style={styles.phoneRow}>
@@ -222,6 +235,7 @@ export default function OrderForm() {
               <input style={{ ...styles.input, flex: 1 }} type="tel" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="WhatsApp number" />
             </div>
           </div>
+          )}
 
           {/* Address */}
           <div style={styles.fieldGroup}>
@@ -239,10 +253,12 @@ export default function OrderForm() {
           </div>
 
           {/* Email */}
+          {formData.form_settings.show_email && (
           <div style={styles.fieldGroup}>
             <label style={styles.label}>Email (Optional)</label>
             <input style={styles.input} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" />
           </div>
+          )}
 
           {/* Variations */}
           <div style={styles.fieldGroup}>
@@ -290,11 +306,12 @@ export default function OrderForm() {
           ))}
 
           {/* Coupon */}
+          {formData.form_settings.show_coupon && (
           <div style={styles.fieldGroup}>
             <label style={styles.label}>Coupon Code</label>
             <div style={{ display: 'flex', gap: 8 }}>
               <input style={{ ...styles.input, flex: 1 }} value={couponCode} onChange={(e) => { setCouponCode(e.target.value); setCouponValid(null) }} placeholder="Enter code" />
-              <button type="button" onClick={validateCoupon} disabled={couponChecking || !couponCode.trim()} style={styles.couponBtn}>
+              <button type="button" onClick={validateCoupon} disabled={couponChecking || !couponCode.trim()} style={{ ...styles.couponBtn, background: formData.form_settings.button_color }}>
                 {couponChecking ? '...' : 'Apply'}
               </button>
             </div>
@@ -304,6 +321,7 @@ export default function OrderForm() {
               </p>
             )}
           </div>
+          )}
 
           {/* Order Summary */}
           {selectedVariation && (
@@ -315,8 +333,8 @@ export default function OrderForm() {
             </div>
           )}
 
-          <button type="submit" disabled={submitting || !selectedVariation || !state} style={{ ...styles.submitBtn, opacity: (submitting || !selectedVariation || !state) ? 0.6 : 1 }}>
-            {submitting ? 'Placing Order...' : 'Place Order Now'}
+          <button type="submit" disabled={submitting || !selectedVariation || !state} style={{ ...styles.submitBtn, background: formData.form_settings.button_color, opacity: (submitting || !selectedVariation || !state) ? 0.6 : 1 }}>
+            {submitting ? 'Placing Order...' : formData.form_settings.button_text}
           </button>
         </form>
       </div>

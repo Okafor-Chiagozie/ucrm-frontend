@@ -87,6 +87,17 @@ export interface ProductVariation {
   sort_order: number
 }
 
+export interface FormSettings {
+  heading: string
+  subheading: string
+  button_text: string
+  button_color: string
+  success_message: string
+  show_whatsapp: boolean
+  show_email: boolean
+  show_coupon: boolean
+}
+
 export interface Product {
   id: string
   name: string
@@ -97,6 +108,7 @@ export interface Product {
   category_id: string | null
   category_name: string | null
   is_active: boolean
+  form_settings: FormSettings
   total_stock: number
   low_stock: boolean
   variations: ProductVariation[]
