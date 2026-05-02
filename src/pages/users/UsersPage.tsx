@@ -111,21 +111,21 @@ export default function UsersPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Users</h2>
           <p className="text-sm text-muted-foreground mt-0.5">Manage staff accounts and permissions</p>
         </div>
         {hasPermission('users.create') && (
-          <Button onClick={() => setShowCreate(true)} size="sm">
+          <Button onClick={() => setShowCreate(true)} size="sm" className="w-full sm:w-auto">
             <Plus className="mr-1.5 h-4 w-4" /> Add User
           </Button>
         )}
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-55 max-w-sm">
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
+        <div className="relative flex-1 min-w-0 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search name, email, phone..."
@@ -134,25 +134,85 @@ export default function UsersPage() {
             className="pl-9 h-9"
           />
         </div>
-        <Select value={roleFilter || 'all'} onValueChange={(v) => { setRoleFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
-          <SelectTrigger className="w-40 h-9"><SelectValue placeholder="All Roles" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Roles</SelectItem>
-            {roles.map((r) => <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={statusFilter || 'all'} onValueChange={(v) => { setStatusFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
-          <SelectTrigger className="w-32 h-9"><SelectValue placeholder="All Status" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="true">Active</SelectItem>
-            <SelectItem value="false">Inactive</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex gap-3">
+          <Select value={roleFilter || 'all'} onValueChange={(v) => { setRoleFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
+            <SelectTrigger className="w-full sm:w-40 h-9"><SelectValue placeholder="All Roles" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Roles</SelectItem>
+              {roles.map((r) => <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter || 'all'} onValueChange={(v) => { setStatusFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
+            <SelectTrigger className="w-full sm:w-32 h-9"><SelectValue placeholder="All Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="true">Active</SelectItem>
+              <SelectItem value="false">Inactive</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Table */}
-      <div className="rounded-md border bg-card">
+      {/* Sort bar (mobile) */}
+      <div className="flex md:hidden items-center gap-2">
+        <span className="text-xs text-muted-foreground">Sort:</span>
+        {(['name', 'email', 'created_at'] as SortField[]).map((f) => (
+          <button key={f} onClick={() => toggleSort(f)} className={`inline-flex items-center text-xs px-2 py-1 rounded-md border transition-colors ${sortField === f ? 'bg-primary/10 border-primary/30 text-primary' : 'text-muted-foreground'}`}>
+            {f === 'created_at' ? 'Joined' : f.charAt(0).toUpperCase() + f.slice(1)}
+            <SortIcon field={f} />
+          </button>
+        ))}
+      </div>
+
+      {/* Mobile card list */}
+      <div className="md:hidden space-y-3">
+        {loading ? (
+          <div className="flex items-center justify-center h-32 text-muted-foreground gap-2">
+            <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            Loading...
+          </div>
+        ) : users.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">No users found</div>
+        ) : (
+          users.map((u) => (
+            <div key={u.id} className="rounded-md border bg-card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold shrink-0">
+                    {u.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{u.name}</p>
+                    <p className="text-xs text-muted-foreground">{u.email}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  {hasPermission('users.edit') && (
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditUser(u); setShowEdit(true) }}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                  {hasPermission('users.delete') && u.is_active && (
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDeactivate(u)}>
+                      <UserX className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <Badge variant="secondary" className="font-normal">{u.role}</Badge>
+                <Badge variant={u.is_active ? 'default' : 'destructive'} className="font-normal">{u.is_active ? 'Active' : 'Inactive'}</Badge>
+                {u.phone && <span className="text-muted-foreground">{u.phone}</span>}
+                <span className="text-muted-foreground ml-auto">{new Date(u.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden md:block rounded-md border bg-card">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
@@ -289,7 +349,7 @@ function CreateUserDialog({ open, onClose, roles, onSuccess }: { open: boolean; 
           {error && (
             <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">{error}</div>
           )}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-sm">Full Name</Label>
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="John Doe" required className="h-10" />
@@ -299,7 +359,7 @@ function CreateUserDialog({ open, onClose, roles, onSuccess }: { open: boolean; 
               <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="john@company.com" required className="h-10" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-sm">Phone</Label>
               <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="08012345678" className="h-10" />

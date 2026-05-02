@@ -1,10 +1,14 @@
+import { useState } from 'react'
 import { Outlet, Navigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
-import Sidebar from './Sidebar'
+import Sidebar, { SidebarContent } from './Sidebar'
 import { Toaster } from '@/components/ui/sonner'
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
+import { Lock, Menu } from 'lucide-react'
 
 export default function AppLayout() {
   const { user, isLoading } = useAuth()
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   if (isLoading) {
     return (
@@ -17,22 +21,44 @@ export default function AppLayout() {
     )
   }
 
-  if (!user) {
-    return <Navigate to="/login" replace />
-  }
-
-  if (user.must_change_password) {
-    return <Navigate to="/change-password" replace />
-  }
+  if (!user) return <Navigate to="/login" replace />
+  if (user.must_change_password) return <Navigate to="/change-password" replace />
 
   return (
     <div className="flex h-screen bg-background">
+      {/* Desktop sidebar */}
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <main className="flex-1 overflow-auto p-8">
+
+      {/* Mobile sidebar sheet */}
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent side="left" className="w-64 p-0 bg-sidebar border-none">
+          <SheetTitle className="sr-only">Navigation</SheetTitle>
+          <SidebarContent onNavigate={() => setMobileOpen(false)} />
+        </SheetContent>
+      </Sheet>
+
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        {/* Mobile top bar */}
+        <header className="lg:hidden flex items-center gap-3 h-14 px-4 border-b bg-card shrink-0">
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="h-9 w-9 flex items-center justify-center rounded-md border hover:bg-muted transition-colors"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center">
+              <Lock className="w-3.5 h-3.5 text-primary-foreground" />
+            </div>
+            <span className="font-bold text-sm">UCRM</span>
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>
+
       <Toaster richColors position="top-right" />
     </div>
   )

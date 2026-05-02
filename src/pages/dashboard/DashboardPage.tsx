@@ -35,7 +35,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">
+        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
           Good {getGreeting()}, {user?.name?.split(' ')[0]}
         </h2>
         <p className="text-base text-muted-foreground mt-1">

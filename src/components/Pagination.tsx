@@ -14,7 +14,7 @@ export default function Pagination({ meta, page, onPageChange }: PaginationProps
   const pages = getPageNumbers(page, meta.last_page)
 
   return (
-    <div className="flex items-center justify-between pt-4">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4">
       <p className="text-sm text-muted-foreground">
         Page <span className="font-medium text-foreground">{meta.current_page}</span> of{' '}
         <span className="font-medium text-foreground">{meta.last_page}</span>
