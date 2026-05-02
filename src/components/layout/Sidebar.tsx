@@ -8,11 +8,17 @@ import {
   LogOut,
   Lock,
   ChevronRight,
+  Store,
+  Tag,
+  Package,
 } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, permission: 'dashboard.view' },
+  { to: '/businesses', label: 'Businesses', icon: Store, permission: 'businesses.view' },
+  { to: '/categories', label: 'Categories', icon: Tag, permission: 'categories.view' },
+  { to: '/products', label: 'Products', icon: Package, permission: 'products.view' },
   { to: '/users', label: 'Users', icon: Users, permission: 'users.view' },
   { to: '/roles', label: 'Roles & Permissions', icon: Shield, permission: 'roles.manage' },
   { to: '/settings', label: 'Settings', icon: Settings, permission: 'settings.view' },

@@ -51,6 +51,58 @@ export interface LoginResponse {
   }
 }
 
+export interface Business {
+  id: string
+  name: string
+  description: string | null
+  logo: string | null
+  is_active: boolean
+  categories_count: number
+  products_count: number
+  created_by: string | null
+  created_at: string
+  updated_at?: string
+}
+
+export interface Category {
+  id: string
+  name: string
+  description: string | null
+  business_id: string
+  business_name: string | null
+  products_count: number
+  is_active: boolean
+  created_at: string
+}
+
+export interface ProductVariation {
+  id: string
+  name: string
+  description: string | null
+  price: string
+  stock: number
+  low_stock_threshold: number
+  is_active: boolean
+  sort_order: number
+}
+
+export interface Product {
+  id: string
+  name: string
+  description: string | null
+  image: string | null
+  business_id: string
+  business_name: string | null
+  category_id: string | null
+  category_name: string | null
+  is_active: boolean
+  total_stock: number
+  low_stock: boolean
+  variations: ProductVariation[]
+  created_at: string
+  updated_at?: string
+}
+
 export interface ApiError {
   message: string
   errors?: Record<string, string[]>
