@@ -6,17 +6,18 @@ import type { LucideIcon } from 'lucide-react'
 export default function DashboardPage() {
   const { user } = useAuth()
 
-  const stats: { label: string; value: string; icon: LucideIcon; color: string }[] = [
-    { label: 'Your Role', value: user?.role ?? '—', icon: Shield, color: 'text-blue-600' },
-    { label: 'Permissions', value: String(user?.permissions.length ?? 0), icon: Key, color: 'text-emerald-600' },
-    { label: 'Account Status', value: user?.is_active ? 'Active' : 'Inactive', icon: UserCheck, color: 'text-violet-600' },
+  const stats: { label: string; value: string; icon: LucideIcon; iconColor: string; accent: string }[] = [
+    { label: 'Your Role', value: user?.role ?? '—', icon: Shield, iconColor: 'text-blue-600', accent: 'border-l-blue-500' },
+    { label: 'Permissions', value: String(user?.permissions.length ?? 0), icon: Key, iconColor: 'text-emerald-600', accent: 'border-l-emerald-500' },
+    { label: 'Account Status', value: user?.is_active ? 'Active' : 'Inactive', icon: UserCheck, iconColor: 'text-violet-600', accent: 'border-l-violet-500' },
     {
       label: 'Member Since',
       value: user?.created_at
         ? new Date(user.created_at).toLocaleDateString('en-NG', { month: 'short', year: 'numeric' })
         : '—',
       icon: CalendarDays,
-      color: 'text-amber-600',
+      iconColor: 'text-amber-600',
+      accent: 'border-l-amber-500',
     },
   ]
 
@@ -33,11 +34,11 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
-          <Card key={stat.label} className="border">
+          <Card key={stat.label} className={`border border-l-3 ${stat.accent}`}>
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-sm text-muted-foreground">{stat.label}</p>
-                <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
               </div>
               <p className="text-xl font-semibold">{stat.value}</p>
             </CardContent>

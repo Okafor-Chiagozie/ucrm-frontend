@@ -222,8 +222,8 @@ export default function UsersPage() {
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-xs">
-                <Badge variant="secondary" className="font-normal">{u.role}</Badge>
-                <Badge variant={u.is_active ? 'default' : 'destructive'} className="font-normal">{u.is_active ? 'Active' : 'Inactive'}</Badge>
+                <Badge variant="outline" className="font-normal border-blue-200 bg-blue-50 text-blue-700">{u.role}</Badge>
+                <Badge variant="outline" className={`font-normal ${u.is_active ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`}>{u.is_active ? 'Active' : 'Inactive'}</Badge>
                 {u.phone && <span className="text-muted-foreground">{u.phone}</span>}
                 <span className="text-muted-foreground ml-auto">{new Date(u.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
               </div>
@@ -281,7 +281,7 @@ export default function UsersPage() {
                   </TableCell>
                   <TableCell className="text-muted-foreground">{u.email}</TableCell>
                   <TableCell className="text-muted-foreground">{u.phone || '—'}</TableCell>
-                  <TableCell><Badge variant="secondary" className="font-normal">{u.role}</Badge></TableCell>
+                  <TableCell><Badge variant="outline" className="font-normal border-blue-200 bg-blue-50 text-blue-700">{u.role}</Badge></TableCell>
                   <TableCell>
                     <Badge variant={u.is_active ? 'default' : 'destructive'} className="font-normal">
                       {u.is_active ? 'Active' : 'Inactive'}

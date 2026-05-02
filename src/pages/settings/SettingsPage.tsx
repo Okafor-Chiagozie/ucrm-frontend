@@ -97,7 +97,7 @@ export default function SettingsPage() {
                       onClick={() => updateSetting(key, value === 'true' ? 'false' : 'true')}
                     >
                       {value === 'true' ? (
-                        <ToggleRight className="h-7 w-7 text-primary" />
+                        <ToggleRight className="h-7 w-7 text-emerald-600" />
                       ) : (
                         <ToggleLeft className="h-7 w-7 text-muted-foreground" />
                       )}

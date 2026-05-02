@@ -66,7 +66,7 @@ export default function RolesPage() {
               <CardContent className="p-5">
                 <div className="flex items-center justify-between mb-1">
                   <h3 className="font-semibold">{role.name}</h3>
-                  <Badge variant="secondary" className="font-normal text-xs">
+                  <Badge variant="outline" className="font-normal text-xs border-blue-200 bg-blue-50 text-blue-700">
                     {role.permissions_count}
                   </Badge>
                 </div>
