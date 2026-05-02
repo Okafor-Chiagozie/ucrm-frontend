@@ -393,7 +393,7 @@ function CreateUserDialog({ open, onClose, roles, onSuccess }: { open: boolean; 
             <div className="space-y-1.5">
               <Label className="text-sm">Role</Label>
               <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v ?? '' })}>
-                <SelectTrigger className="h-10"><SelectValue placeholder="Select role" /></SelectTrigger>
+                <SelectTrigger className="h-10 w-full"><SelectValue placeholder="Select role" /></SelectTrigger>
                 <SelectContent>
                   {roles.map((r) => <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>)}
                 </SelectContent>
@@ -487,7 +487,7 @@ function EditUserDialog({ open, onClose, user, roles, onSuccess }: { open: boole
             <div className="space-y-1.5">
               <Label className="text-sm">Role</Label>
               <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v ?? '' })}>
-                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-10 w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {roles.map((r) => <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>)}
                 </SelectContent>

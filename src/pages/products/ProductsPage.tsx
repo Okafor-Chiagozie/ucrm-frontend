@@ -347,7 +347,7 @@ function ProductDialog({ open, product, businesses, onClose, onSuccess }: { open
               <div className="space-y-1.5">
                 <Label>Business</Label>
                 <Select value={businessId} onValueChange={(v) => { setBusinessId(v ?? ''); setCategoryId('') }}>
-                  <SelectTrigger className="h-10">
+                  <SelectTrigger className="h-10 w-full">
                     <SelectValue placeholder="Select business">
                       {businesses.find((b) => b.id === businessId)?.name ?? 'Select business'}
                     </SelectValue>
@@ -361,7 +361,7 @@ function ProductDialog({ open, product, businesses, onClose, onSuccess }: { open
             <div className="space-y-1.5">
               <Label>Category</Label>
               <Select value={categoryId || 'none'} onValueChange={(v) => setCategoryId(v === 'none' ? '' : v ?? '')}>
-                <SelectTrigger className="h-10">
+                <SelectTrigger className="h-10 w-full">
                   <SelectValue placeholder="Select category">
                     {categories.find((c) => c.id === categoryId)?.name ?? 'No category'}
                   </SelectValue>

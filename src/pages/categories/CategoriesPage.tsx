@@ -277,7 +277,7 @@ function CategoryDialog({ open, category, businesses, onClose, onSuccess }: { op
             <div className="space-y-1.5">
               <Label>Business</Label>
               <Select value={businessId} onValueChange={(v) => setBusinessId(v ?? '')}>
-                <SelectTrigger className="h-10">
+                <SelectTrigger className="h-10 w-full">
                   <SelectValue placeholder="Select business">
                     {businesses.find((b) => b.id === businessId)?.name ?? 'Select business'}
                   </SelectValue>
