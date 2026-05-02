@@ -241,28 +241,33 @@ function FormBuilderDialog({ product, onClose, onSaved }: { product: Product; on
           </div>
 
           <Separator />
-          <h4 className="text-sm font-semibold">Preview</h4>
-          <div className="rounded-md border p-6 bg-white">
+          <h4 className="text-sm font-semibold">Live Preview</h4>
+          <div className="rounded-md border p-5 bg-white text-sm" style={{ fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
             <div className="text-center mb-4">
-              <h3 className="text-lg font-bold text-gray-900">{settings.heading}</h3>
+              <p className="text-lg font-bold text-gray-900">{settings.heading}</p>
               <p className="text-xs text-gray-500 mt-1">{settings.subheading}</p>
             </div>
             <div className="space-y-3">
-              <div className="h-10 rounded-md border bg-gray-50" />
-              <div className="h-10 rounded-md border bg-gray-50" />
-              {settings.show_whatsapp && <div className="h-10 rounded-md border bg-gray-50 border-dashed" />}
-              <div className="h-10 rounded-md border bg-gray-50" />
-              <div className="h-10 rounded-md border bg-gray-50" />
-              {settings.show_email && <div className="h-10 rounded-md border bg-gray-50 border-dashed" />}
-              <div className="rounded-md border p-3 bg-gray-50">
-                <div className="h-3 w-28 bg-gray-200 rounded mb-2" />
+              <PreviewField label="Full Name *" />
+              <PreviewField label="Phone Number *" />
+              {settings.show_whatsapp && <PreviewField label="WhatsApp Number" optional />}
+              <PreviewField label="Delivery Address *" />
+              <PreviewField label="State *" />
+              {settings.show_email && <PreviewField label="Email" optional />}
+              <div>
+                <p className="text-xs font-semibold text-gray-700 mb-2">Select Your Package *</p>
                 <div className="space-y-2">
-                  <div className="h-10 rounded-md border bg-white" />
-                  <div className="h-10 rounded-md border bg-white" />
+                  {product.variations.slice(0, 3).map((v, i) => (
+                    <div key={v.id} className={`flex items-center justify-between rounded-md border-2 px-3 py-2 ${i === 0 ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
+                      <span className="text-xs font-medium text-gray-800">{v.name}</span>
+                      <span className="text-xs font-bold">₦{Number(v.price).toLocaleString()}</span>
+                    </div>
+                  ))}
+                  {product.variations.length > 3 && <p className="text-xs text-gray-400">+{product.variations.length - 3} more</p>}
                 </div>
               </div>
-              {settings.show_coupon && <div className="h-10 rounded-md border bg-gray-50 border-dashed" />}
-              <button className="w-full h-12 rounded-md text-white font-bold text-sm" style={{ background: settings.button_color }} disabled>
+              {settings.show_coupon && <PreviewField label="Coupon Code" optional />}
+              <button className="w-full h-11 rounded-md text-white font-bold text-sm mt-2" style={{ background: settings.button_color }} disabled>
                 {settings.button_text}
               </button>
             </div>
@@ -275,5 +280,14 @@ function FormBuilderDialog({ product, onClose, onSaved }: { product: Product; on
         </div>
       </DialogContent>
     </Dialog>
+  )
+}
+
+function PreviewField({ label, optional }: { label: string; optional?: boolean }) {
+  return (
+    <div>
+      <p className={`text-xs font-semibold mb-1 ${optional ? 'text-gray-400' : 'text-gray-700'}`}>{label}</p>
+      <div className={`h-10 rounded-md border bg-gray-50 ${optional ? 'border-dashed' : ''}`} />
+    </div>
   )
 }
