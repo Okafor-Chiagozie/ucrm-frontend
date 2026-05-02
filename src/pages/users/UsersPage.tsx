@@ -137,8 +137,8 @@ export default function UsersPage() {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-end gap-3">
-        <div className="flex-1 min-w-0 sm:max-w-sm space-y-1">
-          <label className="text-xs font-medium text-muted-foreground">Search</label>
+        <div className="flex-1 min-w-0 sm:max-w-sm">
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Search</label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -149,28 +149,26 @@ export default function UsersPage() {
             />
           </div>
         </div>
-        <div className="flex gap-3">
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Role</label>
-            <Select value={roleFilter || 'all'} onValueChange={(v) => { setRoleFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
-              <SelectTrigger className="w-full sm:w-40 h-10"><SelectValue placeholder="All Roles" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
-                {roles.map((r) => <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Status</label>
-            <Select value={statusFilter || 'all'} onValueChange={(v) => { setStatusFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
-              <SelectTrigger className="w-full sm:w-32 h-10"><SelectValue placeholder="All Status" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="true">Active</SelectItem>
-                <SelectItem value="false">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Role</label>
+          <Select value={roleFilter || 'all'} onValueChange={(v) => { setRoleFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
+            <SelectTrigger className="w-full sm:w-40"><SelectValue placeholder="All Roles" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Roles</SelectItem>
+              {roles.map((r) => <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Status</label>
+          <Select value={statusFilter || 'all'} onValueChange={(v) => { setStatusFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
+            <SelectTrigger className="w-full sm:w-36"><SelectValue placeholder="All Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="true">Active</SelectItem>
+              <SelectItem value="false">Inactive</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
