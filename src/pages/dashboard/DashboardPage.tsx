@@ -6,16 +6,17 @@ import type { LucideIcon } from 'lucide-react'
 export default function DashboardPage() {
   const { user } = useAuth()
 
-  const stats: { label: string; value: string; icon: LucideIcon }[] = [
-    { label: 'Your Role', value: user?.role ?? '—', icon: Shield },
-    { label: 'Permissions', value: String(user?.permissions.length ?? 0), icon: Key },
-    { label: 'Account Status', value: user?.is_active ? 'Active' : 'Inactive', icon: UserCheck },
+  const stats: { label: string; value: string; icon: LucideIcon; color: string }[] = [
+    { label: 'Your Role', value: user?.role ?? '—', icon: Shield, color: 'text-blue-600' },
+    { label: 'Permissions', value: String(user?.permissions.length ?? 0), icon: Key, color: 'text-emerald-600' },
+    { label: 'Account Status', value: user?.is_active ? 'Active' : 'Inactive', icon: UserCheck, color: 'text-violet-600' },
     {
       label: 'Member Since',
       value: user?.created_at
         ? new Date(user.created_at).toLocaleDateString('en-NG', { month: 'short', year: 'numeric' })
         : '—',
       icon: CalendarDays,
+      color: 'text-amber-600',
     },
   ]
 
@@ -36,7 +37,7 @@ export default function DashboardPage() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-sm text-muted-foreground">{stat.label}</p>
-                <stat.icon className="h-5 w-5 text-muted-foreground/60" />
+                <stat.icon className={`h-5 w-5 ${stat.color}`} />
               </div>
               <p className="text-xl font-semibold">{stat.value}</p>
             </CardContent>
