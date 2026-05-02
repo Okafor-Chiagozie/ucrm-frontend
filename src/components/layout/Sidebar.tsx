@@ -18,6 +18,7 @@ import {
   PhoneMissed,
   Code,
   Boxes,
+  Gift,
 } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 
@@ -27,6 +28,7 @@ const navItems = [
   { to: '/businesses', label: 'Businesses', icon: Store, permission: 'businesses.view' },
   { to: '/categories', label: 'Categories', icon: Tag, permission: 'categories.view' },
   { to: '/products', label: 'Products', icon: Package, permission: 'products.view' },
+  { to: '/bump-offers', label: 'Bump Offers', icon: Gift, permission: 'products.view' },
   { to: '/inventory', label: 'Inventory', icon: Boxes, permission: 'inventory.view' },
   { to: '/delivery-fees', label: 'Delivery Fees', icon: Truck, permission: 'delivery_fees.view' },
   { to: '/coupons', label: 'Coupons', icon: Ticket, permission: 'coupons.view' },

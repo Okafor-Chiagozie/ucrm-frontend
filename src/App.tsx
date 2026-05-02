@@ -8,6 +8,7 @@ import OrdersPage from '@/pages/orders/OrdersPage'
 import BusinessesPage from '@/pages/businesses/BusinessesPage'
 import CategoriesPage from '@/pages/categories/CategoriesPage'
 import ProductsPage from '@/pages/products/ProductsPage'
+import BumpOffersPage from '@/pages/bump-offers/BumpOffersPage'
 import InventoryPage from '@/pages/inventory/InventoryPage'
 import DeliveryFeesPage from '@/pages/delivery-fees/DeliveryFeesPage'
 import CouponsPage from '@/pages/coupons/CouponsPage'
@@ -35,6 +36,7 @@ export default function App() {
             <Route path="/businesses" element={<BusinessesPage />} />
             <Route path="/categories" element={<CategoriesPage />} />
             <Route path="/products" element={<ProductsPage />} />
+            <Route path="/bump-offers" element={<BumpOffersPage />} />
             <Route path="/inventory" element={<InventoryPage />} />
             <Route path="/delivery-fees" element={<DeliveryFeesPage />} />
             <Route path="/coupons" element={<CouponsPage />} />

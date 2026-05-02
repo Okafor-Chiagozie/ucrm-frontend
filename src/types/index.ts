@@ -198,6 +198,24 @@ export interface PartialOrderData {
   created_at: string
 }
 
+export interface BumpOffer {
+  id: string
+  product_id: string
+  product_name: string | null
+  bump_product_id: string
+  bump_product_name: string | null
+  bump_product_image: string | null
+  bump_variation_id: string
+  bump_variation_name: string | null
+  bump_variation_price: string | null
+  headline: string
+  description: string | null
+  special_price: string
+  original_price: string
+  is_active: boolean
+  created_at: string
+}
+
 export interface ApiError {
   message: string
   errors?: Record<string, string[]>
