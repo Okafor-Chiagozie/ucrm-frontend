@@ -272,7 +272,27 @@ export default function OrdersPage() {
                 <TableCell className="text-muted-foreground">{o.business_name}</TableCell>
                 <TableCell><Badge variant="outline" className="font-normal border-blue-200 bg-blue-50 text-blue-700">{o.items_count}</Badge></TableCell>
                 <TableCell className="font-medium">{formatPrice(o.total)}</TableCell>
-                <TableCell><Badge variant="outline" className={`font-normal ${statusColors[o.status] ?? ''}`}>{o.status}</Badge></TableCell>
+                <TableCell>
+                  {hasPermission('orders.update_status') ? (
+                    <Select value={o.status} onValueChange={async (v) => {
+                      if (!v || v === o.status) return
+                      try {
+                        await api.put(`/orders/${o.id}/status`, { status: v })
+                        toast.success(`${o.order_number} → ${v}`)
+                        fetchOrders()
+                      } catch { toast.error('Failed to update status') }
+                    }}>
+                      <SelectTrigger className="h-7 w-28 text-xs border-0 bg-transparent p-0">
+                        <Badge variant="outline" className={`font-normal cursor-pointer ${statusColors[o.status] ?? ''}`}>{o.status}</Badge>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ORDER_STATUSES.map((s) => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Badge variant="outline" className={`font-normal ${statusColors[o.status] ?? ''}`}>{o.status}</Badge>
+                  )}
+                </TableCell>
                 <TableCell className="text-muted-foreground text-sm">{new Date(o.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}</TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewOrder(o)}>
