@@ -48,6 +48,8 @@ export default function OrdersPage() {
   const [search, setSearch] = useState('')
   const [businessFilter, setBusinessFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const [page, setPage] = useState(1)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkStatus, setBulkStatus] = useState('')
@@ -63,6 +65,8 @@ export default function OrdersPage() {
       if (search) params.set('search', search)
       if (businessFilter) params.set('business_id', businessFilter)
       if (statusFilter) params.set('status', statusFilter)
+      if (dateFrom) params.set('date_from', dateFrom)
+      if (dateTo) params.set('date_to', dateTo)
       const { data } = await api.get(`/orders?${params}`)
       setOrders(data.data.data)
       setMeta(data.meta)
@@ -71,7 +75,7 @@ export default function OrdersPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, businessFilter, statusFilter, sortField, sortDir])
+  }, [page, search, businessFilter, statusFilter, dateFrom, dateTo, sortField, sortDir])
 
   useEffect(() => { fetchOrders() }, [fetchOrders])
 
@@ -173,6 +177,14 @@ export default function OrdersPage() {
               {ORDER_STATUSES.map((s) => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>)}
             </SelectContent>
           </Select>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">From</label>
+          <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }} className="h-10 w-full sm:w-40" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">To</label>
+          <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }} className="h-10 w-full sm:w-40" />
         </div>
       </div>
 
