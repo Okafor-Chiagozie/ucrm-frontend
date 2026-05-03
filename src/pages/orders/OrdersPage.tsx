@@ -20,7 +20,7 @@ import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
-import { Search, ArrowUpDown, ArrowUp, ArrowDown, Eye, ShoppingCart, Download } from 'lucide-react'
+import { Search, ArrowUpDown, ArrowUp, ArrowDown, Eye, ShoppingCart, Download, FileText } from 'lucide-react'
 
 const ORDER_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned']
 
@@ -110,6 +110,23 @@ export default function OrdersPage() {
           } catch { toast.error('Failed to export') }
         }}>
           <Download className="mr-1.5 h-4 w-4" /> Export CSV
+        </Button>
+        <Button variant="outline" className="w-full sm:w-auto h-10" onClick={async () => {
+          try {
+            const params = new URLSearchParams()
+            if (businessFilter) params.set('business_id', businessFilter)
+            if (statusFilter) params.set('status', statusFilter)
+            const { data } = await api.get(`/orders-export-pdf?${params}`, { responseType: 'blob' })
+            const url = URL.createObjectURL(data)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `orders-${new Date().toISOString().slice(0, 10)}.pdf`
+            a.click()
+            URL.revokeObjectURL(url)
+            toast.success('PDF downloaded')
+          } catch { toast.error('Failed to export PDF') }
+        }}>
+          <FileText className="mr-1.5 h-4 w-4" /> Export PDF
         </Button>
       </div>
 
