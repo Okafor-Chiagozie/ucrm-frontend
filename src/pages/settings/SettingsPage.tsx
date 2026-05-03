@@ -34,35 +34,47 @@ const settingsMeta: Record<string, { label: string; description: string; type: '
     type: 'text',
     group: 'General',
   },
-  sms_enabled: {
-    label: 'SMS Notifications',
-    description: 'Send SMS notifications via Twilio when orders are placed or updated',
+  sms_new_order_enabled: {
+    label: 'SMS — New Order',
+    description: 'Send SMS to customer when a new order is placed',
     type: 'toggle',
-    group: 'Notifications',
-  },
-  whatsapp_enabled: {
-    label: 'WhatsApp Notifications',
-    description: 'Send WhatsApp messages via Twilio when orders are placed or updated',
-    type: 'toggle',
-    group: 'Notifications',
+    group: 'SMS Notifications',
   },
   sms_new_order_template: {
     label: 'SMS — New Order Template',
     description: 'Variables: {order_number}, {customer_name}, {customer_phone}, {customer_state}, {total}, {business_name}',
     type: 'textarea',
-    group: 'Notifications',
+    group: 'SMS Notifications',
+  },
+  sms_order_status_enabled: {
+    label: 'SMS — Order Status Update',
+    description: 'Send SMS to customer when order status changes',
+    type: 'toggle',
+    group: 'SMS Notifications',
   },
   sms_order_status_template: {
     label: 'SMS — Order Status Template',
     description: 'Variables: {order_number}, {customer_name}, {status}, {total}',
     type: 'textarea',
-    group: 'Notifications',
+    group: 'SMS Notifications',
+  },
+  whatsapp_new_order_enabled: {
+    label: 'WhatsApp — New Order',
+    description: 'Send WhatsApp message to customer when a new order is placed',
+    type: 'toggle',
+    group: 'WhatsApp Notifications',
   },
   whatsapp_new_order_template: {
     label: 'WhatsApp — New Order Template',
     description: 'Variables: {order_number}, {customer_name}, {customer_phone}, {customer_state}, {total}, {business_name}. Use \\n for line breaks.',
     type: 'textarea',
-    group: 'Notifications',
+    group: 'WhatsApp Notifications',
+  },
+  whatsapp_order_status_enabled: {
+    label: 'WhatsApp — Order Status Update',
+    description: 'Send WhatsApp message to customer when order status changes',
+    type: 'toggle',
+    group: 'WhatsApp Notifications',
   },
   whatsapp_order_status_template: {
     label: 'WhatsApp — Order Status Template',
@@ -100,6 +112,26 @@ export default function SettingsPage() {
     } catch {
       toast.error('Failed to update setting')
     }
+  }
+
+  const previewTemplate = (template: string) => {
+    const sample: Record<string, string> = {
+      '{order_number}': 'ORD-00042',
+      '{customer_name}': 'John Doe',
+      '{customer_phone}': '+2348012345678',
+      '{customer_state}': 'Lagos',
+      '{customer_address}': '15 Admiralty Way, Lekki',
+      '{total}': '29,500',
+      '{subtotal}': '27,000',
+      '{delivery_fee}': '2,500',
+      '{status}': 'Confirmed',
+      '{business_name}': 'Skincare Empire',
+    }
+    let result = template
+    for (const [key, val] of Object.entries(sample)) {
+      result = result.replaceAll(key, val)
+    }
+    return result.replaceAll('\\n', '\n')
   }
 
   const groupedSettings = (() => {
@@ -161,6 +193,10 @@ export default function SettingsPage() {
                               rows={3}
                               className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
                             />
+                            <div className="rounded-md bg-muted/50 border border-dashed p-3">
+                              <p className="text-[10px] font-medium text-muted-foreground mb-1">Preview:</p>
+                              <p className="text-xs whitespace-pre-wrap">{previewTemplate(value)}</p>
+                            </div>
                             {canEdit && (
                               <div className="flex justify-end">
                                 <Button size="sm" className="h-9" onClick={() => updateSetting(key, value)}>Save</Button>
