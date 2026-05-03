@@ -331,29 +331,24 @@ function OrderDetailDialog({ order, canUpdateStatus, canAssignAgent, onClose, on
   const formatPrice = (price: string | number) =>
     new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(Number(price))
 
-  const handleStatusUpdate = async () => {
-    setSaving(true)
-    try {
-      await api.put(`/orders/${order.id}/status`, { status })
-      toast.success('Status updated')
-      onUpdated()
-      onClose()
-    } catch {
-      toast.error('Failed to update status')
-    } finally {
-      setSaving(false)
-    }
-  }
+  const statusChanged = status !== order.status
+  const agentChanged = agentId !== (order.assigned_agent?.id ?? '')
+  const hasChanges = statusChanged || agentChanged
 
-  const handleAssignAgent = async () => {
+  const handleSave = async () => {
     setSaving(true)
     try {
-      await api.put(`/orders/${order.id}/assign`, { agent_id: agentId })
-      toast.success('Agent assigned')
+      if (statusChanged) {
+        await api.put(`/orders/${order.id}/status`, { status })
+      }
+      if (agentChanged && agentId) {
+        await api.put(`/orders/${order.id}/assign`, { agent_id: agentId })
+      }
+      toast.success('Order updated')
       onUpdated()
       onClose()
     } catch {
-      toast.error('Failed to assign agent')
+      toast.error('Failed to update order')
     } finally {
       setSaving(false)
     }
@@ -415,36 +410,26 @@ function OrderDetailDialog({ order, canUpdateStatus, canAssignAgent, onClose, on
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Status</Label>
-              <div className="flex gap-2">
-                <Select value={status} onValueChange={(v) => setStatus(v ?? status)} disabled={!canUpdateStatus}>
-                  <SelectTrigger className="h-10 w-full">
-                    <SelectValue>{status.charAt(0).toUpperCase() + status.slice(1)}</SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ORDER_STATUSES.map((s) => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                {canUpdateStatus && status !== order.status && (
-                  <Button onClick={handleStatusUpdate} disabled={saving} className="h-10">Save</Button>
-                )}
-              </div>
+              <Select value={status} onValueChange={(v) => setStatus(v ?? status)} disabled={!canUpdateStatus}>
+                <SelectTrigger className="h-10 w-full">
+                  <SelectValue>{status.charAt(0).toUpperCase() + status.slice(1)}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {ORDER_STATUSES.map((s) => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label>Assigned Agent</Label>
-              <div className="flex gap-2">
-                <Select value={agentId || 'none'} onValueChange={(v) => setAgentId(v === 'none' ? '' : v ?? '')} disabled={!canAssignAgent}>
-                  <SelectTrigger className="h-10 w-full">
-                    <SelectValue>{agents.find((a) => a.id === agentId)?.name ?? 'Unassigned'}</SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Unassigned</SelectItem>
-                    {agents.map((a) => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                {canAssignAgent && agentId !== (order.assigned_agent?.id ?? '') && (
-                  <Button onClick={handleAssignAgent} disabled={saving} className="h-10">Save</Button>
-                )}
-              </div>
+              <Select value={agentId || 'none'} onValueChange={(v) => setAgentId(v === 'none' ? '' : v ?? '')} disabled={!canAssignAgent}>
+                <SelectTrigger className="h-10 w-full">
+                  <SelectValue>{agents.find((a) => a.id === agentId)?.name ?? 'Unassigned'}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Unassigned</SelectItem>
+                  {agents.map((a) => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -455,6 +440,15 @@ function OrderDetailDialog({ order, canUpdateStatus, canAssignAgent, onClose, on
             </div>
           )}
         </div>
+        {(canUpdateStatus || canAssignAgent) && (
+          <>
+            <Separator />
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={onClose}>Close</Button>
+              <Button onClick={handleSave} disabled={saving || !hasChanges}>{saving ? 'Saving...' : 'Save Changes'}</Button>
+            </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   )
