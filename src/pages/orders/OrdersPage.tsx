@@ -179,18 +179,32 @@ export default function OrdersPage() {
           </Select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-1.5">From</label>
-          <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }} className="h-10 w-full sm:w-40" />
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Date Range</label>
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              { label: 'Today', from: new Date().toISOString().slice(0, 10), to: new Date().toISOString().slice(0, 10) },
+              { label: 'This Week', from: (() => { const d = new Date(); d.setDate(d.getDate() - d.getDay()); return d.toISOString().slice(0, 10) })(), to: new Date().toISOString().slice(0, 10) },
+              { label: 'This Month', from: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10), to: new Date().toISOString().slice(0, 10) },
+            ].map((preset) => (
+              <Button key={preset.label} variant={dateFrom === preset.from && dateTo === preset.to ? 'default' : 'outline'} size="sm" className="h-8 text-xs"
+                onClick={() => { setDateFrom(preset.from); setDateTo(preset.to); setPage(1) }}>
+                {preset.label}
+              </Button>
+            ))}
+          </div>
         </div>
         <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-1.5">To</label>
-          <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }} className="h-10 w-full sm:w-40" />
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Custom Range</label>
+          <div className="flex gap-2">
+            <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }} className="h-10 w-full sm:w-36" />
+            <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }} className="h-10 w-full sm:w-36" />
+          </div>
         </div>
         {(search || businessFilter || statusFilter || dateFrom || dateTo) && (
           <div>
             <label className="block text-xs font-medium text-transparent mb-1.5">.</label>
             <Button variant="ghost" className="h-10 text-muted-foreground" onClick={() => { setSearch(''); setBusinessFilter(''); setStatusFilter(''); setDateFrom(''); setDateTo(''); setPage(1) }}>
-              <X className="mr-1.5 h-4 w-4" /> Clear filters
+              <X className="mr-1.5 h-4 w-4" /> Clear
             </Button>
           </div>
         )}

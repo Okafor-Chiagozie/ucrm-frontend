@@ -13,7 +13,7 @@ import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
-import { Search, PhoneMissed } from 'lucide-react'
+import { Search, PhoneMissed, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 
 export default function PartialOrdersPage() {
   const [partials, setPartials] = useState<PartialOrderData[]>([])
@@ -22,12 +22,14 @@ export default function PartialOrdersPage() {
   const [search, setSearch] = useState('')
   const [businessFilter, setBusinessFilter] = useState('')
   const [page, setPage] = useState(1)
+  const [sortField, setSortField] = useState<string>('created_at')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [loading, setLoading] = useState(true)
 
   const fetchPartials = useCallback(async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams({ page: String(page), per_page: '15' })
+      const params = new URLSearchParams({ page: String(page), per_page: '15', sort_by: sortField, sort_dir: sortDir })
       if (search) params.set('search', search)
       if (businessFilter) params.set('business_id', businessFilter)
       const { data } = await api.get(`/partial-orders?${params}`)
@@ -35,7 +37,17 @@ export default function PartialOrdersPage() {
       setMeta(data.meta)
     } catch { toast.error('Failed to load') }
     finally { setLoading(false) }
-  }, [page, search, businessFilter])
+  }, [page, search, businessFilter, sortField, sortDir])
+
+  const toggleSort = (field: string) => {
+    if (sortField === field) setSortDir(sortDir === 'asc' ? 'desc' : 'asc')
+    else { setSortField(field); setSortDir('asc') }
+  }
+
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortField !== field) return <ArrowUpDown className="ml-1 h-3.5 w-3.5 text-muted-foreground/50" />
+    return sortDir === 'asc' ? <ArrowUp className="ml-1 h-3.5 w-3.5 text-primary" /> : <ArrowDown className="ml-1 h-3.5 w-3.5 text-primary" />
+  }
 
   useEffect(() => { fetchPartials() }, [fetchPartials])
   useEffect(() => { api.get('/businesses?per_page=100').then(({ data }) => setBusinesses(data.data.data)).catch(() => {}) }, [])
@@ -63,7 +75,14 @@ export default function PartialOrdersPage() {
 
       <div className="rounded-md border bg-card">
         <Table>
-          <TableHeader><TableRow className="bg-muted/50 hover:bg-muted/50"><TableHead>Phone</TableHead><TableHead>Name</TableHead><TableHead>Business</TableHead><TableHead>IP</TableHead><TableHead>Converted</TableHead><TableHead>Date</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow className="bg-muted/50 hover:bg-muted/50">
+            <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('phone')}><span className="inline-flex items-center">Phone <SortIcon field="phone" /></span></TableHead>
+            <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('name')}><span className="inline-flex items-center">Name <SortIcon field="name" /></span></TableHead>
+            <TableHead>Business</TableHead>
+            <TableHead>IP</TableHead>
+            <TableHead>Converted</TableHead>
+            <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('created_at')}><span className="inline-flex items-center">Date <SortIcon field="created_at" /></span></TableHead>
+          </TableRow></TableHeader>
           <TableBody>
             {loading ? <TableRow><TableCell colSpan={6}><LoadingState text="Loading..." /></TableCell></TableRow>
             : partials.length === 0 ? <TableRow><TableCell colSpan={6}><EmptyState icon={PhoneMissed} title="No partial orders" description="Partial data is captured when visitors start filling the order form" /></TableCell></TableRow>

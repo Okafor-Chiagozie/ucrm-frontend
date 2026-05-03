@@ -18,7 +18,7 @@ import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
-import { Plus, Pencil, Trash2, Truck } from 'lucide-react'
+import { Plus, Pencil, Trash2, Truck, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -32,6 +32,8 @@ export default function DeliveryFeesPage() {
   const [meta, setMeta] = useState<PaginationMeta | null>(null)
   const [businessFilter, setBusinessFilter] = useState('')
   const [page, setPage] = useState(1)
+  const [sortField, setSortField] = useState<string>('state')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
   const [editFee, setEditFee] = useState<DeliveryFee | null>(null)
@@ -40,14 +42,24 @@ export default function DeliveryFeesPage() {
   const fetchFees = useCallback(async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams({ page: String(page), per_page: '50' })
+      const params = new URLSearchParams({ page: String(page), per_page: '50', sort_by: sortField, sort_dir: sortDir })
       if (businessFilter) params.set('business_id', businessFilter)
       const { data } = await api.get(`/delivery-fees?${params}`)
       setFees(data.data.data)
       setMeta(data.meta)
     } catch { toast.error('Failed to load delivery fees') }
     finally { setLoading(false) }
-  }, [page, businessFilter])
+  }, [page, businessFilter, sortField, sortDir])
+
+  const toggleSort = (field: string) => {
+    if (sortField === field) setSortDir(sortDir === 'asc' ? 'desc' : 'asc')
+    else { setSortField(field); setSortDir('asc') }
+  }
+
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortField !== field) return <ArrowUpDown className="ml-1 h-3.5 w-3.5 text-muted-foreground/50" />
+    return sortDir === 'asc' ? <ArrowUp className="ml-1 h-3.5 w-3.5 text-primary" /> : <ArrowDown className="ml-1 h-3.5 w-3.5 text-primary" />
+  }
 
   useEffect(() => { fetchFees() }, [fetchFees])
   useEffect(() => { api.get('/businesses?per_page=100').then(({ data }) => setBusinesses(data.data.data)).catch(() => {}) }, [])
@@ -80,7 +92,12 @@ export default function DeliveryFeesPage() {
 
       <div className="rounded-md border bg-card">
         <Table>
-          <TableHeader><TableRow className="bg-muted/50 hover:bg-muted/50"><TableHead>State</TableHead><TableHead>Business</TableHead><TableHead>Fee</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow className="bg-muted/50 hover:bg-muted/50">
+            <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('state')}><span className="inline-flex items-center">State <SortIcon field="state" /></span></TableHead>
+            <TableHead>Business</TableHead>
+            <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('fee')}><span className="inline-flex items-center">Fee <SortIcon field="fee" /></span></TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow></TableHeader>
           <TableBody>
             {loading ? <TableRow><TableCell colSpan={4}><LoadingState text="Loading..." /></TableCell></TableRow>
             : fees.length === 0 ? <TableRow><TableCell colSpan={4}><EmptyState icon={Truck} title="No delivery fees" description="Add delivery fees for each state" /></TableCell></TableRow>

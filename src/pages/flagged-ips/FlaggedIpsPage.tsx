@@ -20,13 +20,15 @@ import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
-import { Plus, Search, Trash2, ShieldBan } from 'lucide-react'
+import { Plus, Search, Trash2, ShieldBan, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 
 export default function FlaggedIpsPage() {
   const [ips, setIps] = useState<FlaggedIp[]>([])
   const [meta, setMeta] = useState<PaginationMeta | null>(null)
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [sortField, setSortField] = useState<string>('created_at')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
   const [deleteIp, setDeleteIp] = useState<FlaggedIp | null>(null)
@@ -34,14 +36,24 @@ export default function FlaggedIpsPage() {
   const fetchIps = useCallback(async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams({ page: String(page), per_page: '15' })
+      const params = new URLSearchParams({ page: String(page), per_page: '15', sort_by: sortField, sort_dir: sortDir })
       if (search) params.set('search', search)
       const { data } = await api.get(`/flagged-ips?${params}`)
       setIps(data.data.data)
       setMeta(data.meta)
     } catch { toast.error('Failed to load flagged IPs') }
     finally { setLoading(false) }
-  }, [page, search])
+  }, [page, search, sortField, sortDir])
+
+  const toggleSort = (field: string) => {
+    if (sortField === field) setSortDir(sortDir === 'asc' ? 'desc' : 'asc')
+    else { setSortField(field); setSortDir('asc') }
+  }
+
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortField !== field) return <ArrowUpDown className="ml-1 h-3.5 w-3.5 text-muted-foreground/50" />
+    return sortDir === 'asc' ? <ArrowUp className="ml-1 h-3.5 w-3.5 text-primary" /> : <ArrowDown className="ml-1 h-3.5 w-3.5 text-primary" />
+  }
 
   useEffect(() => { fetchIps() }, [fetchIps])
 
@@ -68,7 +80,14 @@ export default function FlaggedIpsPage() {
 
       <div className="rounded-md border bg-card">
         <Table>
-          <TableHeader><TableRow className="bg-muted/50 hover:bg-muted/50"><TableHead>IP Address</TableHead><TableHead>Reason</TableHead><TableHead>Flagged By</TableHead><TableHead>Status</TableHead><TableHead>Date</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow className="bg-muted/50 hover:bg-muted/50">
+            <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('ip_address')}><span className="inline-flex items-center">IP Address <SortIcon field="ip_address" /></span></TableHead>
+            <TableHead>Reason</TableHead>
+            <TableHead>Flagged By</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('created_at')}><span className="inline-flex items-center">Date <SortIcon field="created_at" /></span></TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow></TableHeader>
           <TableBody>
             {loading ? <TableRow><TableCell colSpan={6}><LoadingState text="Loading..." /></TableCell></TableRow>
             : ips.length === 0 ? <TableRow><TableCell colSpan={6}><EmptyState icon={ShieldBan} title="No flagged IPs" description="Flag an IP to block it from placing orders" /></TableCell></TableRow>

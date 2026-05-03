@@ -23,7 +23,7 @@ import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
-import { Plus, Search, Pencil, Trash2, Ticket } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, Ticket, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 
 export default function CouponsPage() {
   const [coupons, setCoupons] = useState<Coupon[]>([])
@@ -32,6 +32,8 @@ export default function CouponsPage() {
   const [search, setSearch] = useState('')
   const [businessFilter, setBusinessFilter] = useState('')
   const [page, setPage] = useState(1)
+  const [sortField, setSortField] = useState<string>('created_at')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
   const [editCoupon, setEditCoupon] = useState<Coupon | null>(null)
@@ -40,7 +42,7 @@ export default function CouponsPage() {
   const fetchCoupons = useCallback(async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams({ page: String(page), per_page: '15' })
+      const params = new URLSearchParams({ page: String(page), per_page: '15', sort_by: sortField, sort_dir: sortDir })
       if (search) params.set('search', search)
       if (businessFilter) params.set('business_id', businessFilter)
       const { data } = await api.get(`/coupons?${params}`)
@@ -48,7 +50,17 @@ export default function CouponsPage() {
       setMeta(data.meta)
     } catch { toast.error('Failed to load coupons') }
     finally { setLoading(false) }
-  }, [page, search, businessFilter])
+  }, [page, search, businessFilter, sortField, sortDir])
+
+  const toggleSort = (field: string) => {
+    if (sortField === field) setSortDir(sortDir === 'asc' ? 'desc' : 'asc')
+    else { setSortField(field); setSortDir('asc') }
+  }
+
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortField !== field) return <ArrowUpDown className="ml-1 h-3.5 w-3.5 text-muted-foreground/50" />
+    return sortDir === 'asc' ? <ArrowUp className="ml-1 h-3.5 w-3.5 text-primary" /> : <ArrowDown className="ml-1 h-3.5 w-3.5 text-primary" />
+  }
 
   useEffect(() => { fetchCoupons() }, [fetchCoupons])
   useEffect(() => { api.get('/businesses?per_page=100').then(({ data }) => setBusinesses(data.data.data)).catch(() => {}) }, [])
@@ -87,7 +99,15 @@ export default function CouponsPage() {
 
       <div className="rounded-md border bg-card">
         <Table>
-          <TableHeader><TableRow className="bg-muted/50 hover:bg-muted/50"><TableHead>Code</TableHead><TableHead>Business</TableHead><TableHead>Discount</TableHead><TableHead>Used</TableHead><TableHead>Expires</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow className="bg-muted/50 hover:bg-muted/50">
+            <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('code')}><span className="inline-flex items-center">Code <SortIcon field="code" /></span></TableHead>
+            <TableHead>Business</TableHead>
+            <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('value')}><span className="inline-flex items-center">Discount <SortIcon field="value" /></span></TableHead>
+            <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('times_used')}><span className="inline-flex items-center">Used <SortIcon field="times_used" /></span></TableHead>
+            <TableHead>Expires</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow></TableHeader>
           <TableBody>
             {loading ? <TableRow><TableCell colSpan={7}><LoadingState text="Loading..." /></TableCell></TableRow>
             : coupons.length === 0 ? <TableRow><TableCell colSpan={7}><EmptyState icon={Ticket} title="No coupons" description="Create a coupon to offer discounts" /></TableCell></TableRow>
