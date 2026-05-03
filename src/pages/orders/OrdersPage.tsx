@@ -49,6 +49,8 @@ export default function OrdersPage() {
   const [businessFilter, setBusinessFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [page, setPage] = useState(1)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkStatus, setBulkStatus] = useState('')
   const [sortField, setSortField] = useState<SortField>('created_at')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [loading, setLoading] = useState(true)
@@ -174,6 +176,31 @@ export default function OrdersPage() {
         </div>
       </div>
 
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && hasPermission('orders.update_status') && (
+        <div className="flex items-center gap-3 rounded-md border bg-primary/5 border-primary/20 p-3">
+          <span className="text-sm font-medium">{selectedIds.size} selected</span>
+          <Select value={bulkStatus} onValueChange={(v) => setBulkStatus(v ?? '')}>
+            <SelectTrigger className="w-44 h-9">
+              <SelectValue>{bulkStatus ? bulkStatus.charAt(0).toUpperCase() + bulkStatus.slice(1) : 'Change status to...'}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {ORDER_STATUSES.map((s) => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Button size="sm" disabled={!bulkStatus} onClick={async () => {
+            try {
+              await api.put('/orders-bulk-status', { order_ids: Array.from(selectedIds), status: bulkStatus })
+              toast.success(`${selectedIds.size} order(s) updated`)
+              setSelectedIds(new Set())
+              setBulkStatus('')
+              fetchOrders()
+            } catch { toast.error('Failed to update') }
+          }}>Apply</Button>
+          <Button variant="ghost" size="sm" onClick={() => { setSelectedIds(new Set()); setBulkStatus('') }}>Cancel</Button>
+        </div>
+      )}
+
       {/* Mobile cards */}
       <div className="md:hidden space-y-3">
         {loading ? <LoadingState text="Loading orders..." /> : orders.length === 0 ? <EmptyState icon={ShoppingCart} title="No orders found" description="Orders will appear here when customers place them" /> : orders.map((o) => (
@@ -196,6 +223,11 @@ export default function OrdersPage() {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
+              {hasPermission('orders.update_status') && (
+                <TableHead className="w-10">
+                  <input type="checkbox" checked={orders.length > 0 && selectedIds.size === orders.length} onChange={(e) => setSelectedIds(e.target.checked ? new Set(orders.map((o) => o.id)) : new Set())} />
+                </TableHead>
+              )}
               <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('order_number')}>
                 <span className="inline-flex items-center">Order # <SortIcon field="order_number" /></span>
               </TableHead>
@@ -216,11 +248,20 @@ export default function OrdersPage() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={8}><LoadingState text="Loading orders..." /></TableCell></TableRow>
+              <TableRow><TableCell colSpan={9}><LoadingState text="Loading orders..." /></TableCell></TableRow>
             ) : orders.length === 0 ? (
-              <TableRow><TableCell colSpan={8}><EmptyState icon={ShoppingCart} title="No orders found" /></TableCell></TableRow>
+              <TableRow><TableCell colSpan={9}><EmptyState icon={ShoppingCart} title="No orders found" /></TableCell></TableRow>
             ) : orders.map((o) => (
               <TableRow key={o.id}>
+                {hasPermission('orders.update_status') && (
+                  <TableCell>
+                    <input type="checkbox" checked={selectedIds.has(o.id)} onChange={(e) => {
+                      const next = new Set(selectedIds)
+                      e.target.checked ? next.add(o.id) : next.delete(o.id)
+                      setSelectedIds(next)
+                    }} />
+                  </TableCell>
+                )}
                 <TableCell className="font-mono text-sm">{o.order_number}</TableCell>
                 <TableCell>
                   <div>

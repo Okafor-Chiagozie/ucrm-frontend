@@ -19,6 +19,7 @@ import {
   Code,
   Boxes,
   Gift,
+  ScrollText,
 } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 
@@ -37,6 +38,7 @@ const navItems = [
   { to: '/order-forms', label: 'Order Forms', icon: Code, permission: 'form_settings.manage' },
   { to: '/users', label: 'Users', icon: Users, permission: 'users.view' },
   { to: '/roles', label: 'Roles & Permissions', icon: Shield, permission: 'roles.manage' },
+  { to: '/activity-log', label: 'Activity Log', icon: ScrollText, permission: 'settings.view' },
   { to: '/settings', label: 'Settings', icon: Settings, permission: 'settings.view' },
 ]
 

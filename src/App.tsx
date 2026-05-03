@@ -18,6 +18,7 @@ import FormSettingsPage from '@/pages/form/FormSettingsPage'
 import OrderForm from '@/pages/form/OrderForm'
 import UsersPage from '@/pages/users/UsersPage'
 import RolesPage from '@/pages/roles/RolesPage'
+import ActivityLogPage from '@/pages/activity-log/ActivityLogPage'
 import SettingsPage from '@/pages/settings/SettingsPage'
 
 export default function App() {
@@ -45,6 +46,7 @@ export default function App() {
             <Route path="/order-forms" element={<FormSettingsPage />} />
             <Route path="/users" element={<UsersPage />} />
             <Route path="/roles" element={<RolesPage />} />
+            <Route path="/activity-log" element={<ActivityLogPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />

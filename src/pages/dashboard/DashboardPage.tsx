@@ -12,10 +12,10 @@ interface DashboardStats {
   pending_orders: number
   delivered_orders: number
   total_revenue: string
-  total_businesses: number
-  total_products: number
-  low_stock_count: number
-  abandoned_forms: number
+  total_businesses?: number
+  total_products?: number
+  low_stock_count?: number
+  abandoned_forms?: number
   recent_orders: { id: string; order_number: string; customer_name: string; business_name: string | null; total: string; status: string; created_at: string }[]
   orders_by_status: Record<string, number>
 }
@@ -43,15 +43,19 @@ export default function DashboardPage() {
 
   const formatPrice = (n: string | number) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(Number(n))
 
+  const isAgent = user?.role === 'Agent'
+
   const cards: { label: string; value: string; icon: LucideIcon; iconColor: string }[] = stats ? [
-    { label: 'Total Orders', value: String(stats.total_orders), icon: ShoppingCart, iconColor: 'text-blue-600' },
-    { label: 'Pending Orders', value: String(stats.pending_orders), icon: Clock, iconColor: 'text-amber-600' },
-    { label: 'Revenue (Delivered)', value: formatPrice(stats.total_revenue), icon: TrendingUp, iconColor: 'text-emerald-600' },
-    { label: 'Businesses', value: String(stats.total_businesses), icon: Store, iconColor: 'text-violet-600' },
-    { label: 'Products', value: String(stats.total_products), icon: Package, iconColor: 'text-blue-600' },
+    { label: isAgent ? 'My Orders' : 'Total Orders', value: String(stats.total_orders), icon: ShoppingCart, iconColor: 'text-blue-600' },
+    { label: 'Pending', value: String(stats.pending_orders), icon: Clock, iconColor: 'text-amber-600' },
     { label: 'Delivered', value: String(stats.delivered_orders), icon: CheckCircle, iconColor: 'text-emerald-600' },
-    { label: 'Low Stock Items', value: String(stats.low_stock_count), icon: AlertTriangle, iconColor: 'text-red-600' },
-    { label: 'Abandoned Forms', value: String(stats.abandoned_forms), icon: PhoneMissed, iconColor: 'text-amber-600' },
+    { label: isAgent ? 'My Revenue' : 'Revenue (Delivered)', value: formatPrice(stats.total_revenue), icon: TrendingUp, iconColor: 'text-emerald-600' },
+    ...(stats.total_businesses !== undefined ? [
+      { label: 'Businesses', value: String(stats.total_businesses), icon: Store, iconColor: 'text-violet-600' },
+      { label: 'Products', value: String(stats.total_products ?? 0), icon: Package, iconColor: 'text-blue-600' },
+      { label: 'Low Stock', value: String(stats.low_stock_count ?? 0), icon: AlertTriangle, iconColor: 'text-red-600' },
+      { label: 'Abandoned Forms', value: String(stats.abandoned_forms ?? 0), icon: PhoneMissed, iconColor: 'text-amber-600' },
+    ] : []),
   ] : []
 
   return (
@@ -60,7 +64,7 @@ export default function DashboardPage() {
         <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
           Good {getGreeting()}, {user?.name?.split(' ')[0]}
         </h2>
-        <p className="text-sm text-muted-foreground mt-1">Here's an overview of your business.</p>
+        <p className="text-sm text-muted-foreground mt-1">{isAgent ? 'Here\'s an overview of your assigned orders.' : 'Here\'s an overview of your business.'}</p>
       </div>
 
       {loading ? <LoadingState text="Loading dashboard..." /> : stats && (
