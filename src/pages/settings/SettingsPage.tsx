@@ -87,6 +87,7 @@ const settingsMeta: Record<string, { label: string; description: string; type: '
 export default function SettingsPage() {
   const { hasPermission } = useAuth()
   const [settings, setSettings] = useState<Setting>({})
+  const [savedSettings, setSavedSettings] = useState<Setting>({})
   const [loading, setLoading] = useState(true)
   const canEdit = hasPermission('settings.edit')
 
@@ -95,6 +96,7 @@ export default function SettingsPage() {
       try {
         const { data } = await api.get('/settings')
         setSettings(data.data)
+        setSavedSettings(data.data)
       } catch {
         toast.error('Failed to load settings')
       } finally {
@@ -108,6 +110,7 @@ export default function SettingsPage() {
     try {
       await api.put(`/settings/${key}`, { value })
       setSettings((prev) => ({ ...prev, [key]: value }))
+      setSavedSettings((prev) => ({ ...prev, [key]: value }))
       toast.success('Setting updated')
     } catch {
       toast.error('Failed to update setting')
@@ -199,7 +202,7 @@ export default function SettingsPage() {
                             </div>
                             {canEdit && (
                               <div className="flex justify-end">
-                                <Button size="sm" className="h-9" onClick={() => updateSetting(key, value)}>Save</Button>
+                                <Button size="sm" className="h-9" disabled={value === savedSettings[key]} onClick={() => updateSetting(key, value)}>Save</Button>
                               </div>
                             )}
                           </div>
@@ -212,7 +215,7 @@ export default function SettingsPage() {
                               className="h-10 w-32 text-sm"
                             />
                             {canEdit && (
-                              <Button size="sm" className="h-10" onClick={() => updateSetting(key, value)}>Save</Button>
+                              <Button size="sm" className="h-10" disabled={value === savedSettings[key]} onClick={() => updateSetting(key, value)}>Save</Button>
                             )}
                           </div>
                         )}
