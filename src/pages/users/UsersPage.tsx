@@ -41,7 +41,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import Pagination from '@/components/Pagination'
 import { toast } from 'sonner'
-import { Plus, Search, ArrowUpDown, ArrowUp, ArrowDown, Pencil, UserX, Eye, EyeOff, Users } from 'lucide-react'
+import { Plus, Search, ArrowUpDown, ArrowUp, ArrowDown, Pencil, UserX, Eye, EyeOff, Users, X } from 'lucide-react'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 
@@ -176,6 +176,14 @@ export default function UsersPage() {
             </SelectContent>
           </Select>
         </div>
+        {(search || roleFilter || statusFilter) && (
+          <div>
+            <label className="block text-xs font-medium text-transparent mb-1.5">.</label>
+            <Button variant="ghost" className="h-10 text-muted-foreground" onClick={() => { setSearch(''); setRoleFilter(''); setStatusFilter(''); setPage(1) }}>
+              <X className="mr-1.5 h-4 w-4" /> Clear
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Table */}

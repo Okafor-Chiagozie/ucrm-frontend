@@ -1,8 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import api from '@/lib/api'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import LoadingState from '@/components/LoadingState'
 import { ShoppingCart, Package, AlertTriangle, PhoneMissed, Store, TrendingUp, Clock, CheckCircle } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -30,16 +35,44 @@ const statusColors: Record<string, string> = {
   returned: 'border-orange-200 bg-orange-50 text-orange-700',
 }
 
+const today = () => new Date().toISOString().slice(0, 10)
+const DATE_PRESETS = [
+  { label: 'Today', from: today, to: today },
+  { label: 'This Week', from: () => { const d = new Date(); const day = d.getDay(); d.setDate(d.getDate() - (day === 0 ? 6 : day - 1)); return d.toISOString().slice(0, 10) }, to: today },
+  { label: 'This Month', from: () => new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10), to: today },
+  { label: 'Last 7 Days', from: () => { const d = new Date(); d.setDate(d.getDate() - 7); return d.toISOString().slice(0, 10) }, to: today },
+  { label: 'Last 30 Days', from: () => { const d = new Date(); d.setDate(d.getDate() - 30); return d.toISOString().slice(0, 10) }, to: today },
+]
+
 export default function DashboardPage() {
   const { user } = useAuth()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [showDatePicker, setShowDatePicker] = useState(false)
 
-  useEffect(() => {
-    api.get('/dashboard/stats').then(({ data }) => setStats(data.data))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
+  const fetchStats = useCallback(async () => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams()
+      if (dateFrom) params.set('date_from', dateFrom)
+      if (dateTo) params.set('date_to', dateTo)
+      const { data } = await api.get(`/dashboard/stats?${params}`)
+      setStats(data.data)
+    } catch { /* ignore */ }
+    finally { setLoading(false) }
+  }, [dateFrom, dateTo])
+
+  useEffect(() => { fetchStats() }, [fetchStats])
+
+  const dateLabel = () => {
+    if (showDatePicker) return 'Custom Range'
+    if (!dateFrom && !dateTo) return 'All Time'
+    const match = DATE_PRESETS.find((p) => dateFrom === p.from() && dateTo === p.to())
+    if (match) return match.label
+    return `${dateFrom || '...'} — ${dateTo || '...'}`
+  }
 
   const formatPrice = (n: string | number) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(Number(n))
 
@@ -60,12 +93,43 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-          Good {getGreeting()}, {user?.name?.split(' ')[0]}
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">{isAgent ? 'Here\'s an overview of your assigned orders.' : 'Here\'s an overview of your business.'}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Good {getGreeting()}, {user?.name?.split(' ')[0]}
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">{isAgent ? 'Here\'s an overview of your assigned orders.' : 'Here\'s an overview of your business.'}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger render={<Button variant="outline" className="h-10 w-full sm:w-44" />}>
+              {dateLabel()}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {DATE_PRESETS.map((preset) => (
+                <DropdownMenuItem key={preset.label} onClick={() => { setDateFrom(preset.from()); setDateTo(preset.to()); setShowDatePicker(false) }}>
+                  {preset.label}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuItem onClick={() => { setShowDatePicker(true); setDateFrom(''); setDateTo('') }}>Custom Range</DropdownMenuItem>
+              {(dateFrom || dateTo) && <DropdownMenuItem onClick={() => { setDateFrom(''); setDateTo(''); setShowDatePicker(false) }}>All Time</DropdownMenuItem>}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
+
+      {showDatePicker && (
+        <div className="flex gap-2 items-end">
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">From</label>
+            <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-10 w-full sm:w-40" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-muted-foreground mb-1.5">To</label>
+            <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-10 w-full sm:w-40" />
+          </div>
+        </div>
+      )}
 
       {loading ? <LoadingState text="Loading dashboard..." /> : stats && (
         <>
@@ -84,12 +148,11 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-            {/* Recent Orders */}
             <Card className="border">
               <CardContent className="p-5">
                 <h3 className="text-sm font-semibold mb-4">Recent Orders</h3>
                 {stats.recent_orders.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">No orders yet</p>
+                  <p className="text-sm text-muted-foreground text-center py-4">No orders in this period</p>
                 ) : (
                   <div className="space-y-3">
                     {stats.recent_orders.map((o) => (
@@ -109,20 +172,21 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            {/* Orders by Status */}
             <Card className="border">
               <CardContent className="p-5">
                 <h3 className="text-sm font-semibold mb-4">Orders by Status</h3>
-                <div className="space-y-3">
-                  {Object.entries(stats.orders_by_status).map(([status, count]) => (
-                    <div key={status} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                {Object.keys(stats.orders_by_status).length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">No orders in this period</p>
+                ) : (
+                  <div className="space-y-3">
+                    {Object.entries(stats.orders_by_status).map(([status, count]) => (
+                      <div key={status} className="flex items-center justify-between">
                         <Badge variant="outline" className={`font-normal ${statusColors[status] ?? ''}`}>{status}</Badge>
+                        <span className="text-sm font-semibold">{count}</span>
                       </div>
-                      <span className="text-sm font-semibold">{count}</span>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

@@ -23,7 +23,7 @@ import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
-import { Plus, Search, Pencil, Trash2, Ticket, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, Ticket, ArrowUpDown, ArrowUp, ArrowDown, X } from 'lucide-react'
 
 export default function CouponsPage() {
   const [coupons, setCoupons] = useState<Coupon[]>([])
@@ -95,6 +95,14 @@ export default function CouponsPage() {
             <SelectContent><SelectItem value="all">All Businesses</SelectItem>{businesses.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
           </Select>
         </div>
+        {(search || businessFilter) && (
+          <div>
+            <label className="block text-xs font-medium text-transparent mb-1.5">.</label>
+            <Button variant="ghost" className="h-10 text-muted-foreground" onClick={() => { setSearch(''); setBusinessFilter(''); setPage(1) }}>
+              <X className="mr-1.5 h-4 w-4" /> Clear
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="rounded-md border bg-card">

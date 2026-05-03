@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import api from '@/lib/api'
 import type { PartialOrderData, Business, PaginationMeta } from '@/types'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -13,7 +14,7 @@ import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
-import { Search, PhoneMissed, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Search, PhoneMissed, ArrowUpDown, ArrowUp, ArrowDown, X } from 'lucide-react'
 
 export default function PartialOrdersPage() {
   const [partials, setPartials] = useState<PartialOrderData[]>([])
@@ -71,6 +72,14 @@ export default function PartialOrdersPage() {
             <SelectContent><SelectItem value="all">All Businesses</SelectItem>{businesses.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
           </Select>
         </div>
+        {(search || businessFilter) && (
+          <div>
+            <label className="block text-xs font-medium text-transparent mb-1.5">.</label>
+            <Button variant="ghost" className="h-10 text-muted-foreground" onClick={() => { setSearch(''); setBusinessFilter(''); setPage(1) }}>
+              <X className="mr-1.5 h-4 w-4" /> Clear
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="rounded-md border bg-card">
