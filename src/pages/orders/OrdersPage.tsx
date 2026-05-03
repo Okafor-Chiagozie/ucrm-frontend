@@ -203,12 +203,12 @@ export default function OrdersPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               {DATE_PRESETS.map((preset) => (
-                <DropdownMenuItem key={preset.label} onClick={() => { setDateFrom(preset.from()); setDateTo(preset.to()); setPage(1) }}>
+                <DropdownMenuItem key={preset.label} onClick={() => { setDateFrom(preset.from()); setDateTo(preset.to()); setShowDatePicker(false); setPage(1) }}>
                   {preset.label}
                 </DropdownMenuItem>
               ))}
               <DropdownMenuItem onClick={() => setShowDatePicker(true)}>Custom Range</DropdownMenuItem>
-              {(dateFrom || dateTo) && <DropdownMenuItem onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }}>All Time</DropdownMenuItem>}
+              {(dateFrom || dateTo) && <DropdownMenuItem onClick={() => { setDateFrom(''); setDateTo(''); setShowDatePicker(false); setPage(1) }}>All Time</DropdownMenuItem>}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
