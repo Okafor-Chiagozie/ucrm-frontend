@@ -77,7 +77,17 @@ export default function FlaggedIpsPage() {
                 <TableCell className="font-mono">{ip.ip_address}</TableCell>
                 <TableCell className="text-muted-foreground">{ip.reason || '—'}</TableCell>
                 <TableCell className="text-muted-foreground">{ip.flagged_by || '—'}</TableCell>
-                <TableCell><Badge variant="outline" className={`font-normal ${ip.is_active ? 'border-red-200 bg-red-50 text-red-700' : 'border-muted bg-muted text-muted-foreground'}`}>{ip.is_active ? 'Blocked' : 'Inactive'}</Badge></TableCell>
+                <TableCell>
+                  <Badge variant="outline" className={`font-normal cursor-pointer ${ip.is_active ? 'border-red-200 bg-red-50 text-red-700' : 'border-muted bg-muted text-muted-foreground'}`}
+                    onClick={async () => {
+                      try {
+                        await api.put(`/flagged-ips/${ip.id}`, { is_active: !ip.is_active })
+                        toast.success(ip.is_active ? 'IP unblocked' : 'IP blocked')
+                        fetchIps()
+                      } catch { toast.error('Failed') }
+                    }}
+                  >{ip.is_active ? 'Blocked' : 'Inactive'}</Badge>
+                </TableCell>
                 <TableCell className="text-muted-foreground text-sm">{new Date(ip.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}</TableCell>
                 <TableCell className="text-right"><Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteIp(ip)}><Trash2 className="h-3.5 w-3.5" /></Button></TableCell>
               </TableRow>

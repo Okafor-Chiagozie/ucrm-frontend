@@ -98,7 +98,17 @@ export default function CouponsPage() {
                 <TableCell><Badge variant="outline" className="font-normal border-blue-200 bg-blue-50 text-blue-700">{formatValue(c)}</Badge></TableCell>
                 <TableCell className="text-muted-foreground">{c.times_used}{c.max_uses ? `/${c.max_uses}` : ''}</TableCell>
                 <TableCell className="text-muted-foreground text-sm">{c.expires_at ? new Date(c.expires_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</TableCell>
-                <TableCell><Badge variant="outline" className={`font-normal ${c.is_valid ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`}>{c.is_valid ? 'Valid' : 'Expired'}</Badge></TableCell>
+                <TableCell>
+                  <Badge variant="outline" className={`font-normal cursor-pointer ${c.is_active ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`}
+                    onClick={async () => {
+                      try {
+                        await api.put(`/coupons/${c.id}`, { is_active: !c.is_active })
+                        toast.success(c.is_active ? 'Coupon deactivated' : 'Coupon activated')
+                        fetchCoupons()
+                      } catch { toast.error('Failed') }
+                    }}
+                  >{c.is_active ? 'Active' : 'Inactive'}</Badge>
+                </TableCell>
                 <TableCell className="text-right"><div className="flex justify-end gap-1"><Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditCoupon(c)}><Pencil className="h-3.5 w-3.5" /></Button><Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteCoupon(c)}><Trash2 className="h-3.5 w-3.5" /></Button></div></TableCell>
               </TableRow>
             ))}
