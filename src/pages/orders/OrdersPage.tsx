@@ -15,6 +15,9 @@ import {
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Separator } from '@/components/ui/separator'
 import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
@@ -94,40 +97,47 @@ export default function OrdersPage() {
           <h2 className="text-2xl font-bold tracking-tight">Orders</h2>
           <p className="text-sm text-muted-foreground mt-0.5">Track and manage customer orders</p>
         </div>
-        <Button variant="outline" className="w-full sm:w-auto h-10" onClick={async () => {
-          try {
-            const params = new URLSearchParams()
-            if (businessFilter) params.set('business_id', businessFilter)
-            if (statusFilter) params.set('status', statusFilter)
-            const { data } = await api.get(`/orders-export?${params}`, { responseType: 'blob' })
-            const url = URL.createObjectURL(data)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`
-            a.click()
-            URL.revokeObjectURL(url)
-            toast.success('Export downloaded')
-          } catch { toast.error('Failed to export') }
-        }}>
-          <Download className="mr-1.5 h-4 w-4" /> Export CSV
-        </Button>
-        <Button variant="outline" className="w-full sm:w-auto h-10" onClick={async () => {
-          try {
-            const params = new URLSearchParams()
-            if (businessFilter) params.set('business_id', businessFilter)
-            if (statusFilter) params.set('status', statusFilter)
-            const { data } = await api.get(`/orders-export-pdf?${params}`, { responseType: 'blob' })
-            const url = URL.createObjectURL(data)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = `orders-${new Date().toISOString().slice(0, 10)}.pdf`
-            a.click()
-            URL.revokeObjectURL(url)
-            toast.success('PDF downloaded')
-          } catch { toast.error('Failed to export PDF') }
-        }}>
-          <FileText className="mr-1.5 h-4 w-4" /> Export PDF
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger render={<Button variant="outline" className="w-full sm:w-auto h-10" />}>
+            <Download className="mr-1.5 h-4 w-4" /> Export
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={async () => {
+              try {
+                const params = new URLSearchParams()
+                if (businessFilter) params.set('business_id', businessFilter)
+                if (statusFilter) params.set('status', statusFilter)
+                const { data } = await api.get(`/orders-export?${params}`, { responseType: 'blob' })
+                const url = URL.createObjectURL(data)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`
+                a.click()
+                URL.revokeObjectURL(url)
+                toast.success('CSV downloaded')
+              } catch { toast.error('Failed to export') }
+            }}>
+              <FileText className="mr-2 h-4 w-4" /> Export as CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={async () => {
+              try {
+                const params = new URLSearchParams()
+                if (businessFilter) params.set('business_id', businessFilter)
+                if (statusFilter) params.set('status', statusFilter)
+                const { data } = await api.get(`/orders-export-pdf?${params}`, { responseType: 'blob' })
+                const url = URL.createObjectURL(data)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = `orders-${new Date().toISOString().slice(0, 10)}.pdf`
+                a.click()
+                URL.revokeObjectURL(url)
+                toast.success('PDF downloaded')
+              } catch { toast.error('Failed to export PDF') }
+            }}>
+              <FileText className="mr-2 h-4 w-4" /> Export as PDF
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-end gap-3">
