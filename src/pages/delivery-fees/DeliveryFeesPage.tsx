@@ -18,7 +18,7 @@ import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
-import { Plus, Pencil, Trash2, Truck, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Plus, Pencil, Trash2, Truck, ArrowUpDown, ArrowUp, ArrowDown, X } from 'lucide-react'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -82,12 +82,19 @@ export default function DeliveryFeesPage() {
         <Button onClick={() => setShowCreate(true)} className="w-full sm:w-auto h-10"><Plus className="mr-1.5 h-4 w-4" /> Add Fee</Button>
       </div>
 
-      <div>
-        <label className="block text-xs font-medium text-muted-foreground mb-1.5">Business</label>
-        <Select value={businessFilter || 'all'} onValueChange={(v) => { setBusinessFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
-          <SelectTrigger className="w-full sm:w-48"><SelectValue>{businesses.find((b) => b.id === businessFilter)?.name ?? 'All Businesses'}</SelectValue></SelectTrigger>
-          <SelectContent><SelectItem value="all">All Businesses</SelectItem>{businesses.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
-        </Select>
+      <div className="flex flex-wrap items-end gap-3">
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Business</label>
+          <Select value={businessFilter || 'all'} onValueChange={(v) => { setBusinessFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
+            <SelectTrigger className="w-full sm:w-48"><SelectValue>{businesses.find((b) => b.id === businessFilter)?.name ?? 'All Businesses'}</SelectValue></SelectTrigger>
+            <SelectContent><SelectItem value="all">All Businesses</SelectItem>{businesses.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+        {businessFilter && (
+          <Button variant="ghost" className="h-10 text-muted-foreground" onClick={() => { setBusinessFilter(''); setPage(1) }}>
+            <X className="mr-1.5 h-4 w-4" /> Clear
+          </Button>
+        )}
       </div>
 
       <div className="rounded-md border bg-card">

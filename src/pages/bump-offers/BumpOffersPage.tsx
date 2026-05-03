@@ -23,7 +23,7 @@ import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
-import { Plus, Pencil, Trash2, Gift } from 'lucide-react'
+import { Plus, Pencil, Trash2, Gift, X } from 'lucide-react'
 
 export default function BumpOffersPage() {
   const [offers, setOffers] = useState<BumpOffer[]>([])
@@ -71,17 +71,24 @@ export default function BumpOffersPage() {
         </Button>
       </div>
 
-      <div>
-        <label className="block text-xs font-medium text-muted-foreground mb-1.5">Filter by Product</label>
-        <Select value={productFilter || 'all'} onValueChange={(v) => { setProductFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
-          <SelectTrigger className="w-full sm:w-56">
-            <SelectValue>{products.find((p) => p.id === productFilter)?.name ?? 'All Products'}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Products</SelectItem>
-            {products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name} ({p.business_name})</SelectItem>)}
-          </SelectContent>
-        </Select>
+      <div className="flex flex-wrap items-end gap-3">
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Filter by Product</label>
+          <Select value={productFilter || 'all'} onValueChange={(v) => { setProductFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
+            <SelectTrigger className="w-full sm:w-56">
+              <SelectValue>{products.find((p) => p.id === productFilter)?.name ?? 'All Products'}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Products</SelectItem>
+              {products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name} ({p.business_name})</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        {productFilter && (
+          <Button variant="ghost" className="h-10 text-muted-foreground" onClick={() => { setProductFilter(''); setPage(1) }}>
+            <X className="mr-1.5 h-4 w-4" /> Clear
+          </Button>
+        )}
       </div>
 
       <div className="rounded-md border bg-card">
