@@ -23,7 +23,7 @@ import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
-import { Search, ArrowUpDown, ArrowUp, ArrowDown, Eye, ShoppingCart, Download, FileText } from 'lucide-react'
+import { Search, ArrowUpDown, ArrowUp, ArrowDown, Eye, ShoppingCart, Download, FileText, X } from 'lucide-react'
 
 const ORDER_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned']
 
@@ -186,6 +186,14 @@ export default function OrdersPage() {
           <label className="block text-xs font-medium text-muted-foreground mb-1.5">To</label>
           <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }} className="h-10 w-full sm:w-40" />
         </div>
+        {(search || businessFilter || statusFilter || dateFrom || dateTo) && (
+          <div>
+            <label className="block text-xs font-medium text-transparent mb-1.5">.</label>
+            <Button variant="ghost" className="h-10 text-muted-foreground" onClick={() => { setSearch(''); setBusinessFilter(''); setStatusFilter(''); setDateFrom(''); setDateTo(''); setPage(1) }}>
+              <X className="mr-1.5 h-4 w-4" /> Clear filters
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Bulk action bar */}
