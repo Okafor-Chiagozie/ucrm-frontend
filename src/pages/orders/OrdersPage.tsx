@@ -62,6 +62,7 @@ export default function OrdersPage() {
   const [showDatePicker, setShowDatePicker] = useState(false)
 
   const dateLabel = () => {
+    if (showDatePicker) return 'Custom Range'
     if (!dateFrom && !dateTo) return 'All Time'
     const match = DATE_PRESETS.find((p) => dateFrom === p.from() && dateTo === p.to())
     if (match) return match.label
@@ -207,7 +208,7 @@ export default function OrdersPage() {
                   {preset.label}
                 </DropdownMenuItem>
               ))}
-              <DropdownMenuItem onClick={() => setShowDatePicker(true)}>Custom Range</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => { setShowDatePicker(true); setDateFrom(''); setDateTo(''); setPage(1) }}>Custom Range</DropdownMenuItem>
               {(dateFrom || dateTo) && <DropdownMenuItem onClick={() => { setDateFrom(''); setDateTo(''); setShowDatePicker(false); setPage(1) }}>All Time</DropdownMenuItem>}
             </DropdownMenuContent>
           </DropdownMenu>
