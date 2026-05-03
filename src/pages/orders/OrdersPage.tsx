@@ -40,6 +40,15 @@ const statusColors: Record<string, string> = {
 type SortField = 'order_number' | 'customer_name' | 'total' | 'created_at'
 type SortDir = 'asc' | 'desc'
 
+const today = () => new Date().toISOString().slice(0, 10)
+const DATE_PRESETS = [
+  { label: 'Today', from: today, to: today },
+  { label: 'This Week', from: () => { const d = new Date(); d.setDate(d.getDate() - d.getDay()); return d.toISOString().slice(0, 10) }, to: today },
+  { label: 'This Month', from: () => new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10), to: today },
+  { label: 'Last 7 Days', from: () => { const d = new Date(); d.setDate(d.getDate() - 7); return d.toISOString().slice(0, 10) }, to: today },
+  { label: 'Last 30 Days', from: () => { const d = new Date(); d.setDate(d.getDate() - 30); return d.toISOString().slice(0, 10) }, to: today },
+]
+
 export default function OrdersPage() {
   const { hasPermission } = useAuth()
   const [orders, setOrders] = useState<Order[]>([])
@@ -50,6 +59,14 @@ export default function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [showDatePicker, setShowDatePicker] = useState(false)
+
+  const dateLabel = () => {
+    if (!dateFrom && !dateTo) return 'All Time'
+    const match = DATE_PRESETS.find((p) => dateFrom === p.from() && dateTo === p.to())
+    if (match) return match.label
+    return `${dateFrom || '...'} — ${dateTo || '...'}`
+  }
   const [page, setPage] = useState(1)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [bulkStatus, setBulkStatus] = useState('')
@@ -180,26 +197,33 @@ export default function OrdersPage() {
         </div>
         <div>
           <label className="block text-xs font-medium text-muted-foreground mb-1.5">Date Range</label>
-          <div className="flex flex-wrap gap-1.5">
-            {[
-              { label: 'Today', from: new Date().toISOString().slice(0, 10), to: new Date().toISOString().slice(0, 10) },
-              { label: 'This Week', from: (() => { const d = new Date(); d.setDate(d.getDate() - d.getDay()); return d.toISOString().slice(0, 10) })(), to: new Date().toISOString().slice(0, 10) },
-              { label: 'This Month', from: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10), to: new Date().toISOString().slice(0, 10) },
-            ].map((preset) => (
-              <Button key={preset.label} variant={dateFrom === preset.from && dateTo === preset.to ? 'default' : 'outline'} size="sm" className="h-8 text-xs"
-                onClick={() => { setDateFrom(preset.from); setDateTo(preset.to); setPage(1) }}>
-                {preset.label}
-              </Button>
-            ))}
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger render={<Button variant="outline" className="h-10 w-full sm:w-44" />}>
+              {dateLabel()}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {DATE_PRESETS.map((preset) => (
+                <DropdownMenuItem key={preset.label} onClick={() => { setDateFrom(preset.from()); setDateTo(preset.to()); setPage(1) }}>
+                  {preset.label}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuItem onClick={() => setShowDatePicker(true)}>Custom Range</DropdownMenuItem>
+              {(dateFrom || dateTo) && <DropdownMenuItem onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }}>All Time</DropdownMenuItem>}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Custom Range</label>
-          <div className="flex gap-2">
-            <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }} className="h-10 w-full sm:w-36" />
-            <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }} className="h-10 w-full sm:w-36" />
+        {showDatePicker && (
+          <div className="flex gap-2 items-end">
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1.5">From</label>
+              <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }} className="h-10 w-full sm:w-36" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1.5">To</label>
+              <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }} className="h-10 w-full sm:w-36" />
+            </div>
           </div>
-        </div>
+        )}
         {(search || businessFilter || statusFilter || dateFrom || dateTo) && (
           <div>
             <label className="block text-xs font-medium text-transparent mb-1.5">.</label>
