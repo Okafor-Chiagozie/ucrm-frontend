@@ -150,7 +150,7 @@ export default function CategoriesPage() {
             </div>
             <div className="flex flex-wrap gap-2 text-xs">
               <Badge variant="outline" className="font-normal border-blue-200 bg-blue-50 text-blue-700">{c.products_count} products</Badge>
-              <Badge variant="outline" className={`font-normal ${c.is_active ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`}>{c.is_active ? 'Active' : 'Inactive'}</Badge>
+              <Badge variant="outline" className={`font-normal cursor-pointer ${c.is_active ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`} onClick={async (e) => { e.stopPropagation(); try { await api.put(`/categories/${c.id}`, { is_active: !c.is_active }); toast.success(c.is_active ? 'Deactivated' : 'Activated'); fetchCategories() } catch { toast.error('Failed') } }}>{c.is_active ? 'Active' : 'Inactive'}</Badge>
             </div>
           </div>
         ))}
@@ -184,7 +184,7 @@ export default function CategoriesPage() {
                 <TableCell className="text-muted-foreground">{c.business_name}</TableCell>
                 <TableCell><Badge variant="outline" className="font-normal border-blue-200 bg-blue-50 text-blue-700">{c.products_count}</Badge></TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={`font-normal ${c.is_active ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`}>{c.is_active ? 'Active' : 'Inactive'}</Badge>
+                  <Badge variant="outline" className={`font-normal cursor-pointer ${c.is_active ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`} onClick={async (e) => { e.stopPropagation(); try { await api.put(`/categories/${c.id}`, { is_active: !c.is_active }); toast.success(c.is_active ? 'Deactivated' : 'Activated'); fetchCategories() } catch { toast.error('Failed') } }}>{c.is_active ? 'Active' : 'Inactive'}</Badge>
                 </TableCell>
                 <TableCell className="text-muted-foreground text-sm">{new Date(c.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}</TableCell>
                 <TableCell className="text-right">

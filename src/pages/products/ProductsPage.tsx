@@ -201,7 +201,7 @@ export default function ProductsPage() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={`font-normal ${p.is_active ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`}>{p.is_active ? 'Active' : 'Inactive'}</Badge>
+                  <Badge variant="outline" className={`font-normal cursor-pointer ${p.is_active ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`} onClick={async () => { try { const fd = new FormData(); fd.append('is_active', p.is_active ? '0' : '1'); fd.append('name', p.name); await api.post(`/products/${p.id}`, fd); toast.success(p.is_active ? 'Deactivated' : 'Activated'); fetchProducts() } catch { toast.error('Failed') } }}>{p.is_active ? 'Active' : 'Inactive'}</Badge>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">

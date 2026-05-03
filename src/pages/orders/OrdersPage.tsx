@@ -457,12 +457,13 @@ function OrderDetailDialog({ order, canUpdateStatus, canAssignAgent, onClose, on
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label>Status</Label>
-              <Select value={status} onValueChange={(v) => setStatus(v ?? status)} disabled={!canUpdateStatus}>
+              <Select value={status} onValueChange={(v) => setStatus(v ?? status)} disabled={!canUpdateStatus || order.allowed_statuses.length === 0}>
                 <SelectTrigger className="h-10 w-full">
                   <SelectValue>{status.charAt(0).toUpperCase() + status.slice(1)}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {ORDER_STATUSES.map((s) => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>)}
+                  <SelectItem value={order.status}>{order.status.charAt(0).toUpperCase() + order.status.slice(1)} (current)</SelectItem>
+                  {order.allowed_statuses.map((s) => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -479,6 +480,14 @@ function OrderDetailDialog({ order, canUpdateStatus, canAssignAgent, onClose, on
               </Select>
             </div>
           </div>
+
+          {order.requires_agent && order.allowed_statuses.length > 0 && (
+            <p className="text-xs text-amber-600">Assign an agent before moving to processing, shipped, or delivered.</p>
+          )}
+
+          {order.allowed_statuses.length === 0 && (
+            <p className="text-xs text-muted-foreground">This order is in a terminal status and cannot be changed.</p>
+          )}
 
           {order.notes && (
             <div>

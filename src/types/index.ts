@@ -149,6 +149,8 @@ export interface Order {
   assigned_agent: { id: string; name: string } | null
   items: OrderItem[]
   items_count: number
+  allowed_statuses: string[]
+  requires_agent: boolean
   created_at: string
   updated_at?: string
 }
