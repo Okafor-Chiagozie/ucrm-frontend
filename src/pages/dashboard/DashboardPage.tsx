@@ -11,6 +11,7 @@ import {
 import LoadingState from '@/components/LoadingState'
 import { ShoppingCart, Package, AlertTriangle, PhoneMissed, Store, TrendingUp, Clock, CheckCircle } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
 
 interface DashboardStats {
   total_orders: number
@@ -23,6 +24,7 @@ interface DashboardStats {
   abandoned_forms?: number
   recent_orders: { id: string; order_number: string; customer_name: string; business_name: string | null; total: string; status: string; created_at: string }[]
   orders_by_status: Record<string, number>
+  chart_data?: { date: string; orders: number; revenue: number }[]
 }
 
 const statusColors: Record<string, string> = {
@@ -146,6 +148,63 @@ export default function DashboardPage() {
               </Card>
             ))}
           </div>
+
+          {stats.chart_data && stats.chart_data.length > 0 && (
+            <Card className="border">
+              <CardContent className="p-5">
+                <h3 className="text-sm font-semibold mb-4">Orders Overview</h3>
+                <div className="h-64 sm:h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={stats.chart_data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="orderGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(217, 91%, 50%)" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="hsl(217, 91%, 50%)" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(152, 69%, 40%)" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="hsl(152, 69%, 40%)" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                      <XAxis
+                        dataKey="date"
+                        tickFormatter={(v: string) => new Date(v).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}
+                        tick={{ fontSize: 11 }}
+                        stroke="hsl(var(--muted-foreground))"
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        yAxisId="orders"
+                        tick={{ fontSize: 11 }}
+                        stroke="hsl(var(--muted-foreground))"
+                        tickLine={false}
+                        axisLine={false}
+                        allowDecimals={false}
+                      />
+                      <YAxis
+                        yAxisId="revenue"
+                        orientation="right"
+                        tick={{ fontSize: 11 }}
+                        stroke="hsl(var(--muted-foreground))"
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(v: number) => v >= 1000 ? `₦${(v / 1000).toFixed(0)}k` : `₦${v}`}
+                      />
+                      <Tooltip
+                        contentStyle={{ borderRadius: '6px', border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))', fontSize: '13px' }}
+                        labelFormatter={(v: string) => new Date(v).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        formatter={(value: number, name: string) => [name === 'revenue' ? formatPrice(value) : value, name === 'revenue' ? 'Revenue' : 'Orders']}
+                      />
+                      <Area yAxisId="orders" type="monotone" dataKey="orders" stroke="hsl(217, 91%, 50%)" fill="url(#orderGrad)" strokeWidth={2} dot={false} />
+                      <Area yAxisId="revenue" type="monotone" dataKey="revenue" stroke="hsl(152, 69%, 40%)" fill="url(#revenueGrad)" strokeWidth={2} dot={false} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
             <Card className="border">
