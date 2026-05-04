@@ -34,6 +34,12 @@ const settingsMeta: Record<string, { label: string; description: string; type: '
     type: 'text',
     group: 'General',
   },
+  sms_sender_id: {
+    label: 'SMS Sender ID',
+    description: 'The sender name/number that appears on SMS messages (e.g. UCRM)',
+    type: 'text',
+    group: 'SMS Notifications',
+  },
   sms_new_order_enabled: {
     label: 'SMS — New Order',
     description: 'Send SMS to customer when a new order is placed',
@@ -57,6 +63,12 @@ const settingsMeta: Record<string, { label: string; description: string; type: '
     description: 'Variables: {order_number}, {customer_name}, {status}, {total}',
     type: 'textarea',
     group: 'SMS Notifications',
+  },
+  whatsapp_sender_number: {
+    label: 'WhatsApp Sender Number',
+    description: 'The WhatsApp number used to send messages (e.g. +2347084613518)',
+    type: 'text',
+    group: 'WhatsApp Notifications',
   },
   whatsapp_new_order_enabled: {
     label: 'WhatsApp — New Order',
