@@ -138,9 +138,9 @@ export default function NotificationsPage() {
                 <p className="text-xs text-muted-foreground mt-1">{formatDate(n.created_at)}</p>
               </div>
               {!n.read_at && (
-                <Button variant="outline" size="sm" className="text-xs shrink-0 text-primary border-primary/30 hover:bg-primary hover:text-white" onClick={() => markAsRead(n.id)}>
-                  Mark read
-                </Button>
+                <button className="text-xs shrink-0 text-primary hover:underline cursor-pointer" onClick={() => markAsRead(n.id)}>
+                  Mark as read
+                </button>
               )}
             </div>
           ))
