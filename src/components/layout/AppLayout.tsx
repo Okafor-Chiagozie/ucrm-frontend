@@ -25,6 +25,13 @@ export default function AppLayout() {
   if (!user) return <Navigate to="/login" replace />
   if (user.must_change_password) return <Navigate to="/change-password" replace />
 
+  const initials = user.name
+    .split(' ')
+    .map(n => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+
   return (
     <div className="flex h-screen bg-background">
       {/* Desktop sidebar */}
@@ -39,7 +46,7 @@ export default function AppLayout() {
       </Sheet>
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Mobile top bar */}
+        {/* Top bar */}
         <header className="flex items-center justify-between h-14 px-4 border-b bg-card shrink-0">
           <div className="flex items-center gap-3">
             <button
@@ -55,7 +62,18 @@ export default function AppLayout() {
               <span className="font-bold text-sm">UCRM</span>
             </div>
           </div>
-          <NotificationBell />
+          <div className="flex items-center gap-3">
+            <NotificationBell />
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
+                {initials}
+              </div>
+              <div className="hidden sm:block">
+                <p className="text-sm font-medium leading-none">{user.name}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{user.role}</p>
+              </div>
+            </div>
+          </div>
         </header>
 
         <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
