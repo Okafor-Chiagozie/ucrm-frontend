@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import api from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Bell } from 'lucide-react'
@@ -15,6 +16,7 @@ export default function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [open, setOpen] = useState(false)
+  const navigate = useNavigate()
 
   const fetchCount = useCallback(async () => {
     try {
@@ -23,10 +25,11 @@ export default function NotificationBell() {
     } catch { /* ignore */ }
   }, [])
 
-  const fetchNotifications = async () => {
+  const fetchRecent = async () => {
     try {
-      const { data } = await api.get('/notifications?per_page=10')
-      setNotifications(data.data.data)
+      const { data } = await api.get('/notifications/recent')
+      setNotifications(data.data)
+      setUnreadCount(data.unread_count)
     } catch { /* ignore */ }
   }
 
@@ -38,7 +41,7 @@ export default function NotificationBell() {
 
   const handleOpen = () => {
     setOpen(!open)
-    if (!open) fetchNotifications()
+    if (!open) fetchRecent()
   }
 
   const markAllRead = async () => {
@@ -75,11 +78,21 @@ export default function NotificationBell() {
                 <p className="text-center text-sm text-muted-foreground py-8">No notifications</p>
               ) : notifications.map((n) => (
                 <div key={n.id} className={`p-3 border-b last:border-b-0 ${n.read_at ? '' : 'bg-primary/5'}`}>
-                  <p className="text-sm font-medium">{n.data.title}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{n.data.message}</p>
+                  <p className="text-sm font-medium">{n.data.title || n.data.message}</p>
+                  {n.data.title && n.data.message && (
+                    <p className="text-xs text-muted-foreground mt-0.5">{n.data.message}</p>
+                  )}
                   <p className="text-xs text-muted-foreground mt-1">{new Date(n.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
                 </div>
               ))}
+            </div>
+            <div className="p-2 border-t">
+              <button
+                onClick={() => { setOpen(false); navigate('/notifications') }}
+                className="w-full text-center text-sm text-primary hover:underline py-1"
+              >
+                View all notifications
+              </button>
             </div>
           </div>
         </>
