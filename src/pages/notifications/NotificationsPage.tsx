@@ -138,8 +138,9 @@ export default function NotificationsPage() {
                 <p className="text-xs text-muted-foreground mt-1">{formatDate(n.created_at)}</p>
               </div>
               {!n.read_at && (
-                <button className="text-xs shrink-0 text-primary hover:underline cursor-pointer" onClick={() => markAsRead(n.id)}>
-                  Mark as read
+                <button className="shrink-0 text-primary cursor-pointer" onClick={() => markAsRead(n.id)} title="Mark as read">
+                  <span className="hidden sm:inline text-xs hover:underline">Mark as read</span>
+                  <CheckCheck className="h-4 w-4 sm:hidden" />
                 </button>
               )}
             </div>
