@@ -80,7 +80,7 @@ const settingsMeta: Record<string, { label: string; description: string; type: '
     label: 'WhatsApp — Order Status Template',
     description: 'Variables: {order_number}, {customer_name}, {status}, {total}. Use \\n for line breaks.',
     type: 'textarea',
-    group: 'Notifications',
+    group: 'WhatsApp Notifications',
   },
 }
 
