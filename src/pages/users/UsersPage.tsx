@@ -49,7 +49,7 @@ type SortField = 'name' | 'email' | 'created_at'
 type SortDir = 'asc' | 'desc'
 
 export default function UsersPage() {
-  const { hasPermission } = useAuth()
+  const { user: currentUser, hasPermission, refreshUser } = useAuth()
   const [users, setUsers] = useState<User[]>([])
   const [meta, setMeta] = useState<PaginationMeta | null>(null)
   const [roles, setRoles] = useState<Role[]>([])
@@ -317,7 +317,7 @@ export default function UsersPage() {
       {meta && <Pagination meta={meta} page={page} onPageChange={setPage} />}
 
       <CreateUserDialog open={showCreate} onClose={() => setShowCreate(false)} roles={roles} onSuccess={fetchUsers} />
-      {editUser && <EditUserDialog open={showEdit} onClose={() => { setShowEdit(false); setEditUser(null) }} user={editUser} roles={roles} onSuccess={fetchUsers} />}
+      {editUser && <EditUserDialog open={showEdit} onClose={() => { setShowEdit(false); setEditUser(null) }} user={editUser} roles={roles} onSuccess={() => { fetchUsers(); if (editUser.id === currentUser?.id) refreshUser() }} />}
 
       <AlertDialog open={!!deactivateUser} onOpenChange={(open) => { if (!open) setDeactivateUser(null) }}>
         <AlertDialogContent>
