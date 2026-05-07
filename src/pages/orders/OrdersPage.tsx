@@ -472,7 +472,7 @@ function OrderDetailDialog({ order, canUpdateStatus, canAssignAgent, onClose, on
   useEffect(() => {
     if (order.business_id) {
       api.get(`/businesses/${order.business_id}/staff`).then(({ data }) => {
-        setAgents(data.data.filter((s: any) => s.role === 'Customer Support').map((s: any) => ({ id: s.id, name: s.name })))
+        setAgents(data.data.map((s: any) => ({ id: s.id, name: s.name })))
       }).catch(() => {})
     }
   }, [order.business_id])
