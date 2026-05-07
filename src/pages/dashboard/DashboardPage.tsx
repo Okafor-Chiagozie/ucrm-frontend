@@ -29,12 +29,15 @@ interface DashboardStats {
 
 const statusColors: Record<string, string> = {
   pending: 'border-amber-200 bg-amber-50 text-amber-700',
-  confirmed: 'border-blue-200 bg-blue-50 text-blue-700',
-  processing: 'border-violet-200 bg-violet-50 text-violet-700',
-  shipped: 'border-sky-200 bg-sky-50 text-sky-700',
+  scheduled: 'border-blue-200 bg-blue-50 text-blue-700',
   delivered: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  not_picking: 'border-orange-200 bg-orange-50 text-orange-700',
   cancelled: 'border-red-200 bg-red-50 text-red-700',
-  returned: 'border-orange-200 bg-orange-50 text-orange-700',
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: 'Pending', scheduled: 'Scheduled', delivered: 'Delivered',
+  not_picking: 'Not Picking', cancelled: 'Cancelled',
 }
 
 const today = () => new Date().toISOString().slice(0, 10)
@@ -222,7 +225,7 @@ export default function DashboardPage() {
                         </div>
                         <div className="text-right">
                           <p className="text-sm font-medium">{formatPrice(o.total)}</p>
-                          <Badge variant="outline" className={`text-xs font-normal ${statusColors[o.status] ?? ''}`}>{o.status}</Badge>
+                          <Badge variant="outline" className={`text-xs font-normal ${statusColors[o.status] ?? ''}`}>{STATUS_LABELS[o.status] ?? o.status}</Badge>
                         </div>
                       </div>
                     ))}
@@ -240,7 +243,7 @@ export default function DashboardPage() {
                   <div className="space-y-3">
                     {Object.entries(stats.orders_by_status).map(([status, count]) => (
                       <div key={status} className="flex items-center justify-between">
-                        <Badge variant="outline" className={`font-normal ${statusColors[status] ?? ''}`}>{status}</Badge>
+                        <Badge variant="outline" className={`font-normal ${statusColors[status] ?? ''}`}>{STATUS_LABELS[status] ?? status}</Badge>
                         <span className="text-sm font-semibold">{count}</span>
                       </div>
                     ))}

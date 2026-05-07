@@ -5,6 +5,8 @@ export interface User {
   phone: string | null
   must_change_password: boolean
   is_active: boolean
+  available_from: string | null
+  available_to: string | null
   role: string | null
   permissions: string[]
   created_by: string | null
@@ -145,6 +147,8 @@ export interface Order {
   total: string
   coupon_code: string | null
   status: string
+  scheduled_at: string | null
+  delivered_at: string | null
   notes: string | null
   assigned_agent: { id: string; name: string } | null
   items: OrderItem[]

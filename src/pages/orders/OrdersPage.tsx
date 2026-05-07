@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import api from '@/lib/api'
-import type { Order, Business, PaginationMeta } from '@/types'
+import type { Order, Business, Product, PaginationMeta, User } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -23,19 +23,40 @@ import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
-import { Search, ArrowUpDown, ArrowUp, ArrowDown, Eye, ShoppingCart, Download, FileText, X } from 'lucide-react'
+import { Search, ArrowUpDown, ArrowUp, ArrowDown, Eye, ShoppingCart, Download, FileText, X, RotateCcw } from 'lucide-react'
 
-const ORDER_STATUSES = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned']
+const ORDER_STATUSES = ['pending', 'scheduled', 'delivered', 'not_picking', 'cancelled']
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: 'Pending',
+  scheduled: 'Scheduled',
+  delivered: 'Delivered',
+  not_picking: 'Not Picking',
+  cancelled: 'Cancelled',
+}
 
 const statusColors: Record<string, string> = {
   pending: 'border-amber-200 bg-amber-50 text-amber-700',
-  confirmed: 'border-blue-200 bg-blue-50 text-blue-700',
-  processing: 'border-violet-200 bg-violet-50 text-violet-700',
-  shipped: 'border-sky-200 bg-sky-50 text-sky-700',
+  scheduled: 'border-blue-200 bg-blue-50 text-blue-700',
   delivered: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  not_picking: 'border-orange-200 bg-orange-50 text-orange-700',
   cancelled: 'border-red-200 bg-red-50 text-red-700',
-  returned: 'border-orange-200 bg-orange-50 text-orange-700',
 }
+
+const statusTabColors: Record<string, string> = {
+  pending: 'bg-amber-500',
+  scheduled: 'bg-blue-500',
+  delivered: 'bg-emerald-500',
+  not_picking: 'bg-orange-500',
+  cancelled: 'bg-red-500',
+}
+
+const NIGERIAN_STATES = [
+  'Lagos', 'Abuja', 'Rivers', 'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa',
+  'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'Gombe', 'Imo',
+  'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Nasarawa', 'Niger', 'Ogun',
+  'Ondo', 'Osun', 'Oyo', 'Plateau', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara',
+]
 
 type SortField = 'order_number' | 'customer_name' | 'total' | 'created_at'
 type SortDir = 'asc' | 'desc'
@@ -53,10 +74,22 @@ export default function OrdersPage() {
   const { hasPermission } = useAuth()
   const [orders, setOrders] = useState<Order[]>([])
   const [businesses, setBusinesses] = useState<Business[]>([])
+  const [products, setProducts] = useState<Product[]>([])
+  const [agents, setAgents] = useState<User[]>([])
   const [meta, setMeta] = useState<PaginationMeta | null>(null)
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({})
+
+  // Filters
   const [search, setSearch] = useState('')
   const [businessFilter, setBusinessFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [stateFilter, setStateFilter] = useState('')
+  const [agentFilter, setAgentFilter] = useState('')
+  const [productFilter, setProductFilter] = useState('')
+  const [minTotal, setMinTotal] = useState('')
+  const [maxTotal, setMaxTotal] = useState('')
+  const [hasCoupon, setHasCoupon] = useState('')
+  const [unassigned, setUnassigned] = useState(false)
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [showDatePicker, setShowDatePicker] = useState(false)
@@ -76,6 +109,15 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true)
   const [viewOrder, setViewOrder] = useState<Order | null>(null)
 
+  const hasActiveFilters = search || businessFilter || statusFilter || stateFilter || agentFilter || productFilter || minTotal || maxTotal || hasCoupon || unassigned || dateFrom || dateTo
+
+  const clearFilters = () => {
+    setSearch(''); setBusinessFilter(''); setStatusFilter(''); setStateFilter('');
+    setAgentFilter(''); setProductFilter(''); setMinTotal(''); setMaxTotal('');
+    setHasCoupon(''); setUnassigned(false); setDateFrom(''); setDateTo('');
+    setShowDatePicker(false); setPage(1)
+  }
+
   const fetchOrders = useCallback(async () => {
     setLoading(true)
     try {
@@ -83,22 +125,38 @@ export default function OrdersPage() {
       if (search) params.set('search', search)
       if (businessFilter) params.set('business_id', businessFilter)
       if (statusFilter) params.set('status', statusFilter)
+      if (stateFilter) params.set('state', stateFilter)
+      if (agentFilter) params.set('assigned_agent_id', agentFilter)
+      if (productFilter) params.set('product_id', productFilter)
+      if (minTotal) params.set('min_total', minTotal)
+      if (maxTotal) params.set('max_total', maxTotal)
+      if (hasCoupon) params.set('has_coupon', hasCoupon)
+      if (unassigned) params.set('unassigned', '1')
       if (dateFrom) params.set('date_from', dateFrom)
       if (dateTo) params.set('date_to', dateTo)
       const { data } = await api.get(`/orders?${params}`)
       setOrders(data.data.data)
       setMeta(data.meta)
+      if (data.status_counts) setStatusCounts(data.status_counts)
     } catch {
       toast.error('Failed to load orders')
     } finally {
       setLoading(false)
     }
-  }, [page, search, businessFilter, statusFilter, dateFrom, dateTo, sortField, sortDir])
+  }, [page, search, businessFilter, statusFilter, stateFilter, agentFilter, productFilter, minTotal, maxTotal, hasCoupon, unassigned, dateFrom, dateTo, sortField, sortDir])
 
   useEffect(() => { fetchOrders() }, [fetchOrders])
 
   useEffect(() => {
-    api.get('/businesses?per_page=100').then(({ data }) => setBusinesses(data.data.data)).catch(() => {})
+    Promise.all([
+      api.get('/businesses?per_page=100'),
+      api.get('/products?per_page=200'),
+      api.get('/users?role=Customer Support&per_page=100'),
+    ]).then(([biz, prod, ag]) => {
+      setBusinesses(biz.data.data.data)
+      setProducts(prod.data.data.data)
+      setAgents(ag.data.data.data)
+    }).catch(() => {})
   }, [])
 
   const toggleSort = (field: SortField) => {
@@ -114,8 +172,10 @@ export default function OrdersPage() {
   const formatPrice = (price: string | number) =>
     new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(Number(price))
 
+  const totalAll = Object.values(statusCounts).reduce((a, b) => a + b, 0)
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Orders</h2>
@@ -131,6 +191,8 @@ export default function OrdersPage() {
                 const params = new URLSearchParams()
                 if (businessFilter) params.set('business_id', businessFilter)
                 if (statusFilter) params.set('status', statusFilter)
+                if (dateFrom) params.set('date_from', dateFrom)
+                if (dateTo) params.set('date_to', dateTo)
                 const { data } = await api.get(`/orders-export?${params}`, { responseType: 'blob' })
                 const url = URL.createObjectURL(data)
                 const a = document.createElement('a')
@@ -148,6 +210,8 @@ export default function OrdersPage() {
                 const params = new URLSearchParams()
                 if (businessFilter) params.set('business_id', businessFilter)
                 if (statusFilter) params.set('status', statusFilter)
+                if (dateFrom) params.set('date_from', dateFrom)
+                if (dateTo) params.set('date_to', dateTo)
                 const { data } = await api.get(`/orders-export-pdf?${params}`, { responseType: 'blob' })
                 const url = URL.createObjectURL(data)
                 const a = document.createElement('a')
@@ -164,42 +228,85 @@ export default function OrdersPage() {
         </DropdownMenu>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-end gap-3">
-        <div className="flex-1 min-w-0 sm:max-w-sm">
-          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Search</label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Order #, name, phone..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} className="pl-9 h-10" />
-          </div>
+      {/* Status tabs */}
+      <div className="flex flex-wrap gap-2">
+        <button
+          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${!statusFilter ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+          onClick={() => { setStatusFilter(''); setPage(1) }}
+        >
+          All ({totalAll})
+        </button>
+        {ORDER_STATUSES.map((s) => (
+          <button
+            key={s}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-1.5 ${statusFilter === s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+            onClick={() => { setStatusFilter(statusFilter === s ? '' : s); setPage(1) }}
+          >
+            <span className={`inline-block h-2 w-2 rounded-full ${statusTabColors[s]}`} />
+            {STATUS_LABELS[s]} ({statusCounts[s] ?? 0})
+          </button>
+        ))}
+      </div>
+
+      {/* Filters grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Order #, name, phone..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} className="pl-9 h-10" />
         </div>
-        <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Business</label>
-          <Select value={businessFilter || 'all'} onValueChange={(v) => { setBusinessFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
-            <SelectTrigger className="w-full sm:w-44">
-              <SelectValue>{businesses.find((b) => b.id === businessFilter)?.name ?? 'All Businesses'}</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Businesses</SelectItem>
-              {businesses.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
+        <Select value={businessFilter || 'all'} onValueChange={(v) => { setBusinessFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
+          <SelectTrigger className="h-10 w-full">
+            <SelectValue>{businesses.find((b) => b.id === businessFilter)?.name ?? 'All Businesses'}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Businesses</SelectItem>
+            {businesses.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={stateFilter || 'all'} onValueChange={(v) => { setStateFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
+          <SelectTrigger className="h-10 w-full">
+            <SelectValue>{stateFilter || 'All States'}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All States</SelectItem>
+            {NIGERIAN_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={agentFilter || 'all'} onValueChange={(v) => { setAgentFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
+          <SelectTrigger className="h-10 w-full">
+            <SelectValue>{agents.find((a) => a.id === agentFilter)?.name ?? 'All Staff'}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Staff</SelectItem>
+            {agents.map((a) => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={productFilter || 'all'} onValueChange={(v) => { setProductFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
+          <SelectTrigger className="h-10 w-full">
+            <SelectValue>{products.find((p) => p.id === productFilter)?.name ?? 'All Products'}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Products</SelectItem>
+            {products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <div className="flex gap-2">
+          <Input type="number" placeholder="Min ₦" value={minTotal} onChange={(e) => { setMinTotal(e.target.value); setPage(1) }} className="h-10" />
+          <Input type="number" placeholder="Max ₦" value={maxTotal} onChange={(e) => { setMaxTotal(e.target.value); setPage(1) }} className="h-10" />
         </div>
-        <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Status</label>
-          <Select value={statusFilter || 'all'} onValueChange={(v) => { setStatusFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
-            <SelectTrigger className="w-full sm:w-36">
-              <SelectValue>{statusFilter ? statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1) : 'All Status'}</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              {ORDER_STATUSES.map((s) => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Date Range</label>
+        <Select value={hasCoupon || 'all'} onValueChange={(v) => { setHasCoupon(v === 'all' ? '' : v ?? ''); setPage(1) }}>
+          <SelectTrigger className="h-10 w-full">
+            <SelectValue>{hasCoupon === '1' ? 'With Coupon' : hasCoupon === '0' ? 'Without Coupon' : 'Coupon: Any'}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Coupon: Any</SelectItem>
+            <SelectItem value="1">With Coupon</SelectItem>
+            <SelectItem value="0">Without Coupon</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="flex items-center gap-3">
           <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="outline" className="h-10 w-full sm:w-44" />}>
+            <DropdownMenuTrigger render={<Button variant="outline" className="h-10 flex-1" />}>
               {dateLabel()}
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
@@ -214,24 +321,23 @@ export default function OrdersPage() {
           </DropdownMenu>
         </div>
         {showDatePicker && (
-          <div className="flex gap-2 items-end">
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">From</label>
-              <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }} className="h-10 w-full sm:w-36" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">To</label>
-              <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }} className="h-10 w-full sm:w-36" />
-            </div>
-          </div>
+          <>
+            <Input type="date" placeholder="From" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }} className="h-10" />
+            <Input type="date" placeholder="To" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }} className="h-10" />
+          </>
         )}
-        {(search || businessFilter || statusFilter || dateFrom || dateTo) && (
-          <div>
-            <label className="block text-xs font-medium text-transparent mb-1.5">.</label>
-            <Button variant="ghost" className="h-10 text-muted-foreground" onClick={() => { setSearch(''); setBusinessFilter(''); setStatusFilter(''); setDateFrom(''); setDateTo(''); setPage(1) }}>
-              <X className="mr-1.5 h-4 w-4" /> Clear
-            </Button>
-          </div>
+      </div>
+
+      {/* Unassigned toggle + Clear */}
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input type="checkbox" checked={unassigned} onChange={(e) => { setUnassigned(e.target.checked); setPage(1) }} className="rounded" />
+          Unassigned only
+        </label>
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={clearFilters}>
+            <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Reset Filters
+          </Button>
         )}
       </div>
 
@@ -241,16 +347,16 @@ export default function OrdersPage() {
           <span className="text-sm font-medium">{selectedIds.size} selected</span>
           <Select value={bulkStatus} onValueChange={(v) => setBulkStatus(v ?? '')}>
             <SelectTrigger className="w-44 h-9">
-              <SelectValue>{bulkStatus ? bulkStatus.charAt(0).toUpperCase() + bulkStatus.slice(1) : 'Change status to...'}</SelectValue>
+              <SelectValue>{bulkStatus ? STATUS_LABELS[bulkStatus] : 'Change status to...'}</SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {ORDER_STATUSES.map((s) => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>)}
+              {ORDER_STATUSES.map((s) => <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>)}
             </SelectContent>
           </Select>
           <Button size="sm" disabled={!bulkStatus} onClick={async () => {
             try {
-              await api.put('/orders-bulk-status', { order_ids: Array.from(selectedIds), status: bulkStatus })
-              toast.success(`${selectedIds.size} order(s) updated`)
+              const { data } = await api.put('/orders-bulk-status', { order_ids: Array.from(selectedIds), status: bulkStatus })
+              toast.success(data.message)
               setSelectedIds(new Set())
               setBulkStatus('')
               fetchOrders()
@@ -266,7 +372,7 @@ export default function OrdersPage() {
           <div key={o.id} className="rounded-md border bg-card p-4 space-y-2 cursor-pointer" onClick={() => setViewOrder(o)}>
             <div className="flex items-center justify-between">
               <span className="font-mono text-sm font-medium">{o.order_number}</span>
-              <Badge variant="outline" className={`font-normal text-xs ${statusColors[o.status] ?? ''}`}>{o.status}</Badge>
+              <Badge variant="outline" className={`font-normal text-xs ${statusColors[o.status] ?? ''}`}>{STATUS_LABELS[o.status] ?? o.status}</Badge>
             </div>
             <p className="text-sm">{o.customer_name}</p>
             <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -294,11 +400,13 @@ export default function OrdersPage() {
                 <span className="inline-flex items-center">Customer <SortIcon field="customer_name" /></span>
               </TableHead>
               <TableHead>Business</TableHead>
+              <TableHead>State</TableHead>
               <TableHead>Items</TableHead>
               <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('total')}>
                 <span className="inline-flex items-center">Total <SortIcon field="total" /></span>
               </TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Agent</TableHead>
               <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('created_at')}>
                 <span className="inline-flex items-center">Date <SortIcon field="created_at" /></span>
               </TableHead>
@@ -307,9 +415,9 @@ export default function OrdersPage() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={9}><LoadingState text="Loading orders..." /></TableCell></TableRow>
+              <TableRow><TableCell colSpan={11}><LoadingState text="Loading orders..." /></TableCell></TableRow>
             ) : orders.length === 0 ? (
-              <TableRow><TableCell colSpan={9}><EmptyState icon={ShoppingCart} title="No orders found" /></TableCell></TableRow>
+              <TableRow><TableCell colSpan={11}><EmptyState icon={ShoppingCart} title="No orders found" /></TableCell></TableRow>
             ) : orders.map((o) => (
               <TableRow key={o.id}>
                 {hasPermission('orders.update_status') && (
@@ -329,9 +437,11 @@ export default function OrdersPage() {
                   </div>
                 </TableCell>
                 <TableCell className="text-muted-foreground">{o.business_name}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">{o.customer_state}</TableCell>
                 <TableCell><Badge variant="outline" className="font-normal border-blue-200 bg-blue-50 text-blue-700">{o.items_count}</Badge></TableCell>
                 <TableCell className="font-medium">{formatPrice(o.total)}</TableCell>
-                <TableCell><Badge variant="outline" className={`font-normal ${statusColors[o.status] ?? ''}`}>{o.status}</Badge></TableCell>
+                <TableCell><Badge variant="outline" className={`font-normal ${statusColors[o.status] ?? ''}`}>{STATUS_LABELS[o.status] ?? o.status}</Badge></TableCell>
+                <TableCell className="text-sm text-muted-foreground">{o.assigned_agent?.name ?? <span className="text-orange-500 text-xs">Unassigned</span>}</TableCell>
                 <TableCell className="text-muted-foreground text-sm">{new Date(o.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}</TableCell>
                 <TableCell className="text-right">
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewOrder(o)}>
@@ -370,7 +480,7 @@ function OrderDetailDialog({ order, canUpdateStatus, canAssignAgent, onClose, on
   useEffect(() => {
     if (order.business_id) {
       api.get(`/businesses/${order.business_id}/staff`).then(({ data }) => {
-        setAgents(data.data.filter((s: any) => s.role === 'Agent').map((s: any) => ({ id: s.id, name: s.name })))
+        setAgents(data.data.filter((s: any) => s.role === 'Customer Support').map((s: any) => ({ id: s.id, name: s.name })))
       }).catch(() => {})
     }
   }, [order.business_id])
@@ -385,17 +495,17 @@ function OrderDetailDialog({ order, canUpdateStatus, canAssignAgent, onClose, on
   const handleSave = async () => {
     setSaving(true)
     try {
-      if (statusChanged) {
-        await api.put(`/orders/${order.id}/status`, { status })
-      }
       if (agentChanged && agentId) {
         await api.put(`/orders/${order.id}/assign`, { agent_id: agentId })
+      }
+      if (statusChanged) {
+        await api.put(`/orders/${order.id}/status`, { status })
       }
       toast.success('Order updated')
       onUpdated()
       onClose()
-    } catch {
-      toast.error('Failed to update order')
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message ?? 'Failed to update order')
     } finally {
       setSaving(false)
     }
@@ -459,16 +569,16 @@ function OrderDetailDialog({ order, canUpdateStatus, canAssignAgent, onClose, on
               <Label>Status</Label>
               <Select value={status} onValueChange={(v) => setStatus(v ?? status)} disabled={!canUpdateStatus || order.allowed_statuses.length === 0}>
                 <SelectTrigger className="h-10 w-full">
-                  <SelectValue>{status.charAt(0).toUpperCase() + status.slice(1)}</SelectValue>
+                  <SelectValue>{STATUS_LABELS[status] ?? status}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={order.status}>{order.status.charAt(0).toUpperCase() + order.status.slice(1)} (current)</SelectItem>
-                  {order.allowed_statuses.map((s) => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</SelectItem>)}
+                  <SelectItem value={order.status}>{STATUS_LABELS[order.status]} (current)</SelectItem>
+                  {order.allowed_statuses.map((s) => <SelectItem key={s} value={s}>{STATUS_LABELS[s] ?? s}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Assigned Agent</Label>
+              <Label>Assigned Staff</Label>
               <Select value={agentId || 'none'} onValueChange={(v) => setAgentId(v === 'none' ? '' : v ?? '')} disabled={!canAssignAgent}>
                 <SelectTrigger className="h-10 w-full">
                   <SelectValue>{agents.find((a) => a.id === agentId)?.name ?? 'Unassigned'}</SelectValue>
@@ -482,11 +592,19 @@ function OrderDetailDialog({ order, canUpdateStatus, canAssignAgent, onClose, on
           </div>
 
           {order.requires_agent && order.allowed_statuses.length > 0 && (
-            <p className="text-xs text-amber-600">Assign an agent before moving to processing, shipped, or delivered.</p>
+            <p className="text-xs text-amber-600">Assign a staff member before moving to scheduled, delivered, or not picking.</p>
           )}
 
           {order.allowed_statuses.length === 0 && (
             <p className="text-xs text-muted-foreground">This order is in a terminal status and cannot be changed.</p>
+          )}
+
+          {/* Timestamps */}
+          {(order.scheduled_at || order.delivered_at) && (
+            <div className="text-xs text-muted-foreground space-y-0.5">
+              {order.scheduled_at && <p>Scheduled: {new Date(order.scheduled_at).toLocaleString('en-NG')}</p>}
+              {order.delivered_at && <p>Delivered: {new Date(order.delivered_at).toLocaleString('en-NG')}</p>}
+            </div>
           )}
 
           {order.notes && (

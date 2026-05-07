@@ -440,7 +440,7 @@ function CreateUserDialog({ open, onClose, roles, onSuccess }: { open: boolean; 
 /* ─── Edit User Dialog ─── */
 
 function EditUserDialog({ open, onClose, user, roles, onSuccess }: { open: boolean; onClose: () => void; user: User; roles: Role[]; onSuccess: () => void }) {
-  const [form, setForm] = useState({ name: user.name, email: user.email, phone: user.phone || '', role: user.role || '', is_active: user.is_active })
+  const [form, setForm] = useState({ name: user.name, email: user.email, phone: user.phone || '', role: user.role || '', is_active: user.is_active, available_from: user.available_from || '', available_to: user.available_to || '' })
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -501,6 +501,17 @@ function EditUserDialog({ open, onClose, user, roles, onSuccess }: { open: boole
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-sm">Available From</Label>
+              <Input type="time" value={form.available_from} onChange={(e) => setForm({ ...form, available_from: e.target.value })} className="h-10" placeholder="e.g. 09:00" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">Available To</Label>
+              <Input type="time" value={form.available_to} onChange={(e) => setForm({ ...form, available_to: e.target.value })} className="h-10" placeholder="e.g. 17:00" />
+            </div>
+            <p className="col-span-2 text-xs text-muted-foreground -mt-2">Leave empty for always available. Used for auto-assignment of orders.</p>
           </div>
           <div className="flex items-center justify-between rounded-md border p-3">
             <div>
