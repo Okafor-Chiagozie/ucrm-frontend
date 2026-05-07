@@ -86,8 +86,6 @@ export default function OrdersPage() {
   const [stateFilter, setStateFilter] = useState('')
   const [agentFilter, setAgentFilter] = useState('')
   const [productFilter, setProductFilter] = useState('')
-  const [minTotal, setMinTotal] = useState('')
-  const [maxTotal, setMaxTotal] = useState('')
   const [hasCoupon, setHasCoupon] = useState('')
   const [unassigned, setUnassigned] = useState(false)
   const [dateFrom, setDateFrom] = useState('')
@@ -109,11 +107,11 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true)
   const [viewOrder, setViewOrder] = useState<Order | null>(null)
 
-  const hasActiveFilters = search || businessFilter || statusFilter || stateFilter || agentFilter || productFilter || minTotal || maxTotal || hasCoupon || unassigned || dateFrom || dateTo
+  const hasActiveFilters = search || businessFilter || statusFilter || stateFilter || agentFilter || productFilter || hasCoupon || unassigned || dateFrom || dateTo
 
   const clearFilters = () => {
     setSearch(''); setBusinessFilter(''); setStatusFilter(''); setStateFilter('');
-    setAgentFilter(''); setProductFilter(''); setMinTotal(''); setMaxTotal('');
+    setAgentFilter(''); setProductFilter('');
     setHasCoupon(''); setUnassigned(false); setDateFrom(''); setDateTo('');
     setShowDatePicker(false); setPage(1)
   }
@@ -128,8 +126,6 @@ export default function OrdersPage() {
       if (stateFilter) params.set('state', stateFilter)
       if (agentFilter) params.set('assigned_agent_id', agentFilter)
       if (productFilter) params.set('product_id', productFilter)
-      if (minTotal) params.set('min_total', minTotal)
-      if (maxTotal) params.set('max_total', maxTotal)
       if (hasCoupon) params.set('has_coupon', hasCoupon)
       if (unassigned) params.set('unassigned', '1')
       if (dateFrom) params.set('date_from', dateFrom)
@@ -143,7 +139,7 @@ export default function OrdersPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, businessFilter, statusFilter, stateFilter, agentFilter, productFilter, minTotal, maxTotal, hasCoupon, unassigned, dateFrom, dateTo, sortField, sortDir])
+  }, [page, search, businessFilter, statusFilter, stateFilter, agentFilter, productFilter, hasCoupon, unassigned, dateFrom, dateTo, sortField, sortDir])
 
   useEffect(() => { fetchOrders() }, [fetchOrders])
 
@@ -290,10 +286,6 @@ export default function OrdersPage() {
             {products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
           </SelectContent>
         </Select>
-        <div className="flex gap-2">
-          <Input type="number" placeholder="Min ₦" value={minTotal} onChange={(e) => { setMinTotal(e.target.value); setPage(1) }} className="h-10" />
-          <Input type="number" placeholder="Max ₦" value={maxTotal} onChange={(e) => { setMaxTotal(e.target.value); setPage(1) }} className="h-10" />
-        </div>
         <Select value={hasCoupon || 'all'} onValueChange={(v) => { setHasCoupon(v === 'all' ? '' : v ?? ''); setPage(1) }}>
           <SelectTrigger className="h-10 w-full">
             <SelectValue>{hasCoupon === '1' ? 'With Coupon' : hasCoupon === '0' ? 'Without Coupon' : 'Coupon: Any'}</SelectValue>
