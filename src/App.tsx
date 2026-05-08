@@ -19,6 +19,9 @@ import OrderForm from '@/pages/form/OrderForm'
 import UsersPage from '@/pages/users/UsersPage'
 import RolesPage from '@/pages/roles/RolesPage'
 import PerformancePage from '@/pages/performance/PerformancePage'
+import PaymentVerificationPage from '@/pages/verification/PaymentVerificationPage'
+import DeliveryVerificationPage from '@/pages/verification/DeliveryVerificationPage'
+import VerificationReportPage from '@/pages/verification/VerificationReportPage'
 import ActivityLogPage from '@/pages/activity-log/ActivityLogPage'
 import NotificationsPage from '@/pages/notifications/NotificationsPage'
 import SettingsPage from '@/pages/settings/SettingsPage'
@@ -49,6 +52,9 @@ export default function App() {
             <Route path="/users" element={<UsersPage />} />
             <Route path="/roles" element={<RolesPage />} />
             <Route path="/performance" element={<PerformancePage />} />
+            <Route path="/verify-payments" element={<PaymentVerificationPage />} />
+            <Route path="/verify-deliveries" element={<DeliveryVerificationPage />} />
+            <Route path="/verification-report" element={<VerificationReportPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/activity-log" element={<ActivityLogPage />} />
             <Route path="/settings" element={<SettingsPage />} />

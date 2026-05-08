@@ -22,6 +22,8 @@ import {
   Bell,
   ScrollText,
   BarChart3,
+  ClipboardCheck,
+  ShieldCheck,
 } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 
@@ -41,6 +43,9 @@ const navItems = [
   { to: '/users', label: 'Users', icon: Users, permission: 'users.view' },
   { to: '/roles', label: 'Roles & Permissions', icon: Shield, permission: 'roles.manage' },
   { to: '/performance', label: 'Performance', icon: BarChart3, permission: 'reports.view' },
+  { to: '/verify-payments', label: 'Verify Payments', icon: ClipboardCheck, permission: 'orders.verify_payment' },
+  { to: '/verify-deliveries', label: 'Verify Deliveries', icon: Truck, permission: 'orders.verify_delivery' },
+  { to: '/verification-report', label: 'Verification Report', icon: ShieldCheck, permission: 'verification_report.view' },
   { to: '/notifications', label: 'Notifications', icon: Bell, permission: 'notifications.view' },
   { to: '/activity-log', label: 'Activity Log', icon: ScrollText, permission: 'settings.view' },
   { to: '/settings', label: 'Settings', icon: Settings, permission: 'settings.view' },
