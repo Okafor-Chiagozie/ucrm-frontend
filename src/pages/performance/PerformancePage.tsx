@@ -66,6 +66,7 @@ export default function PerformancePage() {
   const [dateTo, setDateTo] = useState('')
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [isPersonal, setIsPersonal] = useState(false)
 
   const hasFilters = businessFilter || dateFrom || dateTo
 
@@ -87,6 +88,7 @@ export default function PerformancePage() {
       const { data } = await api.get(`/performance?${params}`)
       setStaff(data.data)
       setTotals(data.totals)
+      setIsPersonal(data.is_personal ?? false)
     } catch {
       toast.error('Failed to load performance data')
     } finally {
@@ -112,8 +114,8 @@ export default function PerformancePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Staff Performance</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">Track Customer Support staff delivery performance and metrics</p>
+        <h2 className="text-2xl font-bold tracking-tight">{isPersonal ? 'My Performance' : 'Staff Performance'}</h2>
+        <p className="text-sm text-muted-foreground mt-0.5">{isPersonal ? 'Your delivery performance and metrics' : 'Track Customer Support staff delivery performance and metrics'}</p>
       </div>
 
       {/* Filters */}
@@ -228,78 +230,151 @@ export default function PerformancePage() {
             </div>
           )}
 
-          {/* Staff Table */}
-          <div className="rounded-md border bg-card">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50 hover:bg-muted/50">
-                  <TableHead>Staff</TableHead>
-                  <TableHead className="text-center">Orders</TableHead>
-                  <TableHead className="text-center">Delivered</TableHead>
-                  <TableHead className="text-center">Cancelled</TableHead>
-                  <TableHead className="text-center">Not Picking</TableHead>
-                  <TableHead className="text-center">Pending</TableHead>
-                  <TableHead className="text-center">Rate</TableHead>
-                  <TableHead className="text-right">Revenue</TableHead>
-                  <TableHead className="text-center">Avg Hours</TableHead>
-                  <TableHead>Availability</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {staff.length === 0 ? (
-                  <TableRow><TableCell colSpan={10}><EmptyState icon={Users} title="No staff data" description="No Customer Support staff found" /></TableCell></TableRow>
-                ) : staff.map((s) => (
-                  <TableRow key={s.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{s.name}</p>
-                        <p className="text-xs text-muted-foreground">{s.email}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center font-medium">{s.total_orders}</TableCell>
-                    <TableCell className="text-center">
-                      <span className="text-emerald-600 font-medium">{s.delivered}</span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className="text-red-600 font-medium">{s.cancelled}</span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className="text-orange-600 font-medium">{s.not_picking}</span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className="text-blue-600 font-medium">{s.pending + s.scheduled}</span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline" className={`font-normal ${rateBadge(s.delivery_rate)}`}>
+          {/* Personal detail view for Customer Support */}
+          {isPersonal && staff.length > 0 && (() => {
+            const s = staff[0]
+            return (
+              <Card className="border">
+                <CardContent className="p-6 space-y-6">
+                  <div className="flex items-center gap-4">
+                    <div className="h-14 w-14 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xl font-bold">
+                      {s.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">{s.name}</h3>
+                      <p className="text-sm text-muted-foreground">{s.email}</p>
+                      {s.available_from && s.available_to ? (
+                        <p className="text-xs text-muted-foreground mt-0.5">Available: {s.available_from.slice(0, 5)} – {s.available_to.slice(0, 5)}</p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground mt-0.5">Available: Always</p>
+                      )}
+                    </div>
+                    <div className="ml-auto text-right">
+                      <Badge variant="outline" className={`text-lg px-3 py-1 font-semibold ${rateBadge(s.delivery_rate)}`}>
                         {s.delivery_rate}%
                       </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-medium">{formatPrice(s.revenue)}</TableCell>
-                    <TableCell className="text-center">
-                      {s.avg_delivery_hours !== null ? (
-                        <span className="inline-flex items-center gap-1 text-sm">
-                          <Clock className="h-3 w-3 text-muted-foreground" />
-                          {s.avg_delivery_hours}h
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground text-xs">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {s.available_from && s.available_to ? (
-                        <span className="text-xs text-muted-foreground">{s.available_from.slice(0, 5)} – {s.available_to.slice(0, 5)}</span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">Always</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                      <p className="text-xs text-muted-foreground mt-1">Delivery Rate</p>
+                    </div>
+                  </div>
 
-          {/* Mobile cards */}
-          <div className="md:hidden space-y-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <div className="rounded-md border p-3 text-center">
+                      <p className="text-2xl font-bold">{s.total_orders}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Total Orders</p>
+                    </div>
+                    <div className="rounded-md border p-3 text-center">
+                      <p className="text-2xl font-bold text-emerald-600">{s.delivered}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Delivered</p>
+                    </div>
+                    <div className="rounded-md border p-3 text-center">
+                      <p className="text-2xl font-bold text-blue-600">{s.pending + s.scheduled}</p>
+                      <p className="text-xs text-muted-foreground mt-1">In Progress</p>
+                    </div>
+                    <div className="rounded-md border p-3 text-center">
+                      <p className="text-2xl font-bold text-orange-600">{s.not_picking}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Not Picking</p>
+                    </div>
+                    <div className="rounded-md border p-3 text-center">
+                      <p className="text-2xl font-bold text-red-600">{s.cancelled}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Cancelled</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="rounded-md border p-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <DollarSign className="h-4 w-4 text-green-600" />
+                        <p className="text-sm text-muted-foreground">Total Revenue Generated</p>
+                      </div>
+                      <p className="text-2xl font-bold">{formatPrice(s.revenue)}</p>
+                    </div>
+                    <div className="rounded-md border p-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Clock className="h-4 w-4 text-blue-600" />
+                        <p className="text-sm text-muted-foreground">Avg Delivery Time</p>
+                      </div>
+                      <p className="text-2xl font-bold">{s.avg_delivery_hours !== null ? `${s.avg_delivery_hours} hours` : 'N/A'}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })()}
+
+          {/* Staff Table — managers only */}
+          {!isPersonal && (
+            <div className="rounded-md border bg-card">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHead>Staff</TableHead>
+                    <TableHead className="text-center">Orders</TableHead>
+                    <TableHead className="text-center">Delivered</TableHead>
+                    <TableHead className="text-center">Cancelled</TableHead>
+                    <TableHead className="text-center">Not Picking</TableHead>
+                    <TableHead className="text-center">Pending</TableHead>
+                    <TableHead className="text-center">Rate</TableHead>
+                    <TableHead className="text-right">Revenue</TableHead>
+                    <TableHead className="text-center">Avg Hours</TableHead>
+                    <TableHead>Availability</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {staff.length === 0 ? (
+                    <TableRow><TableCell colSpan={10}><EmptyState icon={Users} title="No staff data" description="No Customer Support staff found" /></TableCell></TableRow>
+                  ) : staff.map((s) => (
+                    <TableRow key={s.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{s.name}</p>
+                          <p className="text-xs text-muted-foreground">{s.email}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center font-medium">{s.total_orders}</TableCell>
+                      <TableCell className="text-center">
+                        <span className="text-emerald-600 font-medium">{s.delivered}</span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="text-red-600 font-medium">{s.cancelled}</span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="text-orange-600 font-medium">{s.not_picking}</span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className="text-blue-600 font-medium">{s.pending + s.scheduled}</span>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="outline" className={`font-normal ${rateBadge(s.delivery_rate)}`}>
+                          {s.delivery_rate}%
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-medium">{formatPrice(s.revenue)}</TableCell>
+                      <TableCell className="text-center">
+                        {s.avg_delivery_hours !== null ? (
+                          <span className="inline-flex items-center gap-1 text-sm">
+                            <Clock className="h-3 w-3 text-muted-foreground" />
+                            {s.avg_delivery_hours}h
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {s.available_from && s.available_to ? (
+                          <span className="text-xs text-muted-foreground">{s.available_from.slice(0, 5)} – {s.available_to.slice(0, 5)}</span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Always</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+
+          {/* Mobile cards — managers only */}
+          {!isPersonal && <div className="md:hidden space-y-3">
             {staff.map((s) => (
               <Card key={s.id} className="border">
                 <CardContent className="p-4 space-y-3">
