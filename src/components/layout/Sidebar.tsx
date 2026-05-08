@@ -21,6 +21,7 @@ import {
   Gift,
   Bell,
   ScrollText,
+  BarChart3,
 } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 
@@ -39,6 +40,7 @@ const navItems = [
   { to: '/order-forms', label: 'Order Forms', icon: Code, permission: 'form_settings.manage' },
   { to: '/users', label: 'Users', icon: Users, permission: 'users.view' },
   { to: '/roles', label: 'Roles & Permissions', icon: Shield, permission: 'roles.manage' },
+  { to: '/performance', label: 'Performance', icon: BarChart3, permission: 'reports.view' },
   { to: '/notifications', label: 'Notifications', icon: Bell, permission: 'notifications.view' },
   { to: '/activity-log', label: 'Activity Log', icon: ScrollText, permission: 'settings.view' },
   { to: '/settings', label: 'Settings', icon: Settings, permission: 'settings.view' },

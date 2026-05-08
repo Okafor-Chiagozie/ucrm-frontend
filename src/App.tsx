@@ -18,6 +18,7 @@ import FormSettingsPage from '@/pages/form/FormSettingsPage'
 import OrderForm from '@/pages/form/OrderForm'
 import UsersPage from '@/pages/users/UsersPage'
 import RolesPage from '@/pages/roles/RolesPage'
+import PerformancePage from '@/pages/performance/PerformancePage'
 import ActivityLogPage from '@/pages/activity-log/ActivityLogPage'
 import NotificationsPage from '@/pages/notifications/NotificationsPage'
 import SettingsPage from '@/pages/settings/SettingsPage'
@@ -47,6 +48,7 @@ export default function App() {
             <Route path="/order-forms" element={<FormSettingsPage />} />
             <Route path="/users" element={<UsersPage />} />
             <Route path="/roles" element={<RolesPage />} />
+            <Route path="/performance" element={<PerformancePage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/activity-log" element={<ActivityLogPage />} />
             <Route path="/settings" element={<SettingsPage />} />
