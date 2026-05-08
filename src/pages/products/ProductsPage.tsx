@@ -162,7 +162,7 @@ export default function ProductsPage() {
             </div>
             <div className="flex flex-wrap gap-2 text-xs">
               <Badge variant="outline" className="font-normal border-blue-200 bg-blue-50 text-blue-700">{p.variations.length} variation{p.variations.length !== 1 ? 's' : ''}</Badge>
-              <span className="text-muted-foreground">Stock: {p.total_stock}</span>
+              <span className="text-muted-foreground">Stock: {p.stock}</span>
               {p.low_stock && <Badge variant="outline" className="font-normal border-amber-200 bg-amber-50 text-amber-700">Low stock</Badge>}
             </div>
             <div className="text-xs text-muted-foreground">
@@ -204,7 +204,7 @@ export default function ProductsPage() {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <span>{p.total_stock}</span>
+                    <span>{p.stock}</span>
                     {p.low_stock && <Badge variant="outline" className="font-normal border-amber-200 bg-amber-50 text-amber-700 text-xs">Low</Badge>}
                   </div>
                 </TableCell>
@@ -249,8 +249,6 @@ interface VariationForm {
   name: string
   description: string
   price: string
-  stock: string
-  low_stock_threshold: string
 }
 
 function ProductDialog({ open, product, businesses, onClose, onSuccess }: { open: boolean; product?: Product; businesses: Business[]; onClose: () => void; onSuccess: () => void }) {
@@ -260,6 +258,8 @@ function ProductDialog({ open, product, businesses, onClose, onSuccess }: { open
   const [businessId, setBusinessId] = useState(product?.business_id ?? '')
   const [categoryId, setCategoryId] = useState(product?.category_id ?? '')
   const [image, setImage] = useState<File | null>(null)
+  const [stock, setStock] = useState(String(product?.stock ?? 0))
+  const [lowStockThreshold, setLowStockThreshold] = useState(String(product?.low_stock_threshold ?? 5))
   const [categories, setCategories] = useState<Category[]>([])
   const [variations, setVariations] = useState<VariationForm[]>(
     product?.variations?.map((v) => ({
@@ -267,9 +267,7 @@ function ProductDialog({ open, product, businesses, onClose, onSuccess }: { open
       name: v.name,
       description: v.description ?? '',
       price: String(v.price),
-      stock: String(v.stock),
-      low_stock_threshold: String(v.low_stock_threshold),
-    })) ?? [{ name: '', description: '', price: '', stock: '0', low_stock_threshold: '5' }]
+    })) ?? [{ name: '', description: '', price: '' }]
   )
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -282,7 +280,7 @@ function ProductDialog({ open, product, businesses, onClose, onSuccess }: { open
   }, [businessId])
 
   const addVariation = () => {
-    setVariations([...variations, { name: '', description: '', price: '', stock: '0', low_stock_threshold: '5' }])
+    setVariations([...variations, { name: '', description: '', price: '' }])
   }
 
   const removeVariation = (index: number) => {
@@ -307,14 +305,14 @@ function ProductDialog({ open, product, businesses, onClose, onSuccess }: { open
     if (!isEdit) formData.append('business_id', businessId)
     if (categoryId) formData.append('category_id', categoryId)
     if (image) formData.append('image', image)
+    formData.append('stock', stock)
+    formData.append('low_stock_threshold', lowStockThreshold)
 
     variations.forEach((v, i) => {
       if (v.id) formData.append(`variations[${i}][id]`, v.id)
       formData.append(`variations[${i}][name]`, v.name)
       formData.append(`variations[${i}][description]`, v.description)
       formData.append(`variations[${i}][price]`, v.price)
-      formData.append(`variations[${i}][stock]`, v.stock)
-      formData.append(`variations[${i}][low_stock_threshold]`, v.low_stock_threshold)
     })
 
     try {
@@ -384,6 +382,14 @@ function ProductDialog({ open, product, businesses, onClose, onSuccess }: { open
               <Label>Image</Label>
               <Input type="file" accept="image/*" onChange={(e) => setImage(e.target.files?.[0] ?? null)} className="h-10" />
             </div>
+            <div className="space-y-1.5">
+              <Label>Stock</Label>
+              <Input type="number" value={stock} onChange={(e) => setStock(e.target.value)} min="0" required className="h-10" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Low Stock Alert</Label>
+              <Input type="number" value={lowStockThreshold} onChange={(e) => setLowStockThreshold(e.target.value)} min="0" className="h-10" />
+            </div>
           </div>
 
           <div className="space-y-1.5">
@@ -424,14 +430,6 @@ function ProductDialog({ open, product, businesses, onClose, onSuccess }: { open
                     <div className="space-y-1">
                       <Label className="text-xs">Price (NGN)</Label>
                       <Input type="number" value={v.price} onChange={(e) => updateVariation(i, 'price', e.target.value)} placeholder="0" required min="0" step="0.01" className="h-9" />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Stock</Label>
-                      <Input type="number" value={v.stock} onChange={(e) => updateVariation(i, 'stock', e.target.value)} required min="0" className="h-9" />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs">Low Stock Alert</Label>
-                      <Input type="number" value={v.low_stock_threshold} onChange={(e) => updateVariation(i, 'low_stock_threshold', e.target.value)} min="0" className="h-9" />
                     </div>
                   </div>
                 </div>

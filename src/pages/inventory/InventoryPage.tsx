@@ -80,7 +80,7 @@ export default function InventoryPage() {
 
       <div className="rounded-md border bg-card">
         <Table>
-          <TableHeader><TableRow className="bg-muted/50 hover:bg-muted/50"><TableHead>Product</TableHead><TableHead>Business</TableHead><TableHead>Variations</TableHead><TableHead>Total Stock</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow className="bg-muted/50 hover:bg-muted/50"><TableHead>Product</TableHead><TableHead>Business</TableHead><TableHead>Variations</TableHead><TableHead>Stock</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
           <TableBody>
             {loading ? <TableRow><TableCell colSpan={6}><LoadingState text="Loading..." /></TableCell></TableRow>
             : products.length === 0 ? <TableRow><TableCell colSpan={6}><EmptyState icon={Package} title="No products" /></TableCell></TableRow>
@@ -88,20 +88,14 @@ export default function InventoryPage() {
               <TableRow key={p.id}>
                 <TableCell className="font-medium">{p.name}</TableCell>
                 <TableCell className="text-muted-foreground">{p.business_name}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">{p.variations.length} pricing tier{p.variations.length !== 1 ? 's' : ''}</TableCell>
                 <TableCell>
-                  <div className="space-y-1">
-                    {p.variations.map((v) => (
-                      <div key={v.id} className="flex items-center gap-2 text-sm">
-                        <span className="text-muted-foreground">{v.name}:</span>
-                        <span className={`font-medium ${v.stock <= v.low_stock_threshold ? 'text-red-600' : ''}`}>{v.stock}</span>
-                        {v.stock <= v.low_stock_threshold && <Badge variant="outline" className="text-xs font-normal border-amber-200 bg-amber-50 text-amber-700">Low</Badge>}
-                      </div>
-                    ))}
-                  </div>
+                  <span className={`font-medium ${p.low_stock ? 'text-red-600' : ''}`}>{p.stock}</span>
                 </TableCell>
-                <TableCell className="font-medium">{p.total_stock}</TableCell>
                 <TableCell>
-                  {p.low_stock ? (
+                  {p.stock === 0 ? (
+                    <Badge variant="outline" className="font-normal border-red-200 bg-red-50 text-red-700">Out of Stock</Badge>
+                  ) : p.low_stock ? (
                     <Badge variant="outline" className="font-normal border-amber-200 bg-amber-50 text-amber-700">Low Stock</Badge>
                   ) : (
                     <Badge variant="outline" className="font-normal border-emerald-200 bg-emerald-50 text-emerald-700">In Stock</Badge>
@@ -125,25 +119,17 @@ export default function InventoryPage() {
 }
 
 function StockDialog({ product, onClose, onSuccess }: { product: Product; onClose: () => void; onSuccess: () => void }) {
-  const [stocks, setStocks] = useState(product.variations.map((v) => ({ id: v.id, name: v.name, stock: v.stock, low_stock_threshold: v.low_stock_threshold })))
+  const [stock, setStock] = useState(product.stock)
+  const [lowStockThreshold, setLowStockThreshold] = useState(product.low_stock_threshold)
   const [saving, setSaving] = useState(false)
-
-  const updateStock = (id: string, field: 'stock' | 'low_stock_threshold', val: number) => {
-    setStocks(stocks.map((s) => s.id === id ? { ...s, [field]: val } : s))
-  }
 
   const handleSave = async () => {
     setSaving(true)
     try {
       await api.post(`/products/${product.id}`, {
         name: product.name,
-        variations: stocks.map((s) => ({
-          id: s.id,
-          name: s.name,
-          price: product.variations.find((v) => v.id === s.id)?.price ?? 0,
-          stock: s.stock,
-          low_stock_threshold: s.low_stock_threshold,
-        })),
+        stock,
+        low_stock_threshold: lowStockThreshold,
       }, { headers: { 'Content-Type': 'multipart/form-data' } })
       toast.success('Stock updated')
       onClose()
@@ -154,28 +140,21 @@ function StockDialog({ product, onClose, onSuccess }: { product: Product; onClos
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>Update Stock</DialogTitle>
           <DialogDescription>{product.name}</DialogDescription>
         </DialogHeader>
         <Separator />
         <div className="space-y-4 pt-2">
-          {stocks.map((s) => (
-            <div key={s.id} className="rounded-md border p-3">
-              <p className="text-sm font-medium mb-2">{s.name}</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label className="text-xs">Stock</Label>
-                  <Input type="number" value={s.stock} onChange={(e) => updateStock(s.id, 'stock', Number(e.target.value))} min="0" className="h-9" />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Low Stock Alert</Label>
-                  <Input type="number" value={s.low_stock_threshold} onChange={(e) => updateStock(s.id, 'low_stock_threshold', Number(e.target.value))} min="0" className="h-9" />
-                </div>
-              </div>
-            </div>
-          ))}
+          <div className="space-y-1.5">
+            <Label>Stock Quantity</Label>
+            <Input type="number" value={stock} onChange={(e) => setStock(Number(e.target.value))} min="0" className="h-10" />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Low Stock Alert Threshold</Label>
+            <Input type="number" value={lowStockThreshold} onChange={(e) => setLowStockThreshold(Number(e.target.value))} min="0" className="h-10" />
+          </div>
           <Separator />
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={onClose}>Cancel</Button>

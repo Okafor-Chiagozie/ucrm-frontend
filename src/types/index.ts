@@ -83,8 +83,6 @@ export interface ProductVariation {
   name: string
   description: string | null
   price: string
-  stock: number
-  low_stock_threshold: number
   is_active: boolean
   sort_order: number
 }
@@ -110,9 +108,10 @@ export interface Product {
   category_id: string | null
   category_name: string | null
   is_active: boolean
-  form_settings: FormSettings
-  total_stock: number
+  stock: number
+  low_stock_threshold: number
   low_stock: boolean
+  form_settings: FormSettings
   variations: ProductVariation[]
   created_at: string
   updated_at?: string
