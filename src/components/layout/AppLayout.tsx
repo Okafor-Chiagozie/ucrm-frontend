@@ -1,15 +1,30 @@
-import { useState } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Outlet, Navigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import Sidebar, { SidebarContent } from './Sidebar'
 import { Toaster } from '@/components/ui/sonner'
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet'
-import { Lock, Menu } from 'lucide-react'
+import { Lock, Menu, Maximize, Minimize } from 'lucide-react'
 import NotificationBell from '@/components/NotificationBell'
 
 export default function AppLayout() {
   const { user, isLoading } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement)
+
+  const toggleFullscreen = useCallback(() => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen()
+    } else {
+      document.documentElement.requestFullscreen()
+    }
+  }, [])
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', handler)
+    return () => document.removeEventListener('fullscreenchange', handler)
+  }, [])
 
   if (isLoading) {
     return (
@@ -63,6 +78,13 @@ export default function AppLayout() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={toggleFullscreen}
+              className="hidden sm:flex h-9 w-9 items-center justify-center rounded-md border hover:bg-muted transition-colors"
+              title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+            >
+              {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+            </button>
             <NotificationBell />
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">
