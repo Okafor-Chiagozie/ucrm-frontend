@@ -158,7 +158,7 @@ export default function PerformancePage() {
         <>
           {/* Summary Cards */}
           {totals && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <Card className="border">
                 <CardContent className="p-4 flex items-center gap-3">
                   <div className="h-9 w-9 rounded-md bg-blue-100 flex items-center justify-center shrink-0">
