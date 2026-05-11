@@ -12,7 +12,7 @@ import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import type { PaginationMeta, Business, Product, User as UserType } from '@/types'
-import { Megaphone, Send, Users, Mail, MessageSquare, Phone, Plus, Pencil, Trash2, FileText, Search, Filter, X, RotateCcw } from 'lucide-react'
+import { Megaphone, Send, Users, Mail, MessageSquare, Phone, Plus, Pencil, Trash2, FileText, Search, RotateCcw, X } from 'lucide-react'
 
 interface Customer {
   name: string
@@ -35,7 +35,6 @@ interface MarketingTemplate {
 
 const ORDER_STATUSES = ['pending', 'scheduled', 'delivered', 'not_picking', 'cancelled']
 const NIGERIAN_STATES = ['Lagos', 'Abuja', 'Rivers', 'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara']
-
 const DATE_PRESETS = [
   { label: 'Today', value: 'today' },
   { label: 'This Week', value: 'week' },
@@ -70,9 +69,8 @@ export default function MarketingPage() {
   const [dateTo, setDateTo] = useState('')
   const [page, setPage] = useState(1)
 
-  // Selection
-  const [selectedCustomers, setSelectedCustomers] = useState<Customer[]>([])
-  const [selectAll, setSelectAll] = useState(false)
+  // Excluded customers (deselected individually)
+  const [excludedPhones, setExcludedPhones] = useState<Set<string>>(new Set())
 
   // Compose dialog
   const [composeOpen, setComposeOpen] = useState(false)
@@ -96,33 +94,12 @@ export default function MarketingPage() {
     setDatePreset(preset)
     const today = new Date()
     const fmt = (d: Date) => d.toISOString().split('T')[0]
-
     if (preset === 'custom') return
-
-    if (preset === 'today') {
-      setDateFrom(fmt(today))
-      setDateTo(fmt(today))
-    } else if (preset === 'week') {
-      const day = today.getDay()
-      const monday = new Date(today)
-      monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1))
-      setDateFrom(fmt(monday))
-      setDateTo(fmt(today))
-    } else if (preset === 'month') {
-      const first = new Date(today.getFullYear(), today.getMonth(), 1)
-      setDateFrom(fmt(first))
-      setDateTo(fmt(today))
-    } else if (preset === '7d') {
-      const d = new Date(today)
-      d.setDate(today.getDate() - 7)
-      setDateFrom(fmt(d))
-      setDateTo(fmt(today))
-    } else if (preset === '30d') {
-      const d = new Date(today)
-      d.setDate(today.getDate() - 30)
-      setDateFrom(fmt(d))
-      setDateTo(fmt(today))
-    }
+    if (preset === 'today') { setDateFrom(fmt(today)); setDateTo(fmt(today)) }
+    else if (preset === 'week') { const day = today.getDay(); const mon = new Date(today); mon.setDate(today.getDate() - (day === 0 ? 6 : day - 1)); setDateFrom(fmt(mon)); setDateTo(fmt(today)) }
+    else if (preset === 'month') { setDateFrom(fmt(new Date(today.getFullYear(), today.getMonth(), 1))); setDateTo(fmt(today)) }
+    else if (preset === '7d') { const d = new Date(today); d.setDate(today.getDate() - 7); setDateFrom(fmt(d)); setDateTo(fmt(today)) }
+    else if (preset === '30d') { const d = new Date(today); d.setDate(today.getDate() - 30); setDateFrom(fmt(d)); setDateTo(fmt(today)) }
     setPage(1)
   }
 
@@ -141,7 +118,6 @@ export default function MarketingPage() {
       if (maxAmount) params.max_amount = maxAmount
       if (dateFrom) params.date_from = dateFrom
       if (dateTo) params.date_to = dateTo
-
       const { data } = await api.get('/marketing/customers', { params })
       setCustomers(data.data.data ?? data.data)
       if (data.meta) setMeta(data.meta)
@@ -157,96 +133,62 @@ export default function MarketingPage() {
   useEffect(() => {
     api.get('/businesses').then(r => setBusinesses(r.data.data?.data ?? r.data.data ?? [])).catch(() => {})
     api.get('/products?per_page=100').then(r => setProducts(r.data.data?.data ?? r.data.data ?? [])).catch(() => {})
-    api.get('/users?role=Customer Support&per_page=100').then(r => setAgents((r.data.data?.data ?? r.data.data ?? []))).catch(() => {})
+    api.get('/users?role=Customer Support&per_page=100').then(r => setAgents(r.data.data?.data ?? r.data.data ?? [])).catch(() => {})
     api.get('/marketing/templates').then(r => setTemplates(r.data.data ?? [])).catch(() => {})
   }, [])
 
-  const toggleCustomer = (c: Customer) => {
-    setSelectedCustomers(prev => {
-      const exists = prev.some(s => s.phone === c.phone)
-      return exists ? prev.filter(s => s.phone !== c.phone) : [...prev, c]
+  const toggleExclude = (phone: string) => {
+    setExcludedPhones(prev => {
+      const next = new Set(prev)
+      if (next.has(phone)) next.delete(phone)
+      else next.add(phone)
+      return next
     })
-  }
-
-  const toggleAll = () => {
-    if (selectAll) {
-      setSelectedCustomers([])
-    } else {
-      setSelectedCustomers([...customers])
-    }
-    setSelectAll(!selectAll)
   }
 
   const clearFilters = () => {
     setSearch(''); setBusinessFilter(''); setStatusFilter(''); setStateFilter('')
     setAgentFilter(''); setProductFilter(''); setHasCoupon('')
     setMinAmount(''); setMaxAmount(''); setDatePreset(''); setDateFrom(''); setDateTo('')
+    setExcludedPhones(new Set())
     setPage(1)
   }
 
-  const openCompose = () => {
-    if (selectedCustomers.length === 0) {
-      toast.error('Select at least one customer')
-      return
-    }
-    setComposeOpen(true)
-  }
-
+  const recipientCount = meta.total - excludedPhones.size
   const loadTemplate = (t: MarketingTemplate) => {
     setChannel(t.channel)
     setMessage(t.message)
     if (t.email_subject) setSubject(t.email_subject)
   }
 
-  // Filter recipients based on channel — skip those without the required contact info
-  const getEligibleRecipients = () => {
-    return selectedCustomers.filter(c => {
-      if (channel === 'email') return !!c.email
-      if (channel === 'whatsapp') return !!(c.whatsapp || c.phone)
-      if (channel === 'sms') return !!c.phone
-      return true
-    })
-  }
-
   const sendCampaign = async () => {
-    if (!message.trim()) {
-      toast.error('Message is required')
-      return
-    }
-    if (channel === 'email' && !subject.trim()) {
-      toast.error('Subject is required for email')
-      return
-    }
-
-    const eligible = getEligibleRecipients()
-    const skipped = selectedCustomers.length - eligible.length
-
-    if (eligible.length === 0) {
-      toast.error(`No selected customers have ${channel === 'email' ? 'an email address' : channel === 'whatsapp' ? 'a WhatsApp number' : 'a phone number'}`)
-      return
-    }
+    if (!message.trim()) { toast.error('Message is required'); return }
+    if (channel === 'email' && !subject.trim()) { toast.error('Subject is required for email'); return }
+    if (recipientCount <= 0) { toast.error('No customers to send to'); return }
 
     setSending(true)
     try {
-      const recipients = eligible.map(c => ({
-        name: c.name,
-        phone: c.phone,
-        email: c.email,
-        whatsapp: c.whatsapp || c.phone,
-      }))
-
-      const { data } = await api.post('/marketing/send', {
-        channel,
-        message,
+      // Pass the same filters to backend so it fetches ALL matching customers
+      const payload: Record<string, unknown> = {
+        channel, message,
         subject: channel === 'email' ? subject : null,
-        recipients,
-      })
+        excluded_phones: Array.from(excludedPhones),
+      }
+      if (businessFilter) payload.business_id = businessFilter
+      if (statusFilter) payload.status = statusFilter
+      if (stateFilter) payload.state = stateFilter
+      if (agentFilter) payload.agent_id = agentFilter
+      if (productFilter) payload.product_id = productFilter
+      if (hasCoupon) payload.has_coupon = hasCoupon
+      if (minAmount) payload.min_amount = minAmount
+      if (maxAmount) payload.max_amount = maxAmount
+      if (dateFrom) payload.date_from = dateFrom
+      if (dateTo) payload.date_to = dateTo
+      if (search) payload.search = search
 
-      const skippedMsg = skipped > 0 ? ` (${skipped} skipped — no ${channel === 'email' ? 'email' : channel === 'whatsapp' ? 'WhatsApp' : 'phone'})` : ''
-      toast.success(`${data.message}${skippedMsg}`)
+      const { data } = await api.post('/marketing/send', payload)
+      toast.success(data.message)
       setComposeOpen(false)
-      setSelectedCustomers([])
-      setSelectAll(false)
       setMessage('')
       setSubject('')
     } catch {
@@ -258,67 +200,36 @@ export default function MarketingPage() {
 
   const openTemplateDialog = (template?: MarketingTemplate) => {
     if (template) {
-      setEditingTemplate(template)
-      setTemplateName(template.name)
-      setTemplateMessage(template.message)
-      setTemplateChannel(template.channel)
-      setTemplateSubject(template.email_subject ?? '')
+      setEditingTemplate(template); setTemplateName(template.name); setTemplateMessage(template.message)
+      setTemplateChannel(template.channel); setTemplateSubject(template.email_subject ?? '')
     } else {
-      setEditingTemplate(null)
-      setTemplateName('')
-      setTemplateMessage('')
-      setTemplateChannel('whatsapp')
-      setTemplateSubject('')
+      setEditingTemplate(null); setTemplateName(''); setTemplateMessage('')
+      setTemplateChannel('whatsapp'); setTemplateSubject('')
     }
     setTemplateDialogOpen(true)
   }
 
   const saveTemplate = async () => {
-    if (!templateName.trim() || !templateMessage.trim()) {
-      toast.error('Name and message are required')
-      return
-    }
+    if (!templateName.trim() || !templateMessage.trim()) { toast.error('Name and message are required'); return }
     setSavingTemplate(true)
     try {
-      const payload = {
-        name: templateName,
-        message: templateMessage,
-        channel: templateChannel,
-        email_subject: templateChannel === 'email' ? templateSubject : null,
-      }
-      if (editingTemplate) {
-        await api.put(`/marketing/templates/${editingTemplate.id}`, payload)
-        toast.success('Template updated')
-      } else {
-        await api.post('/marketing/templates', payload)
-        toast.success('Template created')
-      }
+      const payload = { name: templateName, message: templateMessage, channel: templateChannel, email_subject: templateChannel === 'email' ? templateSubject : null }
+      if (editingTemplate) { await api.put(`/marketing/templates/${editingTemplate.id}`, payload); toast.success('Template updated') }
+      else { await api.post('/marketing/templates', payload); toast.success('Template created') }
       const { data } = await api.get('/marketing/templates')
-      setTemplates(data.data ?? [])
-      setTemplateDialogOpen(false)
-    } catch {
-      toast.error('Failed to save template')
-    } finally {
-      setSavingTemplate(false)
-    }
+      setTemplates(data.data ?? []); setTemplateDialogOpen(false)
+    } catch { toast.error('Failed to save template') }
+    finally { setSavingTemplate(false) }
   }
 
   const deleteTemplate = async (id: string) => {
-    try {
-      await api.delete(`/marketing/templates/${id}`)
-      setTemplates(prev => prev.filter(t => t.id !== id))
-      toast.success('Template deleted')
-    } catch {
-      toast.error('Failed to delete template')
-    }
+    try { await api.delete(`/marketing/templates/${id}`); setTemplates(prev => prev.filter(t => t.id !== id)); toast.success('Template deleted') }
+    catch { toast.error('Failed to delete template') }
   }
 
   if (!user?.permissions?.includes('notifications.send')) {
     return <div className="p-6 text-center text-muted-foreground">You do not have permission to access this page.</div>
   }
-
-  const eligibleCount = getEligibleRecipients().length
-  const skippedCount = selectedCustomers.length - eligibleCount
 
   return (
     <div className="space-y-5">
@@ -332,34 +243,34 @@ export default function MarketingPage() {
           <Button variant="outline" size="sm" onClick={() => openTemplateDialog()}>
             <Plus className="w-4 h-4 mr-1" /> Template
           </Button>
-          <Button size="sm" onClick={openCompose} disabled={selectedCustomers.length === 0}>
-            <Send className="w-4 h-4 mr-1" /> Send to {selectedCustomers.length > 0 ? `${selectedCustomers.length} selected` : 'selected'}
+          <Button size="sm" onClick={() => setComposeOpen(true)} disabled={recipientCount <= 0}>
+            <Send className="w-4 h-4 mr-1" /> Send to {recipientCount} customer{recipientCount !== 1 ? 's' : ''}
           </Button>
         </div>
       </div>
 
-      {/* Search + Filters */}
+      {/* Filters row 1 */}
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Search by name, phone, email..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} className="pl-9" />
         </div>
         <Select value={businessFilter} onValueChange={(v: string | null) => { setBusinessFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
-          <SelectTrigger className="w-full sm:w-[160px]"><SelectValue placeholder="Business" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-40"><SelectValue placeholder="Business" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Businesses</SelectItem>
             {businesses.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={statusFilter} onValueChange={(v: string | null) => { setStatusFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
-          <SelectTrigger className="w-full sm:w-[140px]"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-36"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
             {ORDER_STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace('_', ' ').replace(/^\w/, c => c.toUpperCase())}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={datePreset} onValueChange={(v: string | null) => v && applyDatePreset(v)}>
-          <SelectTrigger className="w-full sm:w-[140px]"><SelectValue placeholder="Date Range" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-36"><SelectValue placeholder="Date Range" /></SelectTrigger>
           <SelectContent>
             {DATE_PRESETS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
           </SelectContent>
@@ -371,51 +282,54 @@ export default function MarketingPage() {
         )}
       </div>
 
-      {/* Extra filters row */}
+      {/* Filters row 2 */}
       <div className="flex flex-wrap gap-2">
         <Select value={stateFilter} onValueChange={(v: string | null) => { setStateFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
-          <SelectTrigger className="w-[140px]"><SelectValue placeholder="State" /></SelectTrigger>
+          <SelectTrigger className="w-32"><SelectValue placeholder="State" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All States</SelectItem>
             {NIGERIAN_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={agentFilter} onValueChange={(v: string | null) => { setAgentFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
-          <SelectTrigger className="w-[140px]"><SelectValue placeholder="Agent" /></SelectTrigger>
+          <SelectTrigger className="w-32"><SelectValue placeholder="Agent" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Agents</SelectItem>
             {agents.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={productFilter} onValueChange={(v: string | null) => { setProductFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
-          <SelectTrigger className="w-[140px]"><SelectValue placeholder="Product" /></SelectTrigger>
+          <SelectTrigger className="w-32"><SelectValue placeholder="Product" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Products</SelectItem>
             {products.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={hasCoupon} onValueChange={(v: string | null) => { setHasCoupon(!v || v === 'all' ? '' : v); setPage(1) }}>
-          <SelectTrigger className="w-[140px]"><SelectValue placeholder="Coupon" /></SelectTrigger>
+          <SelectTrigger className="w-32"><SelectValue placeholder="Coupon" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All</SelectItem>
             <SelectItem value="1">With Coupon</SelectItem>
-            <SelectItem value="0">Without Coupon</SelectItem>
+            <SelectItem value="0">Without</SelectItem>
           </SelectContent>
         </Select>
-        <Input type="number" placeholder="Min ₦" value={minAmount} onChange={e => { setMinAmount(e.target.value); setPage(1) }} className="w-[100px]" />
-        <Input type="number" placeholder="Max ₦" value={maxAmount} onChange={e => { setMaxAmount(e.target.value); setPage(1) }} className="w-[100px]" />
+        <Input type="number" placeholder="Min ₦" value={minAmount} onChange={e => { setMinAmount(e.target.value); setPage(1) }} className="w-24" />
+        <Input type="number" placeholder="Max ₦" value={maxAmount} onChange={e => { setMaxAmount(e.target.value); setPage(1) }} className="w-24" />
         {datePreset === 'custom' && (
           <>
-            <Input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1) }} className="w-[140px]" />
-            <Input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1) }} className="w-[140px]" />
+            <Input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1) }} className="w-36" />
+            <Input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1) }} className="w-36" />
           </>
         )}
       </div>
 
-      {/* Stats bar */}
+      {/* Stats */}
       <div className="flex gap-4 text-sm">
-        <span className="flex items-center gap-1 text-muted-foreground"><Users className="w-4 h-4" /> {meta.total} customers</span>
-        <span className="flex items-center gap-1 text-blue-600 font-medium">{selectedCustomers.length} selected</span>
+        <span className="flex items-center gap-1 text-muted-foreground"><Users className="w-4 h-4" /> {meta.total} customers match</span>
+        {excludedPhones.size > 0 && (
+          <span className="flex items-center gap-1 text-amber-600">{excludedPhones.size} excluded</span>
+        )}
+        <span className="flex items-center gap-1 text-blue-600 font-medium">{recipientCount} will receive</span>
       </div>
 
       {/* Templates */}
@@ -439,18 +353,16 @@ export default function MarketingPage() {
         </div>
       )}
 
-      {/* Customer table — only customer details */}
+      {/* Customer table */}
       <div className="border rounded-md overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-10">
-                <input type="checkbox" checked={selectAll} onChange={toggleAll} className="rounded" />
-              </TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Phone</TableHead>
               <TableHead className="hidden sm:table-cell">Email</TableHead>
               <TableHead className="hidden md:table-cell">WhatsApp</TableHead>
+              <TableHead className="w-10"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -460,16 +372,18 @@ export default function MarketingPage() {
               <TableRow><TableCell colSpan={5} className="p-0"><EmptyState icon={Users} title="No customers found" description="Adjust your filters to find customers" /></TableCell></TableRow>
             ) : (
               customers.map((c, i) => {
-                const isSelected = selectedCustomers.some(s => s.phone === c.phone)
+                const isExcluded = excludedPhones.has(c.phone)
                 return (
-                  <TableRow key={i} className={isSelected ? 'bg-blue-50/50' : ''}>
-                    <TableCell>
-                      <input type="checkbox" checked={isSelected} onChange={() => toggleCustomer(c)} className="rounded" />
-                    </TableCell>
+                  <TableRow key={i} className={isExcluded ? 'opacity-40' : ''}>
                     <TableCell className="font-medium text-sm">{c.name}</TableCell>
                     <TableCell className="text-sm">{c.phone}</TableCell>
                     <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">{c.email || '—'}</TableCell>
                     <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{c.whatsapp || '—'}</TableCell>
+                    <TableCell>
+                      <button onClick={() => toggleExclude(c.phone)} className={`text-xs ${isExcluded ? 'text-blue-600 hover:text-blue-700' : 'text-muted-foreground hover:text-red-500'}`} title={isExcluded ? 'Include' : 'Exclude'}>
+                        {isExcluded ? <RotateCcw className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
+                      </button>
+                    </TableCell>
                   </TableRow>
                 )
               })
@@ -499,13 +413,9 @@ export default function MarketingPage() {
               </Select>
             </div>
 
-            {/* Eligible recipients info */}
             <div className="text-sm p-3 bg-muted/30 rounded-md">
-              <p>Selected: <span className="font-medium">{selectedCustomers.length}</span></p>
-              <p>Eligible for {channel}: <span className="font-medium text-blue-600">{eligibleCount}</span></p>
-              {skippedCount > 0 && (
-                <p className="text-amber-600">{skippedCount} will be skipped (no {channel === 'email' ? 'email address' : channel === 'whatsapp' ? 'WhatsApp number' : 'phone number'})</p>
-              )}
+              <p>Sending to <span className="font-medium text-blue-600">{recipientCount}</span> customers via {channel}</p>
+              <p className="text-xs text-muted-foreground mt-1">Customers without {channel === 'email' ? 'an email' : channel === 'whatsapp' ? 'a WhatsApp number' : 'a phone number'} will be automatically skipped</p>
             </div>
 
             {channel === 'email' && (
@@ -539,8 +449,8 @@ export default function MarketingPage() {
 
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setComposeOpen(false)}>Cancel</Button>
-              <Button onClick={sendCampaign} disabled={sending || !message.trim() || eligibleCount === 0}>
-                {sending ? 'Sending...' : `Send to ${eligibleCount} customer${eligibleCount !== 1 ? 's' : ''}`}
+              <Button onClick={sendCampaign} disabled={sending || !message.trim() || recipientCount <= 0}>
+                {sending ? 'Sending...' : `Send to ${recipientCount} customer${recipientCount !== 1 ? 's' : ''}`}
               </Button>
             </div>
           </div>

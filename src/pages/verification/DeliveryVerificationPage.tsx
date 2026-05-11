@@ -14,7 +14,7 @@ import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
-import { Search, Truck, CheckCircle, XCircle, RotateCcw } from 'lucide-react'
+import { Search, Truck, CheckCircle, XCircle, Clock, RotateCcw } from 'lucide-react'
 
 interface VerificationOrder {
   id: string; order_number: string; business_name: string | null; customer_name: string
@@ -57,106 +57,131 @@ export default function DeliveryVerificationPage() {
   }, [page, search, businessFilter, logiFilter])
 
   useEffect(() => { fetchOrders() }, [fetchOrders])
-  useEffect(() => { api.get('/businesses?per_page=100').then(({ data }) => setBusinesses(data.data.data)).catch(() => {}) }, [])
+  useEffect(() => { api.get('/businesses?per_page=100').then(({ data }) => setBusinesses(data.data.data ?? data.data ?? [])).catch(() => {}) }, [])
 
   const verify = async (orderId: string, status: string) => {
     try {
       await api.put(`/verification/logistics/${orderId}`, { status })
-      toast.success(`Marked as ${status.replace('_', ' ')}`)
+      const label = status === 'delivery_verified' ? 'Verified' : status === 'delivery_disputed' ? 'Disputed' : 'Pending'
+      toast.success(`Marked as ${label}`)
       fetchOrders()
     } catch { toast.error('Failed to update') }
   }
 
+  const ActionButtons = ({ order }: { order: VerificationOrder }) => {
+    const status = order.logistics_status
+
+    if (status === 'delivery_verified') {
+      return (
+        <div className="flex justify-end gap-1">
+          <Button variant="ghost" size="sm" className="h-7 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50" onClick={() => verify(order.id, 'pending')}>
+            <Clock className="h-3.5 w-3.5 mr-1" /> Pending
+          </Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => verify(order.id, 'delivery_disputed')}>
+            <XCircle className="h-3.5 w-3.5 mr-1" /> Dispute
+          </Button>
+        </div>
+      )
+    }
+
+    if (status === 'delivery_disputed') {
+      return (
+        <div className="flex justify-end gap-1">
+          <Button variant="ghost" size="sm" className="h-7 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" onClick={() => verify(order.id, 'delivery_verified')}>
+            <CheckCircle className="h-3.5 w-3.5 mr-1" /> Verify
+          </Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50" onClick={() => verify(order.id, 'pending')}>
+            <Clock className="h-3.5 w-3.5 mr-1" /> Pending
+          </Button>
+        </div>
+      )
+    }
+
+    // Pending / null
+    return (
+      <div className="flex justify-end gap-1">
+        <Button variant="ghost" size="sm" className="h-7 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" onClick={() => verify(order.id, 'delivery_verified')}>
+          <CheckCircle className="h-3.5 w-3.5 mr-1" /> Verify
+        </Button>
+        <Button variant="ghost" size="sm" className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => verify(order.id, 'delivery_disputed')}>
+          <XCircle className="h-3.5 w-3.5 mr-1" /> Dispute
+        </Button>
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Delivery Verification</h2>
+        <h1 className="text-xl font-semibold flex items-center gap-2"><Truck className="w-5 h-5 text-blue-600" /> Delivery Verification</h1>
         <p className="text-sm text-muted-foreground mt-0.5">Verify delivery status of orders independently</p>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-end gap-3">
-        <div className="flex-1 min-w-0 sm:max-w-sm">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Order #, customer..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} className="pl-9 h-10" />
-          </div>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1 sm:max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Order #, customer..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} className="pl-9" />
         </div>
-        <Select value={businessFilter || 'all'} onValueChange={(v) => { setBusinessFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
-          <SelectTrigger className="h-10 w-full sm:w-44">
-            <SelectValue>{businesses.find((b) => b.id === businessFilter)?.name ?? 'All Businesses'}</SelectValue>
-          </SelectTrigger>
+        <Select value={businessFilter} onValueChange={(v: string | null) => { setBusinessFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
+          <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder="Business" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Businesses</SelectItem>
-            {businesses.map((b) => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+            {businesses.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={logiFilter || 'all'} onValueChange={(v) => { setLogiFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
-          <SelectTrigger className="h-10 w-full sm:w-48">
-            <SelectValue>{logiFilter === 'pending' ? 'Not Verified' : logiFilter === 'delivery_verified' ? 'Delivery Verified' : logiFilter === 'delivery_disputed' ? 'Delivery Disputed' : 'All Statuses'}</SelectValue>
-          </SelectTrigger>
+        <Select value={logiFilter} onValueChange={(v: string | null) => { setLogiFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
+          <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="pending">Not Verified</SelectItem>
-            <SelectItem value="delivery_verified">Delivery Verified</SelectItem>
-            <SelectItem value="delivery_disputed">Delivery Disputed</SelectItem>
+            <SelectItem value="delivery_verified">Verified</SelectItem>
+            <SelectItem value="delivery_disputed">Disputed</SelectItem>
           </SelectContent>
         </Select>
         {hasFilters && (
-          <Button variant="ghost" size="sm" className="h-10 text-muted-foreground" onClick={() => { setSearch(''); setBusinessFilter(''); setLogiFilter(''); setPage(1) }}>
-            <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Reset
+          <Button variant="ghost" size="sm" onClick={() => { setSearch(''); setBusinessFilter(''); setLogiFilter(''); setPage(1) }} className="text-muted-foreground">
+            <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Clear
           </Button>
         )}
       </div>
 
-      <div className="rounded-md border bg-card">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
               <TableHead>Order</TableHead>
               <TableHead>Customer</TableHead>
-              <TableHead>State</TableHead>
-              <TableHead>Total</TableHead>
+              <TableHead className="hidden sm:table-cell">Total</TableHead>
               <TableHead>CS Status</TableHead>
-              <TableHead>Staff</TableHead>
-              <TableHead>Delivery Status</TableHead>
+              <TableHead>Delivery</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? <TableRow><TableCell colSpan={8}><LoadingState text="Loading..." /></TableCell></TableRow>
-            : orders.length === 0 ? <TableRow><TableCell colSpan={8}><EmptyState icon={Truck} title="No orders" /></TableCell></TableRow>
-            : orders.map((o) => (
+            {loading ? <TableRow><TableCell colSpan={6} className="p-0"><LoadingState text="Loading..." /></TableCell></TableRow>
+            : orders.length === 0 ? <TableRow><TableCell colSpan={6} className="p-0"><EmptyState icon={Truck} title="No orders" /></TableCell></TableRow>
+            : orders.map(o => (
               <TableRow key={o.id}>
-                <TableCell className="font-mono text-sm">{o.order_number}</TableCell>
                 <TableCell>
-                  <p className="font-medium">{o.customer_name}</p>
+                  <span className="font-mono text-sm">{o.order_number}</span>
+                  <p className="text-xs text-muted-foreground">{o.business_name}</p>
+                </TableCell>
+                <TableCell>
+                  <p className="font-medium text-sm">{o.customer_name}</p>
                   <p className="text-xs text-muted-foreground">{o.customer_phone}</p>
                 </TableCell>
-                <TableCell className="text-muted-foreground">{o.customer_state}</TableCell>
-                <TableCell className="font-medium">{formatPrice(o.total)}</TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="font-normal">{STATUS_LABELS[o.cs_status] ?? o.cs_status}</Badge>
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">{o.assigned_agent ?? 'Unassigned'}</TableCell>
+                <TableCell className="hidden sm:table-cell font-medium text-sm">{formatPrice(o.total)}</TableCell>
+                <TableCell><Badge variant="outline" className="font-normal">{STATUS_LABELS[o.cs_status] ?? o.cs_status}</Badge></TableCell>
                 <TableCell>
                   {o.logistics_status === 'delivery_verified' ? (
                     <Badge variant="outline" className="font-normal border-emerald-200 bg-emerald-50 text-emerald-700">Verified</Badge>
                   ) : o.logistics_status === 'delivery_disputed' ? (
                     <Badge variant="outline" className="font-normal border-red-200 bg-red-50 text-red-700">Disputed</Badge>
                   ) : (
-                    <Badge variant="outline" className="font-normal border-amber-200 bg-amber-50 text-amber-700">Pending</Badge>
+                    <Badge variant="outline" className="font-normal border-amber-200 bg-amber-50 text-amber-600">Pending</Badge>
                   )}
                 </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" onClick={() => verify(o.id, 'delivery_verified')} title="Verify Delivery">
-                      <CheckCircle className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => verify(o.id, 'delivery_disputed')} title="Dispute Delivery">
-                      <XCircle className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
+                <TableCell><ActionButtons order={o} /></TableCell>
               </TableRow>
             ))}
           </TableBody>
