@@ -24,6 +24,7 @@ import {
   BarChart3,
   ClipboardCheck,
   ShieldCheck,
+  Megaphone,
 } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 
@@ -42,6 +43,7 @@ const navItems = [
   { to: '/order-forms', label: 'Order Forms', icon: Code, permission: 'form_settings.manage' },
   { to: '/users', label: 'Users', icon: Users, permission: 'users.view' },
   { to: '/roles', label: 'Roles & Permissions', icon: Shield, permission: 'roles.manage' },
+  { to: '/marketing', label: 'Marketing', icon: Megaphone, permission: 'notifications.send' },
   { to: '/performance', label: 'Performance', icon: BarChart3, permission: 'reports.view' },
   { to: '/verify-payments', label: 'Verify Payments', icon: ClipboardCheck, permission: 'orders.verify_payment' },
   { to: '/verify-deliveries', label: 'Verify Deliveries', icon: Truck, permission: 'orders.verify_delivery' },

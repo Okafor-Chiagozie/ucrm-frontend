@@ -249,6 +249,7 @@ interface VariationForm {
   name: string
   description: string
   price: string
+  quantity: string
 }
 
 function ProductDialog({ open, product, businesses, onClose, onSuccess }: { open: boolean; product?: Product; businesses: Business[]; onClose: () => void; onSuccess: () => void }) {
@@ -267,7 +268,8 @@ function ProductDialog({ open, product, businesses, onClose, onSuccess }: { open
       name: v.name,
       description: v.description ?? '',
       price: String(v.price),
-    })) ?? [{ name: '', description: '', price: '' }]
+      quantity: String(v.quantity ?? 1),
+    })) ?? [{ name: '', description: '', price: '', quantity: '1' }]
   )
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -280,7 +282,7 @@ function ProductDialog({ open, product, businesses, onClose, onSuccess }: { open
   }, [businessId])
 
   const addVariation = () => {
-    setVariations([...variations, { name: '', description: '', price: '' }])
+    setVariations([...variations, { name: '', description: '', price: '', quantity: '1' }])
   }
 
   const removeVariation = (index: number) => {
@@ -313,6 +315,7 @@ function ProductDialog({ open, product, businesses, onClose, onSuccess }: { open
       formData.append(`variations[${i}][name]`, v.name)
       formData.append(`variations[${i}][description]`, v.description)
       formData.append(`variations[${i}][price]`, v.price)
+      formData.append(`variations[${i}][quantity]`, v.quantity)
     })
 
     try {
@@ -422,7 +425,7 @@ function ProductDialog({ open, product, businesses, onClose, onSuccess }: { open
                       </Button>
                     )}
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="space-y-1">
                       <Label className="text-xs">Name</Label>
                       <Input value={v.name} onChange={(e) => updateVariation(i, 'name', e.target.value)} placeholder="e.g. 1 Pack" required className="h-9" />
@@ -430,6 +433,10 @@ function ProductDialog({ open, product, businesses, onClose, onSuccess }: { open
                     <div className="space-y-1">
                       <Label className="text-xs">Price (NGN)</Label>
                       <Input type="number" value={v.price} onChange={(e) => updateVariation(i, 'price', e.target.value)} placeholder="0" required min="0" step="0.01" className="h-9" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Quantity</Label>
+                      <Input type="number" value={v.quantity} onChange={(e) => updateVariation(i, 'quantity', e.target.value)} placeholder="1" required min="1" className="h-9" />
                     </div>
                   </div>
                 </div>

@@ -18,6 +18,7 @@ import FormSettingsPage from '@/pages/form/FormSettingsPage'
 import OrderForm from '@/pages/form/OrderForm'
 import UsersPage from '@/pages/users/UsersPage'
 import RolesPage from '@/pages/roles/RolesPage'
+import MarketingPage from '@/pages/marketing/MarketingPage'
 import PerformancePage from '@/pages/performance/PerformancePage'
 import PaymentVerificationPage from '@/pages/verification/PaymentVerificationPage'
 import DeliveryVerificationPage from '@/pages/verification/DeliveryVerificationPage'
@@ -51,6 +52,7 @@ export default function App() {
             <Route path="/order-forms" element={<FormSettingsPage />} />
             <Route path="/users" element={<UsersPage />} />
             <Route path="/roles" element={<RolesPage />} />
+            <Route path="/marketing" element={<MarketingPage />} />
             <Route path="/performance" element={<PerformancePage />} />
             <Route path="/verify-payments" element={<PaymentVerificationPage />} />
             <Route path="/verify-deliveries" element={<DeliveryVerificationPage />} />

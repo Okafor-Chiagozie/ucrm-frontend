@@ -83,6 +83,7 @@ export interface ProductVariation {
   name: string
   description: string | null
   price: string
+  quantity: number
   is_active: boolean
   sort_order: number
 }
