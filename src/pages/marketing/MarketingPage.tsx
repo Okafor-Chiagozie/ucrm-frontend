@@ -7,9 +7,9 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Checkbox } from '@/components/ui/checkbox'
-import { toast } from '@/components/ui/toast'
-import Pagination from '@/components/ui/pagination'
+import { toast } from 'sonner'
+import Pagination from '@/components/Pagination'
+import type { PaginationMeta } from '@/types'
 import { Megaphone, Send, Users, Mail, MessageSquare, Phone, Plus, Pencil, Trash2, FileText, Search, Filter, X } from 'lucide-react'
 import type { Business } from '@/types'
 
@@ -32,17 +32,11 @@ interface MarketingTemplate {
   email_subject: string | null
 }
 
-interface Meta {
-  current_page: number
-  last_page: number
-  per_page: number
-  total: number
-}
 
 export default function MarketingPage() {
   const { user } = useAuth()
   const [customers, setCustomers] = useState<Customer[]>([])
-  const [meta, setMeta] = useState<Meta>({ current_page: 1, last_page: 1, per_page: 20, total: 0 })
+  const [meta, setMeta] = useState<PaginationMeta>({ current_page: 1, last_page: 1, per_page: 20, total: 0 })
   const [loading, setLoading] = useState(true)
   const [businesses, setBusinesses] = useState<Business[]>([])
   const [templates, setTemplates] = useState<MarketingTemplate[]>([])
@@ -95,7 +89,7 @@ export default function MarketingPage() {
       setCustomers(data.data.data ?? data.data)
       if (data.meta) setMeta(data.meta)
     } catch {
-      toast('Failed to load customers', 'error')
+      toast.error('Failed to load customers')
     } finally {
       setLoading(false)
     }
@@ -138,7 +132,7 @@ export default function MarketingPage() {
 
   const openCompose = () => {
     if (selectedCustomers.length === 0) {
-      toast('Select at least one customer', 'error')
+      toast.error('Select at least one customer')
       return
     }
     setComposeOpen(true)
@@ -152,11 +146,11 @@ export default function MarketingPage() {
 
   const sendCampaign = async () => {
     if (!message.trim()) {
-      toast('Message is required', 'error')
+      toast.error('Message is required')
       return
     }
     if (channel === 'email' && !subject.trim()) {
-      toast('Subject is required for email', 'error')
+      toast.error('Subject is required for email')
       return
     }
 
@@ -176,14 +170,14 @@ export default function MarketingPage() {
         recipients,
       })
 
-      toast(data.message, 'success')
+      toast.success(data.message)
       setComposeOpen(false)
       setSelectedCustomers([])
       setSelectAll(false)
       setMessage('')
       setSubject('')
     } catch {
-      toast('Failed to send campaign', 'error')
+      toast.error('Failed to send campaign')
     } finally {
       setSending(false)
     }
@@ -208,7 +202,7 @@ export default function MarketingPage() {
 
   const saveTemplate = async () => {
     if (!templateName.trim() || !templateMessage.trim()) {
-      toast('Name and message are required', 'error')
+      toast.error('Name and message are required')
       return
     }
     setSavingTemplate(true)
@@ -222,17 +216,17 @@ export default function MarketingPage() {
 
       if (editingTemplate) {
         await api.put(`/marketing/templates/${editingTemplate.id}`, payload)
-        toast('Template updated', 'success')
+        toast.success('Template updated')
       } else {
         await api.post('/marketing/templates', payload)
-        toast('Template created', 'success')
+        toast.success('Template created')
       }
 
       const { data } = await api.get('/marketing/templates')
       setTemplates(data.data ?? [])
       setTemplateDialogOpen(false)
     } catch {
-      toast('Failed to save template', 'error')
+      toast.error('Failed to save template')
     } finally {
       setSavingTemplate(false)
     }
@@ -242,9 +236,9 @@ export default function MarketingPage() {
     try {
       await api.delete(`/marketing/templates/${id}`)
       setTemplates(prev => prev.filter(t => t.id !== id))
-      toast('Template deleted', 'success')
+      toast.success('Template deleted')
     } catch {
-      toast('Failed to delete template', 'error')
+      toast.error('Failed to delete template')
     }
   }
 
@@ -357,7 +351,7 @@ export default function MarketingPage() {
           <TableHeader>
             <TableRow>
               <TableHead className="w-10">
-                <Checkbox checked={selectAll} onCheckedChange={toggleAll} />
+                <input type="checkbox" checked={selectAll} onChange={toggleAll} className="rounded" />
               </TableHead>
               <TableHead>Customer</TableHead>
               <TableHead className="hidden sm:table-cell">Phone</TableHead>
@@ -377,7 +371,7 @@ export default function MarketingPage() {
                 return (
                   <TableRow key={i} className={isSelected ? 'bg-blue-50/50' : ''}>
                     <TableCell>
-                      <Checkbox checked={isSelected} onCheckedChange={() => toggleCustomer(c)} />
+                      <input type="checkbox" checked={isSelected} onChange={() => toggleCustomer(c)} className="rounded" />
                     </TableCell>
                     <TableCell>
                       <div className="font-medium text-sm">{c.name}</div>
@@ -396,7 +390,7 @@ export default function MarketingPage() {
         </Table>
       </div>
 
-      <Pagination meta={meta} onPageChange={setPage} />
+      <Pagination meta={meta} page={page} onPageChange={setPage} />
 
       {/* Compose Dialog */}
       <Dialog open={composeOpen} onOpenChange={setComposeOpen}>

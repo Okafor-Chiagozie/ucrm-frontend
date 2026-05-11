@@ -197,8 +197,8 @@ export default function DashboardPage() {
                       />
                       <Tooltip
                         contentStyle={{ borderRadius: '6px', border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))', fontSize: '13px' }}
-                        labelFormatter={(v: string) => new Date(v).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })}
-                        formatter={(value: number, name: string) => [name === 'revenue' ? formatPrice(value) : value, name === 'revenue' ? 'Revenue' : 'Orders']}
+                        labelFormatter={(v) => new Date(String(v)).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        formatter={(value, name) => [name === 'revenue' ? formatPrice(Number(value)) : value, name === 'revenue' ? 'Revenue' : 'Orders']}
                       />
                       <Area yAxisId="orders" type="monotone" dataKey="orders" stroke="hsl(217, 91%, 50%)" fill="url(#orderGrad)" strokeWidth={2} dot={false} />
                       <Area yAxisId="revenue" type="monotone" dataKey="revenue" stroke="hsl(152, 69%, 40%)" fill="url(#revenueGrad)" strokeWidth={2} dot={false} />

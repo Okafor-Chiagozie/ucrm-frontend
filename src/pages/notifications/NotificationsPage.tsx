@@ -149,7 +149,7 @@ export default function NotificationsPage() {
       </div>
 
       {meta.last_page > 1 && (
-        <Pagination meta={meta} onPageChange={setPage} />
+        <Pagination meta={meta} page={page} onPageChange={setPage} />
       )}
     </div>
   )

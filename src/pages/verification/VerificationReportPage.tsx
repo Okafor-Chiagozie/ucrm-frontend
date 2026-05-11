@@ -18,7 +18,7 @@ import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
-import { ShieldCheck, AlertTriangle, CheckCircle, XCircle, Clock, RotateCcw } from 'lucide-react'
+import { ShieldCheck, AlertTriangle, CheckCircle, Clock, RotateCcw } from 'lucide-react'
 
 interface ReportOrder {
   id: string; order_number: string; business_name: string | null; customer_name: string
