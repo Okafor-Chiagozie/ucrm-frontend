@@ -285,7 +285,7 @@ export default function MarketingPage() {
       {/* Filters */}
       {showFilters && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 p-4 bg-muted/30 rounded-md border">
-          <Select value={businessFilter} onValueChange={v => { setBusinessFilter(v === 'all' ? '' : v); setPage(1) }}>
+          <Select value={businessFilter} onValueChange={(v: string | null) => { setBusinessFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
             <SelectTrigger className="w-full"><SelectValue placeholder="Business" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Businesses</SelectItem>
@@ -293,7 +293,7 @@ export default function MarketingPage() {
             </SelectContent>
           </Select>
 
-          <Select value={statusFilter} onValueChange={v => { setStatusFilter(v === 'all' ? '' : v); setPage(1) }}>
+          <Select value={statusFilter} onValueChange={(v: string | null) => { setStatusFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
             <SelectTrigger className="w-full"><SelectValue placeholder="Order Status" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
@@ -305,7 +305,7 @@ export default function MarketingPage() {
             </SelectContent>
           </Select>
 
-          <Select value={stateFilter} onValueChange={v => { setStateFilter(v === 'all' ? '' : v); setPage(1) }}>
+          <Select value={stateFilter} onValueChange={(v: string | null) => { setStateFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
             <SelectTrigger className="w-full"><SelectValue placeholder="State" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All States</SelectItem>
@@ -405,7 +405,7 @@ export default function MarketingPage() {
 
             <div className="space-y-1.5">
               <Label>Channel</Label>
-              <Select value={channel} onValueChange={v => setChannel(v as 'email' | 'sms' | 'whatsapp')}>
+              <Select value={channel} onValueChange={(v: string | null) => v && setChannel(v as 'email' | 'sms' | 'whatsapp')}>
                 <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="email"><span className="flex items-center gap-1.5"><Mail className="w-4 h-4" /> Email</span></SelectItem>
@@ -469,7 +469,7 @@ export default function MarketingPage() {
 
             <div className="space-y-1.5">
               <Label>Channel</Label>
-              <Select value={templateChannel} onValueChange={v => setTemplateChannel(v as 'email' | 'sms' | 'whatsapp')}>
+              <Select value={templateChannel} onValueChange={(v: string | null) => v && setTemplateChannel(v as 'email' | 'sms' | 'whatsapp')}>
                 <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="email">Email</SelectItem>
