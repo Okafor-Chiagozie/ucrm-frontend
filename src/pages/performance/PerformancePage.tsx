@@ -404,7 +404,7 @@ export default function PerformancePage() {
                 </CardContent>
               </Card>
             ))}
-          </div>
+          </div>}
         </>
       )}
     </div>
