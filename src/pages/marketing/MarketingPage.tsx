@@ -9,9 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { toast } from 'sonner'
 import Pagination from '@/components/Pagination'
-import type { PaginationMeta } from '@/types'
-import { Megaphone, Send, Users, Mail, MessageSquare, Phone, Plus, Pencil, Trash2, FileText, Search, Filter, X } from 'lucide-react'
-import type { Business } from '@/types'
+import LoadingState from '@/components/LoadingState'
+import EmptyState from '@/components/EmptyState'
+import type { PaginationMeta, Business, Product, User as UserType } from '@/types'
+import { Megaphone, Send, Users, Mail, MessageSquare, Phone, Plus, Pencil, Trash2, FileText, Search, Filter, X, RotateCcw } from 'lucide-react'
 
 interface Customer {
   name: string
@@ -32,6 +33,17 @@ interface MarketingTemplate {
   email_subject: string | null
 }
 
+const ORDER_STATUSES = ['pending', 'scheduled', 'delivered', 'not_picking', 'cancelled']
+const NIGERIAN_STATES = ['Lagos', 'Abuja', 'Rivers', 'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara']
+
+const DATE_PRESETS = [
+  { label: 'Today', value: 'today' },
+  { label: 'This Week', value: 'week' },
+  { label: 'This Month', value: 'month' },
+  { label: 'Last 7 Days', value: '7d' },
+  { label: 'Last 30 Days', value: '30d' },
+  { label: 'Custom Range', value: 'custom' },
+]
 
 export default function MarketingPage() {
   const { user } = useAuth()
@@ -39,6 +51,8 @@ export default function MarketingPage() {
   const [meta, setMeta] = useState<PaginationMeta>({ current_page: 1, last_page: 1, per_page: 20, total: 0 })
   const [loading, setLoading] = useState(true)
   const [businesses, setBusinesses] = useState<Business[]>([])
+  const [products, setProducts] = useState<Product[]>([])
+  const [agents, setAgents] = useState<UserType[]>([])
   const [templates, setTemplates] = useState<MarketingTemplate[]>([])
 
   // Filters
@@ -46,6 +60,12 @@ export default function MarketingPage() {
   const [businessFilter, setBusinessFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [stateFilter, setStateFilter] = useState('')
+  const [agentFilter, setAgentFilter] = useState('')
+  const [productFilter, setProductFilter] = useState('')
+  const [hasCoupon, setHasCoupon] = useState('')
+  const [minAmount, setMinAmount] = useState('')
+  const [maxAmount, setMaxAmount] = useState('')
+  const [datePreset, setDatePreset] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [page, setPage] = useState(1)
@@ -70,9 +90,41 @@ export default function MarketingPage() {
   const [templateSubject, setTemplateSubject] = useState('')
   const [savingTemplate, setSavingTemplate] = useState(false)
 
-  const [showFilters, setShowFilters] = useState(false)
+  const hasFilters = search || businessFilter || statusFilter || stateFilter || agentFilter || productFilter || hasCoupon || minAmount || maxAmount || dateFrom || dateTo
 
-  const hasFilters = search || businessFilter || statusFilter || stateFilter || dateFrom || dateTo
+  const applyDatePreset = (preset: string) => {
+    setDatePreset(preset)
+    const today = new Date()
+    const fmt = (d: Date) => d.toISOString().split('T')[0]
+
+    if (preset === 'custom') return
+
+    if (preset === 'today') {
+      setDateFrom(fmt(today))
+      setDateTo(fmt(today))
+    } else if (preset === 'week') {
+      const day = today.getDay()
+      const monday = new Date(today)
+      monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1))
+      setDateFrom(fmt(monday))
+      setDateTo(fmt(today))
+    } else if (preset === 'month') {
+      const first = new Date(today.getFullYear(), today.getMonth(), 1)
+      setDateFrom(fmt(first))
+      setDateTo(fmt(today))
+    } else if (preset === '7d') {
+      const d = new Date(today)
+      d.setDate(today.getDate() - 7)
+      setDateFrom(fmt(d))
+      setDateTo(fmt(today))
+    } else if (preset === '30d') {
+      const d = new Date(today)
+      d.setDate(today.getDate() - 30)
+      setDateFrom(fmt(d))
+      setDateTo(fmt(today))
+    }
+    setPage(1)
+  }
 
   const fetchCustomers = useCallback(async () => {
     setLoading(true)
@@ -82,6 +134,11 @@ export default function MarketingPage() {
       if (businessFilter) params.business_id = businessFilter
       if (statusFilter) params.status = statusFilter
       if (stateFilter) params.state = stateFilter
+      if (agentFilter) params.agent_id = agentFilter
+      if (productFilter) params.product_id = productFilter
+      if (hasCoupon) params.has_coupon = hasCoupon
+      if (minAmount) params.min_amount = minAmount
+      if (maxAmount) params.max_amount = maxAmount
       if (dateFrom) params.date_from = dateFrom
       if (dateTo) params.date_to = dateTo
 
@@ -93,14 +150,14 @@ export default function MarketingPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, businessFilter, statusFilter, stateFilter, dateFrom, dateTo])
+  }, [page, search, businessFilter, statusFilter, stateFilter, agentFilter, productFilter, hasCoupon, minAmount, maxAmount, dateFrom, dateTo])
 
-  useEffect(() => {
-    fetchCustomers()
-  }, [fetchCustomers])
+  useEffect(() => { fetchCustomers() }, [fetchCustomers])
 
   useEffect(() => {
     api.get('/businesses').then(r => setBusinesses(r.data.data?.data ?? r.data.data ?? [])).catch(() => {})
+    api.get('/products?per_page=100').then(r => setProducts(r.data.data?.data ?? r.data.data ?? [])).catch(() => {})
+    api.get('/users?role=Customer Support&per_page=100').then(r => setAgents((r.data.data?.data ?? r.data.data ?? []))).catch(() => {})
     api.get('/marketing/templates').then(r => setTemplates(r.data.data ?? [])).catch(() => {})
   }, [])
 
@@ -121,12 +178,9 @@ export default function MarketingPage() {
   }
 
   const clearFilters = () => {
-    setSearch('')
-    setBusinessFilter('')
-    setStatusFilter('')
-    setStateFilter('')
-    setDateFrom('')
-    setDateTo('')
+    setSearch(''); setBusinessFilter(''); setStatusFilter(''); setStateFilter('')
+    setAgentFilter(''); setProductFilter(''); setHasCoupon('')
+    setMinAmount(''); setMaxAmount(''); setDatePreset(''); setDateFrom(''); setDateTo('')
     setPage(1)
   }
 
@@ -144,6 +198,16 @@ export default function MarketingPage() {
     if (t.email_subject) setSubject(t.email_subject)
   }
 
+  // Filter recipients based on channel — skip those without the required contact info
+  const getEligibleRecipients = () => {
+    return selectedCustomers.filter(c => {
+      if (channel === 'email') return !!c.email
+      if (channel === 'whatsapp') return !!(c.whatsapp || c.phone)
+      if (channel === 'sms') return !!c.phone
+      return true
+    })
+  }
+
   const sendCampaign = async () => {
     if (!message.trim()) {
       toast.error('Message is required')
@@ -154,9 +218,17 @@ export default function MarketingPage() {
       return
     }
 
+    const eligible = getEligibleRecipients()
+    const skipped = selectedCustomers.length - eligible.length
+
+    if (eligible.length === 0) {
+      toast.error(`No selected customers have ${channel === 'email' ? 'an email address' : channel === 'whatsapp' ? 'a WhatsApp number' : 'a phone number'}`)
+      return
+    }
+
     setSending(true)
     try {
-      const recipients = selectedCustomers.map(c => ({
+      const recipients = eligible.map(c => ({
         name: c.name,
         phone: c.phone,
         email: c.email,
@@ -170,7 +242,8 @@ export default function MarketingPage() {
         recipients,
       })
 
-      toast.success(data.message)
+      const skippedMsg = skipped > 0 ? ` (${skipped} skipped — no ${channel === 'email' ? 'email' : channel === 'whatsapp' ? 'WhatsApp' : 'phone'})` : ''
+      toast.success(`${data.message}${skippedMsg}`)
       setComposeOpen(false)
       setSelectedCustomers([])
       setSelectAll(false)
@@ -213,7 +286,6 @@ export default function MarketingPage() {
         channel: templateChannel,
         email_subject: templateChannel === 'email' ? templateSubject : null,
       }
-
       if (editingTemplate) {
         await api.put(`/marketing/templates/${editingTemplate.id}`, payload)
         toast.success('Template updated')
@@ -221,7 +293,6 @@ export default function MarketingPage() {
         await api.post('/marketing/templates', payload)
         toast.success('Template created')
       }
-
       const { data } = await api.get('/marketing/templates')
       setTemplates(data.data ?? [])
       setTemplateDialogOpen(false)
@@ -242,11 +313,12 @@ export default function MarketingPage() {
     }
   }
 
-  const nigerianStates = ['Lagos', 'Abuja', 'Rivers', 'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara']
-
   if (!user?.permissions?.includes('notifications.send')) {
     return <div className="p-6 text-center text-muted-foreground">You do not have permission to access this page.</div>
   }
+
+  const eligibleCount = getEligibleRecipients().length
+  const skippedCount = selectedCustomers.length - eligibleCount
 
   return (
     <div className="space-y-5">
@@ -266,57 +338,79 @@ export default function MarketingPage() {
         </div>
       </div>
 
-      {/* Search + Filter toggle */}
+      {/* Search + Filters */}
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Search by name, phone, email..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} className="pl-9" />
         </div>
-        <Button variant="outline" onClick={() => setShowFilters(!showFilters)}>
-          <Filter className="w-4 h-4 mr-1" /> Filters
-        </Button>
+        <Select value={businessFilter} onValueChange={(v: string | null) => { setBusinessFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
+          <SelectTrigger className="w-full sm:w-[160px]"><SelectValue placeholder="Business" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Businesses</SelectItem>
+            {businesses.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={(v: string | null) => { setStatusFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
+          <SelectTrigger className="w-full sm:w-[140px]"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            {ORDER_STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace('_', ' ').replace(/^\w/, c => c.toUpperCase())}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={datePreset} onValueChange={(v: string | null) => v && applyDatePreset(v)}>
+          <SelectTrigger className="w-full sm:w-[140px]"><SelectValue placeholder="Date Range" /></SelectTrigger>
+          <SelectContent>
+            {DATE_PRESETS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
         {hasFilters && (
           <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
-            <X className="w-4 h-4 mr-1" /> Clear
+            <RotateCcw className="w-4 h-4 mr-1" /> Clear
           </Button>
         )}
       </div>
 
-      {/* Filters */}
-      {showFilters && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 p-4 bg-muted/30 rounded-md border">
-          <Select value={businessFilter} onValueChange={(v: string | null) => { setBusinessFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="Business" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Businesses</SelectItem>
-              {businesses.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-
-          <Select value={statusFilter} onValueChange={(v: string | null) => { setStatusFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="Order Status" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="scheduled">Scheduled</SelectItem>
-              <SelectItem value="delivered">Delivered</SelectItem>
-              <SelectItem value="not_picking">Not Picking</SelectItem>
-              <SelectItem value="cancelled">Cancelled</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={stateFilter} onValueChange={(v: string | null) => { setStateFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
-            <SelectTrigger className="w-full"><SelectValue placeholder="State" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All States</SelectItem>
-              {nigerianStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-            </SelectContent>
-          </Select>
-
-          <Input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1) }} placeholder="From" />
-          <Input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1) }} placeholder="To" />
-        </div>
-      )}
+      {/* Extra filters row */}
+      <div className="flex flex-wrap gap-2">
+        <Select value={stateFilter} onValueChange={(v: string | null) => { setStateFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
+          <SelectTrigger className="w-[140px]"><SelectValue placeholder="State" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All States</SelectItem>
+            {NIGERIAN_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={agentFilter} onValueChange={(v: string | null) => { setAgentFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
+          <SelectTrigger className="w-[140px]"><SelectValue placeholder="Agent" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Agents</SelectItem>
+            {agents.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={productFilter} onValueChange={(v: string | null) => { setProductFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
+          <SelectTrigger className="w-[140px]"><SelectValue placeholder="Product" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Products</SelectItem>
+            {products.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={hasCoupon} onValueChange={(v: string | null) => { setHasCoupon(!v || v === 'all' ? '' : v); setPage(1) }}>
+          <SelectTrigger className="w-[140px]"><SelectValue placeholder="Coupon" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="1">With Coupon</SelectItem>
+            <SelectItem value="0">Without Coupon</SelectItem>
+          </SelectContent>
+        </Select>
+        <Input type="number" placeholder="Min ₦" value={minAmount} onChange={e => { setMinAmount(e.target.value); setPage(1) }} className="w-[100px]" />
+        <Input type="number" placeholder="Max ₦" value={maxAmount} onChange={e => { setMaxAmount(e.target.value); setPage(1) }} className="w-[100px]" />
+        {datePreset === 'custom' && (
+          <>
+            <Input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1) }} className="w-[140px]" />
+            <Input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1) }} className="w-[140px]" />
+          </>
+        )}
+      </div>
 
       {/* Stats bar */}
       <div className="flex gap-4 text-sm">
@@ -324,7 +418,7 @@ export default function MarketingPage() {
         <span className="flex items-center gap-1 text-blue-600 font-medium">{selectedCustomers.length} selected</span>
       </div>
 
-      {/* Templates section */}
+      {/* Templates */}
       {templates.length > 0 && (
         <div className="border rounded-md p-3">
           <h3 className="text-sm font-medium mb-2 flex items-center gap-1"><FileText className="w-4 h-4" /> Saved Templates</h3>
@@ -345,7 +439,7 @@ export default function MarketingPage() {
         </div>
       )}
 
-      {/* Customer table */}
+      {/* Customer table — only customer details */}
       <div className="border rounded-md overflow-hidden">
         <Table>
           <TableHeader>
@@ -353,18 +447,17 @@ export default function MarketingPage() {
               <TableHead className="w-10">
                 <input type="checkbox" checked={selectAll} onChange={toggleAll} className="rounded" />
               </TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead className="hidden sm:table-cell">Phone</TableHead>
-              <TableHead className="hidden md:table-cell">State</TableHead>
-              <TableHead className="hidden lg:table-cell">Orders</TableHead>
-              <TableHead className="hidden lg:table-cell">Total Spent</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Phone</TableHead>
+              <TableHead className="hidden sm:table-cell">Email</TableHead>
+              <TableHead className="hidden md:table-cell">WhatsApp</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-10 text-muted-foreground">Loading...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={5} className="p-0"><LoadingState text="Loading customers..." /></TableCell></TableRow>
             ) : customers.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-10 text-muted-foreground"><Users className="w-8 h-8 mx-auto mb-2 opacity-40" />No customers found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={5} className="p-0"><EmptyState icon={Users} title="No customers found" description="Adjust your filters to find customers" /></TableCell></TableRow>
             ) : (
               customers.map((c, i) => {
                 const isSelected = selectedCustomers.some(s => s.phone === c.phone)
@@ -373,15 +466,10 @@ export default function MarketingPage() {
                     <TableCell>
                       <input type="checkbox" checked={isSelected} onChange={() => toggleCustomer(c)} className="rounded" />
                     </TableCell>
-                    <TableCell>
-                      <div className="font-medium text-sm">{c.name}</div>
-                      {c.email && <div className="text-xs text-muted-foreground">{c.email}</div>}
-                      <div className="text-xs text-muted-foreground sm:hidden">{c.phone}</div>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell text-sm">{c.phone}</TableCell>
-                    <TableCell className="hidden md:table-cell text-sm">{c.state}</TableCell>
-                    <TableCell className="hidden lg:table-cell text-sm">{c.total_orders}</TableCell>
-                    <TableCell className="hidden lg:table-cell text-sm font-medium">₦{Number(c.total_spent).toLocaleString()}</TableCell>
+                    <TableCell className="font-medium text-sm">{c.name}</TableCell>
+                    <TableCell className="text-sm">{c.phone}</TableCell>
+                    <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">{c.email || '—'}</TableCell>
+                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{c.whatsapp || '—'}</TableCell>
                   </TableRow>
                 )
               })
@@ -399,10 +487,6 @@ export default function MarketingPage() {
             <DialogTitle className="text-lg">Send Campaign</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              Sending to <span className="font-medium text-foreground">{selectedCustomers.length}</span> customers
-            </div>
-
             <div className="space-y-1.5">
               <Label>Channel</Label>
               <Select value={channel} onValueChange={(v: string | null) => v && setChannel(v as 'email' | 'sms' | 'whatsapp')}>
@@ -413,6 +497,15 @@ export default function MarketingPage() {
                   <SelectItem value="whatsapp"><span className="flex items-center gap-1.5"><MessageSquare className="w-4 h-4" /> WhatsApp</span></SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Eligible recipients info */}
+            <div className="text-sm p-3 bg-muted/30 rounded-md">
+              <p>Selected: <span className="font-medium">{selectedCustomers.length}</span></p>
+              <p>Eligible for {channel}: <span className="font-medium text-blue-600">{eligibleCount}</span></p>
+              {skippedCount > 0 && (
+                <p className="text-amber-600">{skippedCount} will be skipped (no {channel === 'email' ? 'email address' : channel === 'whatsapp' ? 'WhatsApp number' : 'phone number'})</p>
+              )}
             </div>
 
             {channel === 'email' && (
@@ -433,7 +526,6 @@ export default function MarketingPage() {
               />
             </div>
 
-            {/* Quick load from templates */}
             {templates.length > 0 && (
               <div className="space-y-1.5">
                 <Label className="text-xs text-muted-foreground">Load from template</Label>
@@ -447,8 +539,8 @@ export default function MarketingPage() {
 
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setComposeOpen(false)}>Cancel</Button>
-              <Button onClick={sendCampaign} disabled={sending || !message.trim()}>
-                {sending ? 'Sending...' : 'Send Campaign'}
+              <Button onClick={sendCampaign} disabled={sending || !message.trim() || eligibleCount === 0}>
+                {sending ? 'Sending...' : `Send to ${eligibleCount} customer${eligibleCount !== 1 ? 's' : ''}`}
               </Button>
             </div>
           </div>
@@ -466,7 +558,6 @@ export default function MarketingPage() {
               <Label>Template Name</Label>
               <Input value={templateName} onChange={e => setTemplateName(e.target.value)} placeholder="e.g. Flash Sale" />
             </div>
-
             <div className="space-y-1.5">
               <Label>Channel</Label>
               <Select value={templateChannel} onValueChange={(v: string | null) => v && setTemplateChannel(v as 'email' | 'sms' | 'whatsapp')}>
@@ -478,14 +569,12 @@ export default function MarketingPage() {
                 </SelectContent>
               </Select>
             </div>
-
             {templateChannel === 'email' && (
               <div className="space-y-1.5">
                 <Label>Email Subject</Label>
                 <Input value={templateSubject} onChange={e => setTemplateSubject(e.target.value)} placeholder="Subject line" />
               </div>
             )}
-
             <div className="space-y-1.5">
               <Label>Message</Label>
               <p className="text-xs text-muted-foreground">Use {'{customer_name}'} to personalize</p>
@@ -496,7 +585,6 @@ export default function MarketingPage() {
                 placeholder="Type your message template..."
               />
             </div>
-
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setTemplateDialogOpen(false)}>Cancel</Button>
               <Button onClick={saveTemplate} disabled={savingTemplate || !templateName.trim() || !templateMessage.trim()}>
