@@ -12,6 +12,7 @@ import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import type { PaginationMeta, Business, Product, User as UserType } from '@/types'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Megaphone, Send, Users, Mail, MessageSquare, Phone, Plus, Pencil, Trash2, FileText, Search, RotateCcw, X } from 'lucide-react'
 
 interface Customer {
@@ -34,14 +35,16 @@ interface MarketingTemplate {
 }
 
 const ORDER_STATUSES = ['pending', 'scheduled', 'delivered', 'not_picking', 'cancelled']
+const STATUS_LABELS: Record<string, string> = { pending: 'Pending', scheduled: 'Scheduled', delivered: 'Delivered', not_picking: 'Not Picking', cancelled: 'Cancelled' }
+const statusTabColors: Record<string, string> = { pending: 'bg-amber-400', scheduled: 'bg-blue-400', delivered: 'bg-emerald-400', not_picking: 'bg-orange-400', cancelled: 'bg-red-400' }
 const NIGERIAN_STATES = ['Lagos', 'Abuja', 'Rivers', 'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara']
+
+const today = () => new Date().toISOString().slice(0, 10)
 const DATE_PRESETS = [
-  { label: 'Today', value: 'today' },
-  { label: 'This Week', value: 'week' },
-  { label: 'This Month', value: 'month' },
-  { label: 'Last 7 Days', value: '7d' },
-  { label: 'Last 30 Days', value: '30d' },
-  { label: 'Custom Range', value: 'custom' },
+  { label: 'Today', from: today, to: today },
+  { label: 'This Week', from: () => { const d = new Date(); const day = d.getDay(); d.setDate(d.getDate() - (day === 0 ? 6 : day - 1)); return d.toISOString().slice(0, 10) }, to: today },
+  { label: 'This Month', from: () => new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10), to: today },
+  { label: 'Last 30 Days', from: () => { const d = new Date(); d.setDate(d.getDate() - 30); return d.toISOString().slice(0, 10) }, to: today },
 ]
 
 export default function MarketingPage() {
@@ -61,12 +64,9 @@ export default function MarketingPage() {
   const [stateFilter, setStateFilter] = useState('')
   const [agentFilter, setAgentFilter] = useState('')
   const [productFilter, setProductFilter] = useState('')
-  const [hasCoupon, setHasCoupon] = useState('')
-  const [minAmount, setMinAmount] = useState('')
-  const [maxAmount, setMaxAmount] = useState('')
-  const [datePreset, setDatePreset] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [showDatePicker, setShowDatePicker] = useState(false)
   const [page, setPage] = useState(1)
 
   // Excluded customers (deselected individually)
@@ -88,19 +88,14 @@ export default function MarketingPage() {
   const [templateSubject, setTemplateSubject] = useState('')
   const [savingTemplate, setSavingTemplate] = useState(false)
 
-  const hasFilters = search || businessFilter || statusFilter || stateFilter || agentFilter || productFilter || hasCoupon || minAmount || maxAmount || dateFrom || dateTo
+  const hasFilters = search || businessFilter || statusFilter || stateFilter || agentFilter || productFilter || dateFrom || dateTo
 
-  const applyDatePreset = (preset: string) => {
-    setDatePreset(preset)
-    const today = new Date()
-    const fmt = (d: Date) => d.toISOString().split('T')[0]
-    if (preset === 'custom') return
-    if (preset === 'today') { setDateFrom(fmt(today)); setDateTo(fmt(today)) }
-    else if (preset === 'week') { const day = today.getDay(); const mon = new Date(today); mon.setDate(today.getDate() - (day === 0 ? 6 : day - 1)); setDateFrom(fmt(mon)); setDateTo(fmt(today)) }
-    else if (preset === 'month') { setDateFrom(fmt(new Date(today.getFullYear(), today.getMonth(), 1))); setDateTo(fmt(today)) }
-    else if (preset === '7d') { const d = new Date(today); d.setDate(today.getDate() - 7); setDateFrom(fmt(d)); setDateTo(fmt(today)) }
-    else if (preset === '30d') { const d = new Date(today); d.setDate(today.getDate() - 30); setDateFrom(fmt(d)); setDateTo(fmt(today)) }
-    setPage(1)
+  const dateLabel = () => {
+    if (showDatePicker) return 'Custom Range'
+    if (!dateFrom && !dateTo) return 'All Time'
+    const match = DATE_PRESETS.find(p => dateFrom === p.from() && dateTo === p.to())
+    if (match) return match.label
+    return `${dateFrom || '...'} — ${dateTo || '...'}`
   }
 
   const fetchCustomers = useCallback(async () => {
@@ -113,9 +108,6 @@ export default function MarketingPage() {
       if (stateFilter) params.state = stateFilter
       if (agentFilter) params.agent_id = agentFilter
       if (productFilter) params.product_id = productFilter
-      if (hasCoupon) params.has_coupon = hasCoupon
-      if (minAmount) params.min_amount = minAmount
-      if (maxAmount) params.max_amount = maxAmount
       if (dateFrom) params.date_from = dateFrom
       if (dateTo) params.date_to = dateTo
       const { data } = await api.get('/marketing/customers', { params })
@@ -126,7 +118,7 @@ export default function MarketingPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, businessFilter, statusFilter, stateFilter, agentFilter, productFilter, hasCoupon, minAmount, maxAmount, dateFrom, dateTo])
+  }, [page, search, businessFilter, statusFilter, stateFilter, agentFilter, productFilter, dateFrom, dateTo])
 
   useEffect(() => { fetchCustomers() }, [fetchCustomers])
 
@@ -148,10 +140,8 @@ export default function MarketingPage() {
 
   const clearFilters = () => {
     setSearch(''); setBusinessFilter(''); setStatusFilter(''); setStateFilter('')
-    setAgentFilter(''); setProductFilter(''); setHasCoupon('')
-    setMinAmount(''); setMaxAmount(''); setDatePreset(''); setDateFrom(''); setDateTo('')
-    setExcludedPhones(new Set())
-    setPage(1)
+    setAgentFilter(''); setProductFilter(''); setDateFrom(''); setDateTo('')
+    setShowDatePicker(false); setExcludedPhones(new Set()); setPage(1)
   }
 
   const recipientCount = meta.total - excludedPhones.size
@@ -179,9 +169,6 @@ export default function MarketingPage() {
       if (stateFilter) payload.state = stateFilter
       if (agentFilter) payload.agent_id = agentFilter
       if (productFilter) payload.product_id = productFilter
-      if (hasCoupon) payload.has_coupon = hasCoupon
-      if (minAmount) payload.min_amount = minAmount
-      if (maxAmount) payload.max_amount = maxAmount
       if (dateFrom) payload.date_from = dateFrom
       if (dateTo) payload.date_to = dateTo
       if (search) payload.search = search
@@ -240,88 +227,107 @@ export default function MarketingPage() {
           <p className="text-sm text-muted-foreground mt-0.5">Send campaigns to your customers via Email, SMS, or WhatsApp</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => openTemplateDialog()}>
-            <Plus className="w-4 h-4 mr-1" /> Template
+          <Button variant="outline" className="h-10" onClick={() => openTemplateDialog()}>
+            <Plus className="mr-1.5 h-4 w-4" /> Template
           </Button>
-          <Button size="sm" onClick={() => setComposeOpen(true)} disabled={recipientCount <= 0}>
-            <Send className="w-4 h-4 mr-1" /> Send to {recipientCount} customer{recipientCount !== 1 ? 's' : ''}
+          <Button className="h-10 w-full sm:w-auto" onClick={() => setComposeOpen(true)} disabled={recipientCount <= 0}>
+            <Send className="mr-1.5 h-4 w-4" /> Send to {recipientCount} customer{recipientCount !== 1 ? 's' : ''}
           </Button>
         </div>
       </div>
 
-      {/* Filters row 1 */}
-      <div className="flex flex-col sm:flex-row gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search by name, phone, email..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} className="pl-9" />
+      {/* Status tabs */}
+      <div className="flex flex-wrap gap-2">
+        <button
+          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${!statusFilter ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+          onClick={() => { setStatusFilter(''); setPage(1) }}
+        >All</button>
+        {ORDER_STATUSES.map(s => (
+          <button
+            key={s}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-1.5 ${statusFilter === s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+            onClick={() => { setStatusFilter(statusFilter === s ? '' : s); setPage(1) }}
+          >
+            <span className={`inline-block h-2 w-2 rounded-full ${statusTabColors[s]}`} />
+            {STATUS_LABELS[s]}
+          </button>
+        ))}
+      </div>
+
+      {/* Filters grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search name, phone, email..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} className="pl-9 h-10" />
         </div>
-        <Select value={businessFilter} onValueChange={(v: string | null) => { setBusinessFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
-          <SelectTrigger className="w-full sm:w-40"><SelectValue placeholder="Business" /></SelectTrigger>
+        <Select value={businessFilter || 'all'} onValueChange={(v) => { setBusinessFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
+          <SelectTrigger className="h-10 w-full">
+            <SelectValue>{businesses.find(b => b.id === businessFilter)?.name ?? 'All Businesses'}</SelectValue>
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Businesses</SelectItem>
             {businesses.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={statusFilter} onValueChange={(v: string | null) => { setStatusFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
-          <SelectTrigger className="w-full sm:w-36"><SelectValue placeholder="Status" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            {ORDER_STATUSES.map(s => <SelectItem key={s} value={s}>{s.replace('_', ' ').replace(/^\w/, c => c.toUpperCase())}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={datePreset} onValueChange={(v: string | null) => v && applyDatePreset(v)}>
-          <SelectTrigger className="w-full sm:w-36"><SelectValue placeholder="Date Range" /></SelectTrigger>
-          <SelectContent>
-            {DATE_PRESETS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        {hasFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
-            <RotateCcw className="w-4 h-4 mr-1" /> Clear
-          </Button>
-        )}
-      </div>
-
-      {/* Filters row 2 */}
-      <div className="flex flex-wrap gap-2">
-        <Select value={stateFilter} onValueChange={(v: string | null) => { setStateFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
-          <SelectTrigger className="w-32"><SelectValue placeholder="State" /></SelectTrigger>
+        <Select value={stateFilter || 'all'} onValueChange={(v) => { setStateFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
+          <SelectTrigger className="h-10 w-full">
+            <SelectValue>{stateFilter || 'All States'}</SelectValue>
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All States</SelectItem>
             {NIGERIAN_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={agentFilter} onValueChange={(v: string | null) => { setAgentFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
-          <SelectTrigger className="w-32"><SelectValue placeholder="Agent" /></SelectTrigger>
+        <Select value={agentFilter || 'all'} onValueChange={(v) => { setAgentFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
+          <SelectTrigger className="h-10 w-full">
+            <SelectValue>{agents.find(a => a.id === agentFilter)?.name ?? 'All Staff'}</SelectValue>
+          </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Agents</SelectItem>
+            <SelectItem value="all">All Staff</SelectItem>
             {agents.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={productFilter} onValueChange={(v: string | null) => { setProductFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
-          <SelectTrigger className="w-32"><SelectValue placeholder="Product" /></SelectTrigger>
+        <Select value={productFilter || 'all'} onValueChange={(v) => { setProductFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
+          <SelectTrigger className="h-10 w-full">
+            <SelectValue>{products.find(p => p.id === productFilter)?.name ?? 'All Products'}</SelectValue>
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Products</SelectItem>
             {products.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={hasCoupon} onValueChange={(v: string | null) => { setHasCoupon(!v || v === 'all' ? '' : v); setPage(1) }}>
-          <SelectTrigger className="w-32"><SelectValue placeholder="Coupon" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="1">With Coupon</SelectItem>
-            <SelectItem value="0">Without</SelectItem>
-          </SelectContent>
-        </Select>
-        <Input type="number" placeholder="Min ₦" value={minAmount} onChange={e => { setMinAmount(e.target.value); setPage(1) }} className="w-24" />
-        <Input type="number" placeholder="Max ₦" value={maxAmount} onChange={e => { setMaxAmount(e.target.value); setPage(1) }} className="w-24" />
-        {datePreset === 'custom' && (
+        <div className="flex items-center gap-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger render={<Button variant="outline" className="h-10 flex-1" />}>
+              {dateLabel()}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {DATE_PRESETS.map(preset => (
+                <DropdownMenuItem key={preset.label} onClick={() => { setDateFrom(preset.from()); setDateTo(preset.to()); setShowDatePicker(false); setPage(1) }}>
+                  {preset.label}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuItem onClick={() => { setShowDatePicker(true); setDateFrom(''); setDateTo(''); setPage(1) }}>Custom Range</DropdownMenuItem>
+              {(dateFrom || dateTo) && <DropdownMenuItem onClick={() => { setDateFrom(''); setDateTo(''); setShowDatePicker(false); setPage(1) }}>All Time</DropdownMenuItem>}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        {showDatePicker && (
           <>
-            <Input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1) }} className="w-36" />
-            <Input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1) }} className="w-36" />
+            <Input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1) }} className="h-10" />
+            <Input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1) }} className="h-10" />
           </>
         )}
       </div>
+
+      {/* Clear filters */}
+      {hasFilters && (
+        <div className="flex items-center">
+          <Button variant="ghost" className="h-10 text-muted-foreground" onClick={clearFilters}>
+            <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Clear all filters
+          </Button>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="flex gap-4 text-sm">
