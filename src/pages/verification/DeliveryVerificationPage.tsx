@@ -121,7 +121,7 @@ export default function DeliveryVerificationPage() {
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Order #, customer..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} className="pl-9" />
+          <Input placeholder="Order #, customer..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} className="pl-9 h-10" />
         </div>
         <Select value={businessFilter} onValueChange={(v: string | null) => { setBusinessFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
           <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder="Business" /></SelectTrigger>
