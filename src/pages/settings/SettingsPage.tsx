@@ -8,6 +8,28 @@ import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
 import { ToggleLeft, ToggleRight } from 'lucide-react'
 import LoadingState from '@/components/LoadingState'
+import VariableTextarea from '@/components/VariableTextarea'
+
+const NOTIFICATION_VARIABLES: Record<string, { key: string; label: string }[]> = {
+  sms_new_order_template: [
+    { key: '{order_number}', label: 'Order #' }, { key: '{customer_name}', label: 'Name' },
+    { key: '{customer_phone}', label: 'Phone' }, { key: '{customer_state}', label: 'State' },
+    { key: '{total}', label: 'Total' }, { key: '{business_name}', label: 'Business' },
+  ],
+  sms_order_status_template: [
+    { key: '{order_number}', label: 'Order #' }, { key: '{customer_name}', label: 'Name' },
+    { key: '{status}', label: 'Status' }, { key: '{total}', label: 'Total' },
+  ],
+  whatsapp_new_order_template: [
+    { key: '{order_number}', label: 'Order #' }, { key: '{customer_name}', label: 'Name' },
+    { key: '{customer_phone}', label: 'Phone' }, { key: '{customer_state}', label: 'State' },
+    { key: '{total}', label: 'Total' }, { key: '{business_name}', label: 'Business' }, { key: '\\n', label: 'New Line' },
+  ],
+  whatsapp_order_status_template: [
+    { key: '{order_number}', label: 'Order #' }, { key: '{customer_name}', label: 'Name' },
+    { key: '{status}', label: 'Status' }, { key: '{total}', label: 'Total' }, { key: '\\n', label: 'New Line' },
+  ],
+}
 
 const settingsMeta: Record<string, { label: string; description: string; type: 'toggle' | 'text' | 'textarea'; group?: string }> = {
   super_admin_registration_enabled: {
@@ -201,12 +223,11 @@ export default function SettingsPage() {
                           </button>
                         ) : meta.type === 'textarea' ? (
                           <div className="space-y-2">
-                            <textarea
+                            <VariableTextarea
                               value={value}
-                              onChange={(e) => setSettings((prev) => ({ ...prev, [key]: e.target.value }))}
-                              disabled={!canEdit}
+                              onChange={(v) => setSettings((prev) => ({ ...prev, [key]: v }))}
+                              variables={NOTIFICATION_VARIABLES[key] ?? []}
                               rows={3}
-                              className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
                             />
                             <div className="rounded-md bg-muted/50 border border-dashed p-3">
                               <p className="text-[10px] font-medium text-muted-foreground mb-1">Preview:</p>

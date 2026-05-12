@@ -13,7 +13,19 @@ import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import type { PaginationMeta, Business, Product, User as UserType } from '@/types'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { Megaphone, Send, Users, Mail, MessageSquare, Phone, Plus, Pencil, Trash2, FileText, Search, RotateCcw, X } from 'lucide-react'
+import VariableTextarea from '@/components/VariableTextarea'
+import { Megaphone, Send, Users, Mail, MessageSquare, Phone, Plus, Pencil, Trash2, FileText, Search, RotateCcw } from 'lucide-react'
+
+const MARKETING_VARIABLES = [
+  { key: '{customer_name}', label: 'Customer Name' },
+  { key: '{customer_phone}', label: 'Phone' },
+  { key: '{customer_email}', label: 'Email' },
+  { key: '{customer_state}', label: 'State' },
+  { key: '{business_name}', label: 'Business' },
+  { key: '{order_number}', label: 'Order #' },
+  { key: '{total}', label: 'Total' },
+  { key: '{status}', label: 'Status' },
+]
 
 interface Customer {
   name: string
@@ -364,11 +376,11 @@ export default function MarketingPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10"></TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Phone</TableHead>
               <TableHead className="hidden sm:table-cell">Email</TableHead>
               <TableHead className="hidden md:table-cell">WhatsApp</TableHead>
-              <TableHead className="w-10"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -381,15 +393,13 @@ export default function MarketingPage() {
                 const isExcluded = excludedPhones.has(c.phone)
                 return (
                   <TableRow key={i} className={isExcluded ? 'opacity-40' : ''}>
+                    <TableCell>
+                      <input type="checkbox" checked={!isExcluded} onChange={() => toggleExclude(c.phone)} className="rounded" />
+                    </TableCell>
                     <TableCell className="font-medium text-sm">{c.name}</TableCell>
                     <TableCell className="text-sm">{c.phone}</TableCell>
                     <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">{c.email || '—'}</TableCell>
                     <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{c.whatsapp || '—'}</TableCell>
-                    <TableCell>
-                      <button onClick={() => toggleExclude(c.phone)} className={`text-xs ${isExcluded ? 'text-blue-600 hover:text-blue-700' : 'text-muted-foreground hover:text-red-500'}`} title={isExcluded ? 'Include' : 'Exclude'}>
-                        {isExcluded ? <RotateCcw className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
-                      </button>
-                    </TableCell>
                   </TableRow>
                 )
               })
@@ -433,12 +443,12 @@ export default function MarketingPage() {
 
             <div className="space-y-1.5">
               <Label>Message</Label>
-              <p className="text-xs text-muted-foreground">Use {'{customer_name}'} to personalize</p>
-              <textarea
-                className="w-full border rounded-md p-3 text-sm min-h-[120px] resize-y focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              <VariableTextarea
                 value={message}
-                onChange={e => setMessage(e.target.value)}
+                onChange={setMessage}
+                variables={MARKETING_VARIABLES}
                 placeholder="Type your message here..."
+                rows={5}
               />
             </div>
 
@@ -493,12 +503,12 @@ export default function MarketingPage() {
             )}
             <div className="space-y-1.5">
               <Label>Message</Label>
-              <p className="text-xs text-muted-foreground">Use {'{customer_name}'} to personalize</p>
-              <textarea
-                className="w-full border rounded-md p-3 text-sm min-h-[100px] resize-y focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              <VariableTextarea
                 value={templateMessage}
-                onChange={e => setTemplateMessage(e.target.value)}
+                onChange={setTemplateMessage}
+                variables={MARKETING_VARIABLES}
                 placeholder="Type your message template..."
+                rows={4}
               />
             </div>
             <div className="flex justify-end gap-2 pt-2">
