@@ -239,26 +239,26 @@ export default function MarketingPage() {
           <h1 className="text-xl font-semibold flex items-center gap-2"><Megaphone className="w-5 h-5 text-blue-600" /> Marketing</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Send campaigns to your customers via Email, SMS, or WhatsApp</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="h-10" onClick={() => openTemplateDialog()}>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button variant="outline" className="h-10 flex-1 sm:flex-none" onClick={() => openTemplateDialog()}>
             <Plus className="mr-1.5 h-4 w-4" /> Template
           </Button>
-          <Button className="h-10 w-full sm:w-auto" onClick={() => setComposeOpen(true)} disabled={recipientCount <= 0}>
-            <Send className="mr-1.5 h-4 w-4" /> Send to {recipientCount} customer{recipientCount !== 1 ? 's' : ''}
+          <Button className="h-10 flex-1 sm:flex-none" onClick={() => setComposeOpen(true)} disabled={recipientCount <= 0}>
+            <Send className="mr-1.5 h-4 w-4" /> <span className="hidden sm:inline">Send to </span>{recipientCount}<span className="hidden sm:inline"> customer{recipientCount !== 1 ? 's' : ''}</span>
           </Button>
         </div>
       </div>
 
       {/* Status tabs */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5 sm:gap-2">
         <button
-          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${!statusFilter ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+          className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors ${!statusFilter ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
           onClick={() => { setStatusFilter(''); setPage(1) }}
         >All</button>
         {ORDER_STATUSES.map(s => (
           <button
             key={s}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-1.5 ${statusFilter === s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors inline-flex items-center gap-1 sm:gap-1.5 ${statusFilter === s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
             onClick={() => { setStatusFilter(statusFilter === s ? '' : s); setPage(1) }}
           >
             <span className={`inline-block h-2 w-2 rounded-full ${statusTabColors[s]}`} />
@@ -343,8 +343,8 @@ export default function MarketingPage() {
       )}
 
       {/* Stats */}
-      <div className="flex gap-4 text-sm">
-        <span className="flex items-center gap-1 text-muted-foreground"><Users className="w-4 h-4" /> {meta.total} customers match</span>
+      <div className="flex flex-wrap gap-3 sm:gap-4 text-xs sm:text-sm">
+        <span className="flex items-center gap-1 text-muted-foreground"><Users className="w-4 h-4" /> {meta.total} match</span>
         {excludedPhones.size > 0 && (
           <span className="flex items-center gap-1 text-amber-600">{excludedPhones.size} excluded</span>
         )}

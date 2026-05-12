@@ -225,9 +225,9 @@ export default function OrdersPage() {
       </div>
 
       {/* Status tabs */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5 sm:gap-2">
         <button
-          className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${!statusFilter ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+          className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors ${!statusFilter ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
           onClick={() => { setStatusFilter(''); setPage(1) }}
         >
           All ({totalAll})
@@ -235,7 +235,7 @@ export default function OrdersPage() {
         {ORDER_STATUSES.map((s) => (
           <button
             key={s}
-            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-1.5 ${statusFilter === s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors inline-flex items-center gap-1 sm:gap-1.5 ${statusFilter === s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
             onClick={() => { setStatusFilter(statusFilter === s ? '' : s); setPage(1) }}
           >
             <span className={`inline-block h-2 w-2 rounded-full ${statusTabColors[s]}`} />

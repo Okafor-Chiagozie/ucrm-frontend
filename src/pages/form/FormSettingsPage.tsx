@@ -104,15 +104,15 @@ export default function FormSettingsPage() {
                       &middot; Button: "{product.form_settings.button_text}"
                     </p>
                   </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setEditProduct(product)}>
-                      <Pencil className="mr-1.5 h-3.5 w-3.5" /> Customize
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={() => setEditProduct(product)}>
+                      <Pencil className="mr-1 h-3.5 w-3.5" /> Customize
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => window.open(`/form/${product.id}`, '_blank')}>
-                      <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Preview
+                    <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={() => window.open(`/form/${product.id}`, '_blank')}>
+                      <ExternalLink className="mr-1 h-3.5 w-3.5" /> Preview
                     </Button>
-                    <Button size="sm" onClick={() => setEmbedProduct(product)}>
-                      <Code className="mr-1.5 h-3.5 w-3.5" /> Embed Code
+                    <Button size="sm" className="text-xs sm:text-sm" onClick={() => setEmbedProduct(product)}>
+                      <Code className="mr-1 h-3.5 w-3.5" /> Embed
                     </Button>
                   </div>
                 </div>
