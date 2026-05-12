@@ -441,7 +441,7 @@ export default function MarketingPage() {
 
       {/* Compose Dialog */}
       <Dialog open={composeOpen} onOpenChange={setComposeOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="text-lg">Send Campaign</DialogTitle>
           </DialogHeader>
@@ -520,7 +520,7 @@ export default function MarketingPage() {
 
       {/* Template Dialog */}
       <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-lg">{editingTemplate ? 'Edit Template' : 'New Template'}</DialogTitle>
           </DialogHeader>
