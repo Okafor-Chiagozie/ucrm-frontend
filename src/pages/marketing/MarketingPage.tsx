@@ -450,6 +450,22 @@ export default function MarketingPage() {
                 placeholder="Type your message here..."
                 rows={5}
               />
+              {message && (
+                <div className="rounded-md bg-muted/50 border border-dashed p-3 mt-2">
+                  <p className="text-[10px] font-medium text-muted-foreground mb-1">Preview:</p>
+                  <p className="text-sm whitespace-pre-wrap">{message
+                    .replace(/\{customer_name\}/g, 'John Doe')
+                    .replace(/\{customer_phone\}/g, '+2348012345678')
+                    .replace(/\{customer_email\}/g, 'john@example.com')
+                    .replace(/\{customer_state\}/g, 'Lagos')
+                    .replace(/\{business_name\}/g, 'My Business')
+                    .replace(/\{order_number\}/g, 'ORD-00042')
+                    .replace(/\{total\}/g, '₦25,000')
+                    .replace(/\{status\}/g, 'Delivered')
+                    .replace(/\\n/g, '\n')
+                  }</p>
+                </div>
+              )}
             </div>
 
             {templates.length > 0 && (
