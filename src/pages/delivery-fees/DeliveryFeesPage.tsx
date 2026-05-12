@@ -18,6 +18,7 @@ import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
+import { Card, CardContent } from '@/components/ui/card'
 import { Plus, Pencil, Trash2, Truck, ArrowUpDown, ArrowUp, ArrowDown, X } from 'lucide-react'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -97,7 +98,7 @@ export default function DeliveryFeesPage() {
         )}
       </div>
 
-      <div className="rounded-md border bg-card">
+      <div className="hidden sm:block rounded-md border bg-card">
         <Table>
           <TableHeader><TableRow className="bg-muted/50 hover:bg-muted/50">
             <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('state')}><span className="inline-flex items-center">State <SortIcon field="state" /></span></TableHead>
@@ -123,6 +124,25 @@ export default function DeliveryFeesPage() {
             ))}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="sm:hidden space-y-3">
+        {loading ? <LoadingState text="Loading..." /> : fees.length === 0 ? <EmptyState icon={Truck} title="No delivery fees" description="Add delivery fees for each state" /> : fees.map((f) => (
+          <Card key={f.id}>
+            <CardContent className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">{f.state}</span>
+                <span className="font-medium">{formatPrice(f.fee)}</span>
+              </div>
+              <div className="text-sm text-muted-foreground">{f.business_name}</div>
+              <div className="flex justify-end gap-1 pt-1 border-t">
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditFee(f)}><Pencil className="h-3.5 w-3.5" /></Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteFee(f)}><Trash2 className="h-3.5 w-3.5" /></Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
       {meta && <Pagination meta={meta} page={page} onPageChange={setPage} />}
 

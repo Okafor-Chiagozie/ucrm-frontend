@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import api from '@/lib/api'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 import Pagination from '@/components/Pagination'
 import { Bell, BellOff, CheckCheck, Mail, MailOpen } from 'lucide-react'
 
@@ -100,7 +101,8 @@ export default function NotificationsPage() {
         ))}
       </div>
 
-      <div className="space-y-2">
+      {/* Desktop list view */}
+      <div className="hidden sm:block space-y-2">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <Bell className="h-10 w-10 mb-3 animate-pulse" />
@@ -139,11 +141,59 @@ export default function NotificationsPage() {
               </div>
               {!n.read_at && (
                 <button className="shrink-0 text-primary cursor-pointer" onClick={() => markAsRead(n.id)} title="Mark as read">
-                  <span className="hidden sm:inline text-xs hover:underline">Mark as read</span>
-                  <CheckCheck className="h-4 w-4 sm:hidden" />
+                  <span className="text-xs hover:underline">Mark as read</span>
                 </button>
               )}
             </div>
+          ))
+        )}
+      </div>
+
+      {/* Mobile card view */}
+      <div className="sm:hidden space-y-3">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+            <Bell className="h-10 w-10 mb-3 animate-pulse" />
+            <p className="text-sm">Loading notifications...</p>
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+            <BellOff className="h-10 w-10 mb-3" />
+            <p className="text-sm">
+              {filter === 'unread' ? 'No unread notifications' : filter === 'read' ? 'No read notifications' : 'No notifications yet'}
+            </p>
+          </div>
+        ) : (
+          notifications.map((n) => (
+            <Card key={n.id} className={n.read_at ? '' : 'border-primary/20 bg-primary/5'}>
+              <CardContent className="p-4 space-y-2">
+                <div className="flex items-start gap-2">
+                  <div className="mt-0.5 shrink-0">
+                    {n.read_at ? (
+                      <MailOpen className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Mail className="h-4 w-4 text-primary" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm ${n.read_at ? 'text-foreground' : 'font-semibold text-foreground'}`}>
+                      {n.data.title || n.data.message}
+                    </p>
+                    {n.data.title && n.data.message && (
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.data.message}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pl-6">
+                  <p className="text-xs text-muted-foreground">{formatDate(n.created_at)}</p>
+                  {!n.read_at && (
+                    <button className="text-primary cursor-pointer" onClick={() => markAsRead(n.id)} title="Mark as read">
+                      <CheckCheck className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           ))
         )}
       </div>

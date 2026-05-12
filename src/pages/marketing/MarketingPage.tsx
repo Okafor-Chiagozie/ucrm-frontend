@@ -14,6 +14,7 @@ import EmptyState from '@/components/EmptyState'
 import type { PaginationMeta, Business, Product, User as UserType } from '@/types'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import VariableTextarea from '@/components/VariableTextarea'
+import { Card, CardContent } from '@/components/ui/card'
 import { Megaphone, Send, Users, Mail, MessageSquare, Phone, Plus, Pencil, Trash2, FileText, Search, RotateCcw } from 'lucide-react'
 
 const MARKETING_VARIABLES = [
@@ -371,8 +372,8 @@ export default function MarketingPage() {
         </div>
       )}
 
-      {/* Customer table */}
-      <div className="border rounded-md overflow-hidden">
+      {/* Customer table (desktop) */}
+      <div className="hidden sm:block border rounded-md overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -406,6 +407,34 @@ export default function MarketingPage() {
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Customer cards (mobile) */}
+      <div className="sm:hidden space-y-3">
+        {loading ? <LoadingState text="Loading customers..." /> : customers.length === 0 ? <EmptyState icon={Users} title="No customers found" description="Adjust your filters to find customers" /> : customers.map((c, i) => {
+          const isExcluded = excludedPhones.has(c.phone)
+          return (
+            <Card key={i} className={isExcluded ? 'opacity-40' : ''}>
+              <CardContent className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <input type="checkbox" checked={!isExcluded} onChange={() => toggleExclude(c.phone)} className="rounded" />
+                  <span className="font-medium text-sm">{c.name}</span>
+                </div>
+                <div className="grid grid-cols-1 gap-1 text-sm pl-7">
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Phone className="h-3.5 w-3.5" /> {c.phone}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Mail className="h-3.5 w-3.5" /> {c.email || '—'}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <MessageSquare className="h-3.5 w-3.5" /> {c.whatsapp || '—'}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
 
       <Pagination meta={meta} page={page} onPageChange={setPage} />

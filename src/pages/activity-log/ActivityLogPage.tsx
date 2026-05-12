@@ -9,6 +9,7 @@ import {
 import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
+import { Card, CardContent } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { Search, ScrollText } from 'lucide-react'
 
@@ -63,7 +64,28 @@ export default function ActivityLogPage() {
         <Input placeholder="Search activity..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} className="pl-9 h-10" />
       </div>
 
-      <div className="rounded-md border bg-card">
+      {/* Mobile cards */}
+      <div className="sm:hidden space-y-3">
+        {loading ? <LoadingState text="Loading..." /> : logs.length === 0 ? <EmptyState icon={ScrollText} title="No activity yet" description="Actions will be logged here" /> : logs.map((log) => (
+          <Card key={log.id}>
+            <CardContent className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Badge variant="outline" className={`font-normal text-xs ${actionColors[log.action] ?? 'border-muted bg-muted/50 text-muted-foreground'}`}>
+                  {log.action}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(log.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground">{log.description}</p>
+              <p className="text-sm font-medium">{log.user_name}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden sm:block rounded-md border bg-card">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">

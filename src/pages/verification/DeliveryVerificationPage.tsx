@@ -13,6 +13,7 @@ import {
 import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
+import { Card, CardContent } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { Search, Truck, CheckCircle, XCircle, Clock, RotateCcw } from 'lucide-react'
 
@@ -145,13 +146,13 @@ export default function DeliveryVerificationPage() {
         )}
       </div>
 
-      <div className="rounded-md border overflow-x-auto">
+      <div className="hidden sm:block rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
               <TableHead>Order</TableHead>
               <TableHead>Customer</TableHead>
-              <TableHead className="hidden sm:table-cell">Total</TableHead>
+              <TableHead>Total</TableHead>
               <TableHead>CS Status</TableHead>
               <TableHead>Delivery</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -170,7 +171,7 @@ export default function DeliveryVerificationPage() {
                   <p className="font-medium text-sm">{o.customer_name}</p>
                   <p className="text-xs text-muted-foreground">{o.customer_phone}</p>
                 </TableCell>
-                <TableCell className="hidden sm:table-cell font-medium text-sm">{formatPrice(o.total)}</TableCell>
+                <TableCell className="font-medium text-sm">{formatPrice(o.total)}</TableCell>
                 <TableCell><Badge variant="outline" className="font-normal">{STATUS_LABELS[o.cs_status] ?? o.cs_status}</Badge></TableCell>
                 <TableCell>
                   {o.logistics_status === 'delivery_verified' ? (
@@ -186,6 +187,46 @@ export default function DeliveryVerificationPage() {
             ))}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Mobile card view */}
+      <div className="sm:hidden space-y-3">
+        {loading ? (
+          <LoadingState text="Loading..." />
+        ) : orders.length === 0 ? (
+          <EmptyState icon={Truck} title="No orders" />
+        ) : (
+          orders.map(o => (
+            <Card key={o.id}>
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="font-mono text-sm font-medium">{o.order_number}</span>
+                    <p className="text-xs text-muted-foreground">{o.business_name}</p>
+                  </div>
+                  {o.logistics_status === 'delivery_verified' ? (
+                    <Badge variant="outline" className="font-normal border-emerald-200 bg-emerald-50 text-emerald-700">Verified</Badge>
+                  ) : o.logistics_status === 'delivery_disputed' ? (
+                    <Badge variant="outline" className="font-normal border-red-200 bg-red-50 text-red-700">Disputed</Badge>
+                  ) : (
+                    <Badge variant="outline" className="font-normal border-amber-200 bg-amber-50 text-amber-600">Pending</Badge>
+                  )}
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <div>
+                    <p className="font-medium">{o.customer_name}</p>
+                    <p className="text-xs text-muted-foreground">{o.customer_phone}</p>
+                  </div>
+                  <span className="font-medium">{formatPrice(o.total)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Badge variant="outline" className="font-normal">{STATUS_LABELS[o.cs_status] ?? o.cs_status}</Badge>
+                  <ActionButtons order={o} />
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
       {meta && <Pagination meta={meta} page={page} onPageChange={setPage} />}
     </div>

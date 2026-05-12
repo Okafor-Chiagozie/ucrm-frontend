@@ -22,6 +22,7 @@ import { Separator } from '@/components/ui/separator'
 import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
+import { Card, CardContent } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { Plus, Pencil, Trash2, Gift, X } from 'lucide-react'
 
@@ -91,7 +92,36 @@ export default function BumpOffersPage() {
         )}
       </div>
 
-      <div className="rounded-md border bg-card">
+      {/* Mobile cards */}
+      <div className="sm:hidden space-y-3">
+        {loading ? <LoadingState text="Loading..." /> : offers.length === 0 ? <EmptyState icon={Gift} title="No bump offers" description="Add upsell offers to boost order value" /> : offers.map((o) => (
+          <Card key={o.id}>
+            <CardContent className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-sm">{o.product_name}</span>
+                <Badge variant="outline" className={`font-normal text-xs ${o.is_active ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
+                  {o.is_active ? 'Active' : 'Inactive'}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-sm">{o.bump_product_name}</p>
+                <p className="text-xs text-muted-foreground">{o.bump_variation_name}</p>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium text-emerald-700">{formatPrice(o.special_price)}</span>
+                <span className="text-muted-foreground line-through">{formatPrice(o.original_price)}</span>
+              </div>
+              <div className="flex justify-end gap-1 pt-1">
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditOffer(o)}><Pencil className="h-3.5 w-3.5" /></Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteOffer(o)}><Trash2 className="h-3.5 w-3.5" /></Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden sm:block rounded-md border bg-card">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">

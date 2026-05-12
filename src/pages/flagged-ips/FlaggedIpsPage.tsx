@@ -20,6 +20,7 @@ import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
+import { Card, CardContent } from '@/components/ui/card'
 import { Plus, Search, Trash2, ShieldBan, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 
 export default function FlaggedIpsPage() {
@@ -78,7 +79,7 @@ export default function FlaggedIpsPage() {
         <Input placeholder="Search IP address..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} className="pl-9 h-10" />
       </div>
 
-      <div className="rounded-md border bg-card">
+      <div className="hidden sm:block rounded-md border bg-card">
         <Table>
           <TableHeader><TableRow className="bg-muted/50 hover:bg-muted/50">
             <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('ip_address')}><span className="inline-flex items-center">IP Address <SortIcon field="ip_address" /></span></TableHead>
@@ -113,6 +114,36 @@ export default function FlaggedIpsPage() {
             ))}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Mobile cards */}
+      <div className="sm:hidden space-y-3">
+        {loading ? <LoadingState text="Loading..." /> : ips.length === 0 ? <EmptyState icon={ShieldBan} title="No flagged IPs" description="Flag an IP to block it from placing orders" /> : ips.map((ip) => (
+          <Card key={ip.id}>
+            <CardContent className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-sm">{ip.ip_address}</span>
+                <Badge variant="outline" className={`font-normal cursor-pointer ${ip.is_active ? 'border-red-200 bg-red-50 text-red-700' : 'border-muted bg-muted text-muted-foreground'}`}
+                  onClick={async () => {
+                    try {
+                      await api.put(`/flagged-ips/${ip.id}`, { is_active: !ip.is_active })
+                      toast.success(ip.is_active ? 'IP unblocked' : 'IP blocked')
+                      fetchIps()
+                    } catch { toast.error('Failed') }
+                  }}
+                >{ip.is_active ? 'Blocked' : 'Inactive'}</Badge>
+              </div>
+              <div className="text-sm text-muted-foreground">{ip.reason || 'No reason'}</div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>By: {ip.flagged_by || '—'}</span>
+                <span>{new Date(ip.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+              </div>
+              <div className="flex justify-end pt-1 border-t">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteIp(ip)}><Trash2 className="h-3.5 w-3.5" /></Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
       {meta && <Pagination meta={meta} page={page} onPageChange={setPage} />}
 

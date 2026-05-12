@@ -19,6 +19,7 @@ import { Separator } from '@/components/ui/separator'
 import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
+import { Card, CardContent } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { Search, Pencil, Package, X } from 'lucide-react'
 
@@ -78,7 +79,38 @@ export default function InventoryPage() {
         )}
       </div>
 
-      <div className="rounded-md border bg-card">
+      {/* Mobile cards */}
+      <div className="sm:hidden space-y-3">
+        {loading ? <LoadingState text="Loading..." /> : products.length === 0 ? <EmptyState icon={Package} title="No products" /> : products.map((p) => (
+          <Card key={p.id}>
+            <CardContent className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">{p.name}</span>
+                {p.stock === 0 ? (
+                  <Badge variant="outline" className="font-normal text-xs border-red-200 bg-red-50 text-red-700">Out of Stock</Badge>
+                ) : p.low_stock ? (
+                  <Badge variant="outline" className="font-normal text-xs border-amber-200 bg-amber-50 text-amber-700">Low Stock</Badge>
+                ) : (
+                  <Badge variant="outline" className="font-normal text-xs border-emerald-200 bg-emerald-50 text-emerald-700">In Stock</Badge>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground">{p.business_name}</p>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Stock: <span className={`font-medium ${p.low_stock ? 'text-red-600' : 'text-foreground'}`}>{p.stock}</span></span>
+                <span className="text-muted-foreground">Threshold: <span className="font-medium text-foreground">{p.low_stock_threshold}</span></span>
+              </div>
+              {hasPermission('inventory.edit') && (
+                <div className="flex justify-end pt-1">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditProduct(p)}><Pencil className="h-3.5 w-3.5" /></Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden sm:block rounded-md border bg-card">
         <Table>
           <TableHeader><TableRow className="bg-muted/50 hover:bg-muted/50"><TableHead>Product</TableHead><TableHead>Business</TableHead><TableHead>Variations</TableHead><TableHead>Stock</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
           <TableBody>
