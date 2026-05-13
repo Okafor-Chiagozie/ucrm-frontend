@@ -299,7 +299,6 @@ export default function VerificationReportPage() {
           </TableBody>
         </Table>
       </div>
-      {meta && <Pagination meta={meta} page={page} onPageChange={setPage} />}
 
       {/* Mobile cards */}
       <div className="md:hidden space-y-3">
@@ -332,6 +331,8 @@ export default function VerificationReportPage() {
           </Card>
         ))}
       </div>
+
+      {meta && <Pagination meta={meta} page={page} onPageChange={setPage} />}
     </div>
   )
 }
