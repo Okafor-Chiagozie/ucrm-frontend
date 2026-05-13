@@ -98,7 +98,7 @@ export default function DeliveryFeesPage() {
         )}
       </div>
 
-      <div className="hidden sm:block rounded-md border bg-card">
+      <div className="hidden md:block rounded-md border bg-card">
         <Table>
           <TableHeader><TableRow className="bg-muted/50 hover:bg-muted/50">
             <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('state')}><span className="inline-flex items-center">State <SortIcon field="state" /></span></TableHead>
@@ -127,7 +127,7 @@ export default function DeliveryFeesPage() {
       </div>
 
       {/* Mobile cards */}
-      <div className="sm:hidden space-y-3">
+      <div className="md:hidden space-y-3">
         {loading ? <LoadingState text="Loading..." /> : fees.length === 0 ? <EmptyState icon={Truck} title="No delivery fees" description="Add delivery fees for each state" /> : fees.map((f) => (
           <Card key={f.id}>
             <CardContent className="space-y-2">

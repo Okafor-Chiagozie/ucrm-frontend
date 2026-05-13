@@ -80,7 +80,7 @@ export default function InventoryPage() {
       </div>
 
       {/* Mobile cards */}
-      <div className="sm:hidden space-y-3">
+      <div className="md:hidden space-y-3">
         {loading ? <LoadingState text="Loading..." /> : products.length === 0 ? <EmptyState icon={Package} title="No products" /> : products.map((p) => (
           <Card key={p.id}>
             <CardContent className="space-y-2">
@@ -99,6 +99,9 @@ export default function InventoryPage() {
                 <span className="text-muted-foreground">Stock: <span className={`font-medium ${p.low_stock ? 'text-red-600' : 'text-foreground'}`}>{p.stock}</span></span>
                 <span className="text-muted-foreground">Threshold: <span className="font-medium text-foreground">{p.low_stock_threshold}</span></span>
               </div>
+              <div className="text-xs text-muted-foreground">
+                Variations: <span className="font-medium text-foreground">{p.variations.length} pricing tier{p.variations.length !== 1 ? 's' : ''}</span>
+              </div>
               {hasPermission('inventory.edit') && (
                 <div className="flex justify-end pt-1">
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditProduct(p)}><Pencil className="h-3.5 w-3.5" /></Button>
@@ -110,7 +113,7 @@ export default function InventoryPage() {
       </div>
 
       {/* Desktop table */}
-      <div className="hidden sm:block rounded-md border bg-card">
+      <div className="hidden md:block rounded-md border bg-card">
         <Table>
           <TableHeader><TableRow className="bg-muted/50 hover:bg-muted/50"><TableHead>Product</TableHead><TableHead>Business</TableHead><TableHead>Variations</TableHead><TableHead>Stock</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
           <TableBody>

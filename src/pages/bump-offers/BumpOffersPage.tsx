@@ -93,7 +93,7 @@ export default function BumpOffersPage() {
       </div>
 
       {/* Mobile cards */}
-      <div className="sm:hidden space-y-3">
+      <div className="md:hidden space-y-3">
         {loading ? <LoadingState text="Loading..." /> : offers.length === 0 ? <EmptyState icon={Gift} title="No bump offers" description="Add upsell offers to boost order value" /> : offers.map((o) => (
           <Card key={o.id}>
             <CardContent className="space-y-2">
@@ -107,6 +107,7 @@ export default function BumpOffersPage() {
                 <p className="text-sm">{o.bump_product_name}</p>
                 <p className="text-xs text-muted-foreground">{o.bump_variation_name}</p>
               </div>
+              {o.headline && <p className="text-xs text-muted-foreground italic">"{o.headline}"</p>}
               <div className="flex items-center justify-between text-sm">
                 <span className="font-medium text-emerald-700">{formatPrice(o.special_price)}</span>
                 <span className="text-muted-foreground line-through">{formatPrice(o.original_price)}</span>
@@ -121,7 +122,7 @@ export default function BumpOffersPage() {
       </div>
 
       {/* Desktop table */}
-      <div className="hidden sm:block rounded-md border bg-card">
+      <div className="hidden md:block rounded-md border bg-card">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">

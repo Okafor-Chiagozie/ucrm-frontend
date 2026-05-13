@@ -156,9 +156,12 @@ export default function CategoriesPage() {
                 {hasPermission('categories.delete') && c.is_active && <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeactivateCat(c)}><XCircle className="h-3.5 w-3.5" /></Button>}
               </div>
             </div>
-            <div className="flex flex-wrap gap-2 text-xs">
-              <Badge variant="outline" className="font-normal border-blue-200 bg-blue-50 text-blue-700">{c.products_count} products</Badge>
-              <Badge variant="outline" className={`font-normal cursor-pointer ${c.is_active ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`} onClick={async (e) => { e.stopPropagation(); try { await api.put(`/categories/${c.id}`, { is_active: !c.is_active }); toast.success(c.is_active ? 'Deactivated' : 'Activated'); fetchCategories() } catch { toast.error('Failed') } }}>{c.is_active ? 'Active' : 'Inactive'}</Badge>
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline" className="font-normal border-blue-200 bg-blue-50 text-blue-700">{c.products_count} products</Badge>
+                <Badge variant="outline" className={`font-normal cursor-pointer ${c.is_active ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`} onClick={async (e) => { e.stopPropagation(); try { await api.put(`/categories/${c.id}`, { is_active: !c.is_active }); toast.success(c.is_active ? 'Deactivated' : 'Activated'); fetchCategories() } catch { toast.error('Failed') } }}>{c.is_active ? 'Active' : 'Inactive'}</Badge>
+              </div>
+              <span className="text-muted-foreground">{new Date(c.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
             </div>
           </div>
         ))}

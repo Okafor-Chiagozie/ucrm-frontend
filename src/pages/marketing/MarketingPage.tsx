@@ -373,7 +373,7 @@ export default function MarketingPage() {
       )}
 
       {/* Customer table (desktop) */}
-      <div className="hidden sm:block border rounded-md overflow-hidden">
+      <div className="hidden md:block border rounded-md overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -410,7 +410,7 @@ export default function MarketingPage() {
       </div>
 
       {/* Customer cards (mobile) */}
-      <div className="sm:hidden space-y-3">
+      <div className="md:hidden space-y-3">
         {loading ? <LoadingState text="Loading customers..." /> : customers.length === 0 ? <EmptyState icon={Users} title="No customers found" description="Adjust your filters to find customers" /> : customers.map((c, i) => {
           const isExcluded = excludedPhones.has(c.phone)
           return (
@@ -429,6 +429,15 @@ export default function MarketingPage() {
                   </div>
                   <div className="flex items-center gap-1.5 text-muted-foreground">
                     <MessageSquare className="h-3.5 w-3.5" /> {c.whatsapp || '—'}
+                  </div>
+                  {c.state && (
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <span className="text-xs">State:</span> <span className="text-xs">{c.state}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between text-xs text-muted-foreground pt-0.5">
+                    <span>Orders: <span className="font-medium text-foreground">{c.total_orders}</span></span>
+                    <span>Spent: <span className="font-medium text-foreground">₦{Number(c.total_spent).toLocaleString()}</span></span>
                   </div>
                 </div>
               </CardContent>

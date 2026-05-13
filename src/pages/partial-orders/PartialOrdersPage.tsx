@@ -84,7 +84,7 @@ export default function PartialOrdersPage() {
       </div>
 
       {/* Mobile cards */}
-      <div className="sm:hidden space-y-3">
+      <div className="md:hidden space-y-3">
         {loading ? <LoadingState text="Loading..." /> : partials.length === 0 ? <EmptyState icon={PhoneMissed} title="No partial orders" description="Partial data is captured when visitors start filling the order form" /> : partials.map((p) => (
           <Card key={p.id}>
             <CardContent className="space-y-2">
@@ -104,7 +104,7 @@ export default function PartialOrdersPage() {
       </div>
 
       {/* Desktop table */}
-      <div className="hidden sm:block rounded-md border bg-card">
+      <div className="hidden md:block rounded-md border bg-card">
         <Table>
           <TableHeader><TableRow className="bg-muted/50 hover:bg-muted/50">
             <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('phone')}><span className="inline-flex items-center">Phone <SortIcon field="phone" /></span></TableHead>

@@ -102,7 +102,7 @@ export default function NotificationsPage() {
       </div>
 
       {/* Desktop list view */}
-      <div className="hidden sm:block space-y-2">
+      <div className="hidden md:block space-y-2">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <Bell className="h-10 w-10 mb-3 animate-pulse" />
@@ -150,7 +150,7 @@ export default function NotificationsPage() {
       </div>
 
       {/* Mobile card view */}
-      <div className="sm:hidden space-y-3">
+      <div className="md:hidden space-y-3">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <Bell className="h-10 w-10 mb-3 animate-pulse" />

@@ -366,10 +366,21 @@ export default function OrdersPage() {
               <span className="font-mono text-sm font-medium">{o.order_number}</span>
               <Badge variant="outline" className={`font-normal text-xs ${statusColors[o.status] ?? ''}`}>{STATUS_LABELS[o.status] ?? o.status}</Badge>
             </div>
-            <p className="text-sm">{o.customer_name}</p>
+            <div>
+              <p className="text-sm font-medium">{o.customer_name}</p>
+              <p className="text-xs text-muted-foreground">{o.customer_phone}</p>
+            </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{o.business_name}</span>
               <span className="font-medium text-foreground">{formatPrice(o.total)}</span>
+            </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>State: <span className="text-foreground">{o.customer_state}</span></span>
+              <span>Items: <Badge variant="outline" className="font-normal text-xs border-blue-200 bg-blue-50 text-blue-700 ml-1">{o.items_count}</Badge></span>
+            </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Agent: <span className="text-foreground">{o.assigned_agent?.name ?? <span className="text-orange-500">Unassigned</span>}</span></span>
+              <span>{new Date(o.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}</span>
             </div>
           </div>
         ))}

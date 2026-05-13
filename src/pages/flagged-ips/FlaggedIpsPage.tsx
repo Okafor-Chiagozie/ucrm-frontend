@@ -79,7 +79,7 @@ export default function FlaggedIpsPage() {
         <Input placeholder="Search IP address..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} className="pl-9 h-10" />
       </div>
 
-      <div className="hidden sm:block rounded-md border bg-card">
+      <div className="hidden md:block rounded-md border bg-card">
         <Table>
           <TableHeader><TableRow className="bg-muted/50 hover:bg-muted/50">
             <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('ip_address')}><span className="inline-flex items-center">IP Address <SortIcon field="ip_address" /></span></TableHead>
@@ -117,7 +117,7 @@ export default function FlaggedIpsPage() {
       </div>
 
       {/* Mobile cards */}
-      <div className="sm:hidden space-y-3">
+      <div className="md:hidden space-y-3">
         {loading ? <LoadingState text="Loading..." /> : ips.length === 0 ? <EmptyState icon={ShieldBan} title="No flagged IPs" description="Flag an IP to block it from placing orders" /> : ips.map((ip) => (
           <Card key={ip.id}>
             <CardContent className="space-y-2">

@@ -146,7 +146,7 @@ export default function DeliveryVerificationPage() {
         )}
       </div>
 
-      <div className="hidden sm:block rounded-md border overflow-x-auto">
+      <div className="hidden md:block rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
@@ -190,7 +190,7 @@ export default function DeliveryVerificationPage() {
       </div>
 
       {/* Mobile card view */}
-      <div className="sm:hidden space-y-3">
+      <div className="md:hidden space-y-3">
         {loading ? (
           <LoadingState text="Loading..." />
         ) : orders.length === 0 ? (
@@ -218,6 +218,10 @@ export default function DeliveryVerificationPage() {
                     <p className="text-xs text-muted-foreground">{o.customer_phone}</p>
                   </div>
                   <span className="font-medium">{formatPrice(o.total)}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>State: <span className="text-foreground">{o.customer_state}</span></span>
+                  <span>Agent: <span className="text-foreground">{o.assigned_agent ?? <span className="text-orange-500">Unassigned</span>}</span></span>
                 </div>
                 <div className="flex items-center justify-between">
                   <Badge variant="outline" className="font-normal">{STATUS_LABELS[o.cs_status] ?? o.cs_status}</Badge>

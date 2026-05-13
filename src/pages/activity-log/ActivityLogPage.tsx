@@ -65,7 +65,7 @@ export default function ActivityLogPage() {
       </div>
 
       {/* Mobile cards */}
-      <div className="sm:hidden space-y-3">
+      <div className="md:hidden space-y-3">
         {loading ? <LoadingState text="Loading..." /> : logs.length === 0 ? <EmptyState icon={ScrollText} title="No activity yet" description="Actions will be logged here" /> : logs.map((log) => (
           <Card key={log.id}>
             <CardContent className="space-y-2">
@@ -78,14 +78,17 @@ export default function ActivityLogPage() {
                 </span>
               </div>
               <p className="text-sm text-muted-foreground">{log.description}</p>
-              <p className="text-sm font-medium">{log.user_name}</p>
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium">{log.user_name}</p>
+                {log.ip_address && <span className="font-mono text-xs text-muted-foreground">{log.ip_address}</span>}
+              </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
       {/* Desktop table */}
-      <div className="hidden sm:block rounded-md border bg-card">
+      <div className="hidden md:block rounded-md border bg-card">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">

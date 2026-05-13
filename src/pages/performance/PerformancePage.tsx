@@ -303,7 +303,7 @@ export default function PerformancePage() {
 
           {/* Staff Table — managers only */}
           {!isPersonal && (
-            <div className="rounded-md border bg-card">
+            <div className="hidden md:block rounded-md border bg-card">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50 hover:bg-muted/50">
@@ -397,9 +397,33 @@ export default function PerformancePage() {
                       <p className="font-medium text-emerald-600">{s.delivered}</p>
                     </div>
                     <div>
+                      <p className="text-muted-foreground text-xs">In Progress</p>
+                      <p className="font-medium text-blue-600">{s.pending + s.scheduled}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Not Picking</p>
+                      <p className="font-medium text-orange-600">{s.not_picking}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Cancelled</p>
+                      <p className="font-medium text-red-600">{s.cancelled}</p>
+                    </div>
+                    <div>
                       <p className="text-muted-foreground text-xs">Revenue</p>
                       <p className="font-medium">{formatPrice(s.revenue)}</p>
                     </div>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t">
+                    <span>
+                      Avg delivery: <span className="font-medium text-foreground">
+                        {s.avg_delivery_hours !== null ? `${s.avg_delivery_hours}h` : '—'}
+                      </span>
+                    </span>
+                    <span>
+                      Available: <span className="font-medium text-foreground">
+                        {s.available_from && s.available_to ? `${s.available_from.slice(0, 5)} – ${s.available_to.slice(0, 5)}` : 'Always'}
+                      </span>
+                    </span>
                   </div>
                 </CardContent>
               </Card>

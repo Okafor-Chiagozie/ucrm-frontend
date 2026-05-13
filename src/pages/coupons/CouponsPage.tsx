@@ -106,7 +106,7 @@ export default function CouponsPage() {
         )}
       </div>
 
-      <div className="hidden sm:block rounded-md border bg-card">
+      <div className="hidden md:block rounded-md border bg-card">
         <Table>
           <TableHeader><TableRow className="bg-muted/50 hover:bg-muted/50">
             <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('code')}><span className="inline-flex items-center">Code <SortIcon field="code" /></span></TableHead>
@@ -146,7 +146,7 @@ export default function CouponsPage() {
       </div>
 
       {/* Mobile cards */}
-      <div className="sm:hidden space-y-3">
+      <div className="md:hidden space-y-3">
         {loading ? <LoadingState text="Loading..." /> : coupons.length === 0 ? <EmptyState icon={Ticket} title="No coupons" description="Create a coupon to offer discounts" /> : coupons.map((c) => (
           <Card key={c.id}>
             <CardContent className="space-y-3">
