@@ -29,6 +29,27 @@ const actionColors: Record<string, string> = {
   'user.created': 'border-emerald-200 bg-emerald-50 text-emerald-700',
   'user.deactivated': 'border-red-200 bg-red-50 text-red-700',
   'order.status_changed': 'border-violet-200 bg-violet-50 text-violet-700',
+  'order.payment_verified': 'border-green-200 bg-green-50 text-green-700',
+  'order.payment_disputed': 'border-red-200 bg-red-50 text-red-700',
+  'order.payment_pending': 'border-amber-200 bg-amber-50 text-amber-700',
+  'order.delivery_verified': 'border-green-200 bg-green-50 text-green-700',
+  'order.delivery_disputed': 'border-red-200 bg-red-50 text-red-700',
+  'order.delivery_pending': 'border-amber-200 bg-amber-50 text-amber-700',
+  'order.assigned': 'border-indigo-200 bg-indigo-50 text-indigo-700',
+}
+
+const actionLabels: Record<string, string> = {
+  login: 'Login',
+  'user.created': 'User Created',
+  'user.deactivated': 'User Deactivated',
+  'order.status_changed': 'Status Changed',
+  'order.payment_verified': 'Payment Verified',
+  'order.payment_disputed': 'Payment Disputed',
+  'order.payment_pending': 'Payment Pending',
+  'order.delivery_verified': 'Delivery Verified',
+  'order.delivery_disputed': 'Delivery Disputed',
+  'order.delivery_pending': 'Delivery Pending',
+  'order.assigned': 'Agent Assigned',
 }
 
 export default function ActivityLogPage() {
@@ -71,7 +92,7 @@ export default function ActivityLogPage() {
             <CardContent className="space-y-2">
               <div className="flex items-center justify-between">
                 <Badge variant="outline" className={`font-normal text-xs ${actionColors[log.action] ?? 'border-muted bg-muted/50 text-muted-foreground'}`}>
-                  {log.action}
+                  {actionLabels[log.action] ?? log.action.replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
                 </Badge>
                 <span className="text-xs text-muted-foreground">
                   {new Date(log.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
@@ -107,7 +128,7 @@ export default function ActivityLogPage() {
                 <TableCell className="font-medium">{log.user_name}</TableCell>
                 <TableCell>
                   <Badge variant="outline" className={`font-normal text-xs ${actionColors[log.action] ?? 'border-muted bg-muted/50 text-muted-foreground'}`}>
-                    {log.action}
+                    {actionLabels[log.action] ?? log.action.replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-muted-foreground max-w-xs truncate">{log.description}</TableCell>
