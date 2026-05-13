@@ -66,7 +66,7 @@ export default function NotificationBell() {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 z-50 w-80 rounded-md border bg-card shadow-lg">
+          <div className="fixed left-2 right-2 top-14 z-50 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 rounded-md border bg-card shadow-lg">
             <div className="flex items-center justify-between p-3 border-b">
               <span className="text-sm font-semibold">Notifications</span>
               {unreadCount > 0 && (
@@ -80,7 +80,7 @@ export default function NotificationBell() {
                 <div key={n.id} className={`p-3 border-b last:border-b-0 ${n.read_at ? '' : 'bg-primary/5'}`}>
                   <p className="text-sm font-medium">{n.data.title || n.data.message}</p>
                   {n.data.title && n.data.message && (
-                    <p className="text-xs text-muted-foreground mt-0.5">{n.data.message}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.data.message}</p>
                   )}
                   <p className="text-xs text-muted-foreground mt-1">{new Date(n.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
                 </div>
