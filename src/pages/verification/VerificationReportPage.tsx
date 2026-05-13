@@ -133,7 +133,7 @@ export default function VerificationReportPage() {
       {summary && (
         <div className="space-y-3">
           {/* Row 1: Overview */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <Card className="border">
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="h-9 w-9 rounded-md bg-blue-100 flex items-center justify-center shrink-0"><Package className="h-4.5 w-4.5 text-blue-600" /></div>
@@ -161,7 +161,7 @@ export default function VerificationReportPage() {
           </div>
 
           {/* Row 2: CS Status breakdown */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <Card className="border">
               <CardContent className="p-3 flex items-center gap-2">
                 <CalendarClock className="h-4 w-4 text-amber-500 shrink-0" />
