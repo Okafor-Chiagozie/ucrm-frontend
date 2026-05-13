@@ -252,7 +252,7 @@ export default function VerificationReportPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-md border overflow-x-auto">
+      <div className="hidden md:block rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
@@ -302,8 +302,8 @@ export default function VerificationReportPage() {
       {meta && <Pagination meta={meta} page={page} onPageChange={setPage} />}
 
       {/* Mobile cards */}
-      <div className="sm:hidden space-y-3">
-        {!loading && orders.map(o => (
+      <div className="md:hidden space-y-3">
+        {loading ? <LoadingState text="Loading..." /> : orders.length === 0 ? <EmptyState icon={ShieldCheck} title="No orders found" description="Adjust your filters" /> : orders.map(o => (
           <Card key={o.id} className={`border ${o.has_mismatch ? 'border-red-200 bg-red-50/30' : ''}`}>
             <CardContent className="p-4 space-y-3">
               <div className="flex justify-between items-start">
