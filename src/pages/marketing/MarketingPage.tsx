@@ -160,7 +160,7 @@ export default function MarketingPage() {
   const recipientCount = meta.total - excludedPhones.size
   const loadTemplate = (t: MarketingTemplate) => {
     setChannel(t.channel)
-    setMessage(t.message)
+    setMessage(t.message.replaceAll('\\n', '\n'))
     if (t.email_subject) setSubject(t.email_subject)
   }
 
@@ -200,7 +200,7 @@ export default function MarketingPage() {
 
   const openTemplateDialog = (template?: MarketingTemplate) => {
     if (template) {
-      setEditingTemplate(template); setTemplateName(template.name); setTemplateMessage(template.message)
+      setEditingTemplate(template); setTemplateName(template.name); setTemplateMessage(template.message.replaceAll('\\n', '\n'))
       setTemplateChannel(template.channel); setTemplateSubject(template.email_subject ?? '')
     } else {
       setEditingTemplate(null); setTemplateName(''); setTemplateMessage('')
@@ -213,7 +213,7 @@ export default function MarketingPage() {
     if (!templateName.trim() || !templateMessage.trim()) { toast.error('Name and message are required'); return }
     setSavingTemplate(true)
     try {
-      const payload = { name: templateName, message: templateMessage, channel: templateChannel, email_subject: templateChannel === 'email' ? templateSubject : null }
+      const payload = { name: templateName, message: templateMessage.replaceAll('\n', '\\n'), channel: templateChannel, email_subject: templateChannel === 'email' ? templateSubject : null }
       if (editingTemplate) { await api.put(`/marketing/templates/${editingTemplate.id}`, payload); toast.success('Template updated') }
       else { await api.post('/marketing/templates', payload); toast.success('Template created') }
       const { data } = await api.get('/marketing/templates')

@@ -224,8 +224,8 @@ export default function SettingsPage() {
                         ) : meta.type === 'textarea' ? (
                           <div className="space-y-2">
                             <VariableTextarea
-                              value={value}
-                              onChange={(v) => setSettings((prev) => ({ ...prev, [key]: v }))}
+                              value={value.replaceAll('\\n', '\n')}
+                              onChange={(v) => setSettings((prev) => ({ ...prev, [key]: v.replaceAll('\n', '\\n') }))}
                               variables={NOTIFICATION_VARIABLES[key] ?? []}
                               rows={3}
                             />
