@@ -53,7 +53,7 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm max-h-[85vh] overflow-y-auto data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "fixed top-1/2 left-1/2 z-50 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-xl bg-popover p-0 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none sm:max-w-sm max-h-[85vh] flex flex-col data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className
         )}
         {...props}
@@ -64,7 +64,7 @@ function DialogContent({
             render={
               <Button
                 variant="ghost"
-                className="sticky top-0 z-30 ml-auto -mt-4 -mr-1"
+                className="absolute top-2 right-2 z-30"
                 size="icon-sm"
               />
             }
@@ -73,7 +73,7 @@ function DialogContent({
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
         )}
-        {children}
+        <div className="overflow-y-auto flex-1 p-4 grid gap-4">{children}</div>
       </DialogPrimitive.Popup>
     </DialogPortal>
   )
@@ -83,7 +83,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn("sticky top-0 z-20 bg-popover -mx-4 -mt-4 px-4 pt-4 pb-3 border-b flex flex-col gap-2", className)}
+      className={cn("sticky top-0 z-20 bg-popover -mx-4 -mt-4 px-4 pr-10 pt-4 pb-3 border-b flex flex-col gap-2", className)}
       {...props}
     />
   )
@@ -101,7 +101,7 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end",
+        "sticky bottom-0 -mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end",
         className
       )}
       {...props}
