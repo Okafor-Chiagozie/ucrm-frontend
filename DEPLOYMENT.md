@@ -4,9 +4,9 @@
 - **Host:** 82.29.157.194
 - **SSH Port:** 65002
 - **SSH User:** u743308957
-- **Public folder:** `~/domains/boss-stores.com/public_html/ucrm/`
-- **URL:** https://ucrm.boss-stores.com
-- **API URL:** https://api-ucrm.boss-stores.com/api/v1
+- **Public folder:** `~/domains/nabeaucrm.site/public_html/`
+- **URL:** https://nabeaucrm.site
+- **API URL:** https://api.nabeaucrm.site/api/v1
 
 ---
 
@@ -15,7 +15,7 @@
 ### 1. Set production API URL
 Ensure `.env.production` exists in the project root:
 ```
-VITE_API_URL=https://api-ucrm.boss-stores.com/api/v1
+VITE_API_URL=https://api.nabeaucrm.site/api/v1
 ```
 
 ### 2. Build for production
@@ -28,20 +28,20 @@ From your local PC terminal — zip first for speed:
 ```bash
 cd crm-frontend
 tar -czf dist.tar.gz -C dist .
-scp -P 65002 dist.tar.gz u743308957@82.29.157.194:~/domains/boss-stores.com/public_html/ucrm/
+scp -P 65002 dist.tar.gz u743308957@82.29.157.194:~/domains/nabeaucrm.site/public_html/
 ```
 
 Then SSH in and extract:
 ```bash
 ssh -p 65002 u743308957@82.29.157.194
-cd ~/domains/boss-stores.com/public_html/ucrm
+cd ~/domains/nabeaucrm.site/public_html
 tar -xzf dist.tar.gz
 rm dist.tar.gz
 ```
 
 ### 4. Add .htaccess for SPA routing
 ```bash
-cat > ~/domains/boss-stores.com/public_html/ucrm/.htaccess << 'EOF'
+cat > ~/domains/nabeaucrm.site/public_html/.htaccess << 'EOF'
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
@@ -67,7 +67,7 @@ EOF
 ```
 
 ### 5. Verify
-Visit https://ucrm.boss-stores.com in your browser.
+Visit https://nabeaucrm.site in your browser.
 
 ---
 
@@ -86,18 +86,18 @@ tar -czf dist.tar.gz -C dist .
 
 ### 3. Upload to Hostinger
 ```bash
-scp -P 65002 dist.tar.gz u743308957@82.29.157.194:~/domains/boss-stores.com/public_html/ucrm/
+scp -P 65002 dist.tar.gz u743308957@82.29.157.194:~/domains/nabeaucrm.site/public_html/
 ```
 
 ### 4. SSH in and extract
 ```bash
 ssh -p 65002 u743308957@82.29.157.194
-cd ~/domains/boss-stores.com/public_html/ucrm
+cd ~/domains/nabeaucrm.site/public_html
 tar -xzf dist.tar.gz
 rm dist.tar.gz
 ```
 
 ### 5. Verify
-Visit https://ucrm.boss-stores.com in your browser.
+Visit https://nabeaucrm.site in your browser.
 
 The .htaccess only needs to be created once — it persists across updates.
