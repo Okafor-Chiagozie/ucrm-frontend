@@ -2,7 +2,11 @@ import { useState, useEffect, useCallback } from 'react'
 import api from '@/lib/api'
 import type { PaginationMeta } from '@/types'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
@@ -11,7 +15,7 @@ import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { Card, CardContent } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { Search, ScrollText } from 'lucide-react'
+import { Search, ScrollText, RotateCcw } from 'lucide-react'
 
 interface LogEntry {
   id: string
@@ -55,23 +59,33 @@ const actionLabels: Record<string, string> = {
 export default function ActivityLogPage() {
   const [logs, setLogs] = useState<LogEntry[]>([])
   const [meta, setMeta] = useState<PaginationMeta | null>(null)
+  const [users, setUsers] = useState<{ id: string; name: string }[]>([])
   const [search, setSearch] = useState('')
+  const [actionFilter, setActionFilter] = useState('')
+  const [userFilter, setUserFilter] = useState('')
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
+
+  const hasFilters = search || actionFilter || userFilter
 
   const fetchLogs = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams({ page: String(page), per_page: '20' })
       if (search) params.set('search', search)
+      if (actionFilter) params.set('action', actionFilter)
+      if (userFilter) params.set('user_id', userFilter)
       const { data } = await api.get(`/activity-logs?${params}`)
       setLogs(data.data.data)
       setMeta(data.meta)
     } catch { toast.error('Failed to load activity logs') }
     finally { setLoading(false) }
-  }, [page, search])
+  }, [page, search, actionFilter, userFilter])
 
   useEffect(() => { fetchLogs() }, [fetchLogs])
+  useEffect(() => { api.get('/users?per_page=100').then(({ data }) => setUsers(data.data.data.map((u: { id: string; name: string }) => ({ id: u.id, name: u.name })))).catch(() => {}) }, [])
+
+  const clearFilters = () => { setSearch(''); setActionFilter(''); setUserFilter(''); setPage(1) }
 
   return (
     <div className="space-y-6">
@@ -80,9 +94,30 @@ export default function ActivityLogPage() {
         <p className="text-sm text-muted-foreground mt-0.5">Track who did what and when</p>
       </div>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Search activity..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} className="pl-9 h-10" />
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search activity..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} className="pl-9 h-10" />
+        </div>
+        <Select value={userFilter || 'all'} onValueChange={(v: string | null) => { setUserFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
+          <SelectTrigger className="w-full sm:w-40"><SelectValue placeholder="User" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Users</SelectItem>
+            {users.map(u => <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={actionFilter || 'all'} onValueChange={(v: string | null) => { setActionFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
+          <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder="Action" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Actions</SelectItem>
+            {Object.entries(actionLabels).map(([key, label]) => <SelectItem key={key} value={key}>{label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        {hasFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground h-10">
+            <RotateCcw className="mr-1.5 h-3.5 w-3.5" /> Clear
+          </Button>
+        )}
       </div>
 
       {/* Mobile cards */}

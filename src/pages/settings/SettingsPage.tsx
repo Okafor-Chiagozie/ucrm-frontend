@@ -231,7 +231,11 @@ export default function SettingsPage() {
                             />
                             <div className="rounded-md bg-muted/50 border border-dashed p-3">
                               <p className="text-[10px] font-medium text-muted-foreground mb-1">Preview:</p>
-                              <p className="text-xs whitespace-pre-wrap">{previewTemplate(value)}</p>
+                              {value.includes('<') ? (
+                                <div className="text-xs" dangerouslySetInnerHTML={{ __html: previewTemplate(value) }} />
+                              ) : (
+                                <p className="text-xs whitespace-pre-wrap">{previewTemplate(value)}</p>
+                              )}
                             </div>
                             {canEdit && (
                               <div className="flex justify-end">
