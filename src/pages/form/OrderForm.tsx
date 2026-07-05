@@ -164,7 +164,7 @@ export default function OrderForm() {
 
       // If a thank-you URL is configured, redirect the top window (form may be
       // embedded in an iframe) instead of showing the success screen.
-      const thankYouUrl = formData.form_settings.thank_you_url?.trim()
+      const thankYouUrl = formData?.form_settings.thank_you_url?.trim()
       if (thankYouUrl) {
         try {
           (window.top ?? window).location.href = thankYouUrl
