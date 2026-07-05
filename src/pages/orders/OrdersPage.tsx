@@ -71,7 +71,7 @@ const DATE_PRESETS = [
 ]
 
 export default function OrdersPage() {
-  const { hasPermission } = useAuth()
+  const { hasPermission, hasFeature } = useAuth()
   const [orders, setOrders] = useState<Order[]>([])
   const [businesses, setBusinesses] = useState<Business[]>([])
   const [products, setProducts] = useState<Product[]>([])
@@ -286,6 +286,7 @@ export default function OrdersPage() {
             {products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
           </SelectContent>
         </Select>
+        {hasFeature('coupons') && (
         <Select value={hasCoupon || 'all'} onValueChange={(v) => { setHasCoupon(v === 'all' ? '' : v ?? ''); setPage(1) }}>
           <SelectTrigger className="h-10 w-full">
             <SelectValue>{hasCoupon === '1' ? 'With Coupon' : hasCoupon === '0' ? 'Without Coupon' : 'Coupon: Any'}</SelectValue>
@@ -296,6 +297,7 @@ export default function OrdersPage() {
             <SelectItem value="0">Without Coupon</SelectItem>
           </SelectContent>
         </Select>
+        )}
         <div className="flex items-center gap-3">
           <DropdownMenu>
             <DropdownMenuTrigger render={<Button variant="outline" className="h-10 flex-1" />}>
@@ -475,6 +477,7 @@ export default function OrdersPage() {
 function OrderDetailDialog({ order, canUpdateStatus, canAssignAgent, onClose, onUpdated }: {
   order: Order; canUpdateStatus: boolean; canAssignAgent: boolean; onClose: () => void; onUpdated: () => void
 }) {
+  const { hasFeature } = useAuth()
   const [status, setStatus] = useState(order.status)
   const [agentId, setAgentId] = useState(order.assigned_agent?.id ?? '')
   const [agents, setAgents] = useState<{ id: string; name: string }[]>([])
@@ -534,6 +537,9 @@ function OrderDetailDialog({ order, canUpdateStatus, canAssignAgent, onClose, on
               <div className="sm:col-span-2"><span className="text-muted-foreground">Address:</span> {order.customer_address}</div>
               <div><span className="text-muted-foreground">State:</span> {order.customer_state}</div>
               {order.ip_address && <div><span className="text-muted-foreground">IP:</span> <span className="font-mono text-xs">{order.ip_address}</span></div>}
+              {(order.custom_fields ?? []).map((field, i) => (
+                <div key={i}><span className="text-muted-foreground">{field.label}:</span> {field.value}</div>
+              ))}
             </div>
           </div>
 
@@ -559,7 +565,7 @@ function OrderDetailDialog({ order, canUpdateStatus, canAssignAgent, onClose, on
           <div className="rounded-md border p-3 space-y-1 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatPrice(order.subtotal)}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">Delivery Fee</span><span>{formatPrice(order.delivery_fee)}</span></div>
-            {Number(order.discount) > 0 && <div className="flex justify-between text-emerald-600"><span>Discount {order.coupon_code && `(${order.coupon_code})`}</span><span>-{formatPrice(order.discount)}</span></div>}
+            {Number(order.discount) > 0 && <div className="flex justify-between text-emerald-600"><span>Discount {hasFeature('coupons') && order.coupon_code && `(${order.coupon_code})`}</span><span>-{formatPrice(order.discount)}</span></div>}
             <Separator />
             <div className="flex justify-between font-semibold text-base"><span>Total</span><span>{formatPrice(order.total)}</span></div>
           </div>

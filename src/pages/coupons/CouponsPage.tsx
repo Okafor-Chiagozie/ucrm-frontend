@@ -25,8 +25,10 @@ import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
 import { Card, CardContent } from '@/components/ui/card'
 import { Plus, Search, Pencil, Trash2, Ticket, ArrowUpDown, ArrowUp, ArrowDown, X } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function CouponsPage() {
+  const { hasFeature } = useAuth()
   const [coupons, setCoupons] = useState<Coupon[]>([])
   const [businesses, setBusinesses] = useState<Business[]>([])
   const [meta, setMeta] = useState<PaginationMeta | null>(null)
@@ -73,6 +75,18 @@ export default function CouponsPage() {
   }
 
   const formatValue = (c: Coupon) => c.type === 'fixed' ? `₦${Number(c.value).toLocaleString()}` : `${c.value}%`
+
+  if (!hasFeature('coupons')) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Coupons</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">Manage discount codes for your businesses</p>
+        </div>
+        <EmptyState icon={Ticket} title="Coupons are disabled" description="Enable coupons in Settings to manage discount codes." />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

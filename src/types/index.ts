@@ -9,6 +9,7 @@ export interface User {
   available_to: string | null
   role: string | null
   permissions: string[]
+  features?: { coupons: boolean }
   created_by: string | null
   created_at: string
   updated_at?: string
@@ -88,15 +89,27 @@ export interface ProductVariation {
   sort_order: number
 }
 
+export type CustomFieldType = 'text' | 'textarea' | 'number' | 'select' | 'checkbox'
+
+export interface CustomFormField {
+  key: string
+  label: string
+  type: CustomFieldType
+  required: boolean
+  options?: string[]
+}
+
 export interface FormSettings {
   heading: string
   subheading: string
   button_text: string
   button_color: string
   success_message: string
+  thank_you_url: string
   show_whatsapp: boolean
   show_email: boolean
   show_coupon: boolean
+  custom_fields: CustomFormField[]
 }
 
 export interface Product {
@@ -150,6 +163,7 @@ export interface Order {
   scheduled_at: string | null
   delivered_at: string | null
   notes: string | null
+  custom_fields: { label: string; value: string }[]
   assigned_agent: { id: string; name: string } | null
   items: OrderItem[]
   items_count: number

@@ -15,7 +15,9 @@ import { Separator } from '@/components/ui/separator'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
-import { Copy, ExternalLink, Code, Pencil, ToggleLeft, ToggleRight } from 'lucide-react'
+import { Copy, ExternalLink, Code, Pencil, ToggleLeft, ToggleRight, Plus, Trash2 } from 'lucide-react'
+import type { CustomFormField, CustomFieldType } from '@/types'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function FormSettingsPage() {
   const [products, setProducts] = useState<Product[]>([])
@@ -152,6 +154,8 @@ export default function FormSettingsPage() {
 }
 
 function FormBuilderDialog({ product, onClose, onSaved }: { product: Product; onClose: () => void; onSaved: () => void }) {
+  const { hasFeature } = useAuth()
+  const couponsEnabled = hasFeature('coupons')
   const [settings, setSettings] = useState<FormSettings>({ ...product.form_settings })
   const [saving, setSaving] = useState(false)
 
@@ -159,10 +163,41 @@ function FormBuilderDialog({ product, onClose, onSaved }: { product: Product; on
     setSettings({ ...settings, [key]: value })
   }
 
+  const customFields = settings.custom_fields ?? []
+
+  const setCustomFields = (fields: CustomFormField[]) => {
+    setSettings({ ...settings, custom_fields: fields })
+  }
+
+  const addCustomField = () => {
+    setCustomFields([
+      ...customFields,
+      { key: crypto.randomUUID(), label: '', type: 'text', required: false, options: [] },
+    ])
+  }
+
+  const updateCustomField = (index: number, patch: Partial<CustomFormField>) => {
+    setCustomFields(customFields.map((f, i) => (i === index ? { ...f, ...patch } : f)))
+  }
+
+  const removeCustomField = (index: number) => {
+    setCustomFields(customFields.filter((_, i) => i !== index))
+  }
+
   const handleSave = async () => {
+    // Drop fields with no label; require options for select fields.
+    const cleanedFields = customFields
+      .map((f) => ({ ...f, label: f.label.trim(), options: (f.options ?? []).map((o) => o.trim()).filter(Boolean) }))
+      .filter((f) => f.label)
+
+    if (cleanedFields.some((f) => f.type === 'select' && f.options.length === 0)) {
+      toast.error('Dropdown fields need at least one option')
+      return
+    }
+
     setSaving(true)
     try {
-      await api.put(`/products/${product.id}/form-settings`, settings)
+      await api.put(`/products/${product.id}/form-settings`, { ...settings, custom_fields: cleanedFields })
       toast.success('Form settings saved')
       onSaved()
     } catch {
@@ -207,12 +242,15 @@ function FormBuilderDialog({ product, onClose, onSaved }: { product: Product; on
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label>Success Message</Label>
-            <textarea
-              value={settings.success_message}
-              onChange={(e) => set('success_message', e.target.value)}
-              className="flex min-h-16 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            <Label>Thank You URL</Label>
+            <Input
+              type="url"
+              value={settings.thank_you_url ?? ''}
+              onChange={(e) => set('thank_you_url', e.target.value)}
+              placeholder="https://yoursite.com/thank-you"
+              className="h-10"
             />
+            <p className="text-xs text-muted-foreground">Customers are redirected here after placing an order.</p>
           </div>
 
           <Separator />
@@ -222,7 +260,7 @@ function FormBuilderDialog({ product, onClose, onSaved }: { product: Product; on
             {([
               { key: 'show_whatsapp' as const, label: 'WhatsApp Number', description: 'Show WhatsApp number field on the form' },
               { key: 'show_email' as const, label: 'Email Address', description: 'Show email field on the form' },
-              { key: 'show_coupon' as const, label: 'Coupon Code', description: 'Allow customers to enter discount codes' },
+              ...(couponsEnabled ? [{ key: 'show_coupon' as const, label: 'Coupon Code', description: 'Allow customers to enter discount codes' }] : []),
             ]).map(({ key, label, description }) => (
               <div key={key} className="flex items-center justify-between rounded-md border p-3">
                 <div>
@@ -239,6 +277,66 @@ function FormBuilderDialog({ product, onClose, onSaved }: { product: Product; on
               </div>
             ))}
           </div>
+
+          <Separator />
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-sm font-semibold">Custom Fields</h4>
+              <p className="text-xs text-muted-foreground">Add extra questions that appear on this order form</p>
+            </div>
+            <Button type="button" variant="outline" size="sm" onClick={addCustomField}>
+              <Plus className="mr-1 h-3.5 w-3.5" /> Add Field
+            </Button>
+          </div>
+
+          {customFields.length > 0 && (
+            <div className="space-y-3">
+              {customFields.map((field, i) => (
+                <div key={field.key} className="rounded-md border p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-muted-foreground">Field {i + 1}</span>
+                    <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => removeCustomField(i)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Field Label</Label>
+                      <Input value={field.label} onChange={(e) => updateCustomField(i, { label: e.target.value })} placeholder="e.g. Preferred delivery time" className="h-9" />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Field Type</Label>
+                      <Select value={field.type} onValueChange={(v) => updateCustomField(i, { type: v as CustomFieldType })}>
+                        <SelectTrigger className="h-9 w-full"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="text">Short text</SelectItem>
+                          <SelectItem value="textarea">Long text</SelectItem>
+                          <SelectItem value="number">Number</SelectItem>
+                          <SelectItem value="select">Dropdown</SelectItem>
+                          <SelectItem value="checkbox">Checkbox</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  {field.type === 'select' && (
+                    <div className="space-y-1">
+                      <Label className="text-xs">Options (comma separated)</Label>
+                      <Input
+                        value={(field.options ?? []).join(', ')}
+                        onChange={(e) => updateCustomField(i, { options: e.target.value.split(',').map((o) => o.trimStart()) })}
+                        placeholder="e.g. Morning, Afternoon, Evening"
+                        className="h-9"
+                      />
+                    </div>
+                  )}
+                  <label className="flex items-center gap-2 text-sm cursor-pointer w-fit">
+                    <input type="checkbox" checked={field.required} onChange={(e) => updateCustomField(i, { required: e.target.checked })} />
+                    Required field
+                  </label>
+                </div>
+              ))}
+            </div>
+          )}
 
           <Separator />
           <h4 className="text-sm font-semibold">Live Preview</h4>
@@ -266,7 +364,10 @@ function FormBuilderDialog({ product, onClose, onSaved }: { product: Product; on
                   {product.variations.length > 3 && <p className="text-xs text-gray-400">+{product.variations.length - 3} more</p>}
                 </div>
               </div>
-              {settings.show_coupon && <PreviewField label="Coupon Code" optional />}
+              {couponsEnabled && settings.show_coupon && <PreviewField label="Coupon Code" optional />}
+              {customFields.filter((f) => f.label.trim()).map((f) => (
+                <PreviewField key={f.key} label={`${f.label}${f.required ? ' *' : ''}`} optional={!f.required} />
+              ))}
               <button className="w-full h-11 rounded-md text-white font-bold text-sm mt-2" style={{ background: settings.button_color }} disabled>
                 {settings.button_text}
               </button>

@@ -11,6 +11,7 @@ interface AuthContextType {
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
   hasPermission: (permission: string) => boolean
+  hasFeature: (feature: keyof NonNullable<User['features']>) => boolean
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -70,8 +71,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return user?.permissions?.includes(permission) ?? false
   }
 
+  // Feature flags default to enabled when absent so nothing hides unexpectedly.
+  const hasFeature = (feature: keyof NonNullable<User['features']>) => {
+    return user?.features?.[feature] ?? true
+  }
+
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout, refreshUser, hasPermission }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, logout, refreshUser, hasPermission, hasFeature }}>
       {children}
     </AuthContext.Provider>
   )

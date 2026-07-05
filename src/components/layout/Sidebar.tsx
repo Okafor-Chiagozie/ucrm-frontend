@@ -54,8 +54,9 @@ const navItems = [
 ]
 
 export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
-  const { user, logout, hasPermission } = useAuth()
+  const { user, logout, hasPermission, hasFeature } = useAuth()
   const visibleItems = navItems.filter((item) => hasPermission(item.permission))
+    .filter((item) => item.to !== '/coupons' || hasFeature('coupons'))
   const location = useLocation()
 
   return (

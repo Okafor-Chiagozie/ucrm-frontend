@@ -10,7 +10,6 @@ interface Variation {
   name: string
   description: string | null
   price: string
-  in_stock: boolean
 }
 
 interface BumpOfferData {
@@ -28,15 +27,25 @@ interface DeliveryFeeData {
   fee: string
 }
 
+interface CustomFieldData {
+  key: string
+  label: string
+  type: 'text' | 'textarea' | 'number' | 'select' | 'checkbox'
+  required: boolean
+  options?: string[]
+}
+
 interface FormSettingsData {
   heading: string
   subheading: string
   button_text: string
   button_color: string
   success_message: string
+  thank_you_url?: string
   show_whatsapp: boolean
   show_email: boolean
   show_coupon: boolean
+  custom_fields?: CustomFieldData[]
 }
 
 interface FormData {
@@ -73,6 +82,7 @@ export default function OrderForm() {
   const [email, setEmail] = useState('')
   const [selectedVariation, setSelectedVariation] = useState('')
   const [selectedBumps, setSelectedBumps] = useState<Set<string>>(new Set())
+  const [customValues, setCustomValues] = useState<Record<string, string | boolean>>({})
   const [couponCode, setCouponCode] = useState('')
   const [couponValid, setCouponValid] = useState<null | { valid: boolean; type: string; value: number }>(null)
   const [couponChecking, setCouponChecking] = useState(false)
@@ -149,7 +159,21 @@ export default function OrderForm() {
         variation_id: selectedVariation,
         bump_offer_ids: Array.from(selectedBumps),
         coupon_code: couponValid?.valid ? couponCode : undefined,
+        custom_fields: customValues,
       })
+
+      // If a thank-you URL is configured, redirect the top window (form may be
+      // embedded in an iframe) instead of showing the success screen.
+      const thankYouUrl = formData.form_settings.thank_you_url?.trim()
+      if (thankYouUrl) {
+        try {
+          (window.top ?? window).location.href = thankYouUrl
+        } catch {
+          window.location.href = thankYouUrl
+        }
+        return
+      }
+
       setSubmitted(data.data)
     } catch (err) {
       setSubmitError((err as any).response?.data?.message || 'Failed to place order. Please try again.')
@@ -190,7 +214,7 @@ export default function OrderForm() {
           <p style={{ color: '#6b7280', fontSize: 14, margin: '0 0 16px' }}>Your order number is:</p>
           <p style={{ fontSize: 20, fontWeight: 700, color: '#2563eb', fontFamily: 'monospace', margin: '0 0 8px' }}>{submitted.order_number}</p>
           <p style={{ fontSize: 18, fontWeight: 600, color: '#111827' }}>Total: {formatPrice(Number(submitted.total))}</p>
-          <p style={{ color: '#6b7280', fontSize: 13, marginTop: 16 }}>{formData.form_settings.success_message}</p>
+          <p style={{ color: '#6b7280', fontSize: 13, marginTop: 16 }}>We will contact you shortly to confirm your order.</p>
         </div>
       </div>
     )
@@ -199,9 +223,9 @@ export default function OrderForm() {
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', margin: '0 0 4px' }}>{formData.form_settings.heading}</h2>
-          <p style={{ color: '#6b7280', fontSize: 13, margin: 0 }}>{formData.form_settings.subheading}</p>
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <h2 style={{ fontSize: 26, fontWeight: 800, color: '#0f172a', margin: '0 0 6px', letterSpacing: '-0.01em' }}>{formData.form_settings.heading}</h2>
+          <p style={{ color: '#374151', fontSize: 15, fontWeight: 500, margin: 0 }}>{formData.form_settings.subheading}</p>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -262,23 +286,21 @@ export default function OrderForm() {
 
           {/* Variations */}
           <div style={styles.fieldGroup}>
-            <label style={{ ...styles.label, fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Select Your Package *</label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <label style={{ ...styles.label, fontSize: 18, fontWeight: 800, marginBottom: 10 }}>Select Your Package *</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {formData.variations.map((v) => (
                 <label key={v.id} style={{
                   ...styles.variationCard,
-                  borderColor: selectedVariation === v.id ? '#2563eb' : '#e5e7eb',
+                  borderColor: selectedVariation === v.id ? '#2563eb' : '#9ca3af',
                   background: selectedVariation === v.id ? '#eff6ff' : '#fff',
-                  opacity: v.in_stock ? 1 : 0.5,
-                  cursor: v.in_stock ? 'pointer' : 'not-allowed',
+                  cursor: 'pointer',
                 }}>
-                  <input type="radio" name="variation" value={v.id} checked={selectedVariation === v.id} onChange={() => v.in_stock && setSelectedVariation(v.id)} disabled={!v.in_stock} style={{ display: 'none' }} />
+                  <input type="radio" name="variation" value={v.id} checked={selectedVariation === v.id} onChange={() => setSelectedVariation(v.id)} style={{ display: 'none' }} />
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: 14, color: '#111827' }}>{v.name}</div>
-                    {v.description && <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{v.description}</div>}
-                    {!v.in_stock && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 2 }}>Out of stock</div>}
+                    <div style={{ fontWeight: 700, fontSize: 16, color: '#0f172a' }}>{v.name}</div>
+                    {v.description && <div style={{ fontSize: 14, fontWeight: 500, color: '#4b5563', marginTop: 3 }}>{v.description}</div>}
                   </div>
-                  <div style={{ fontWeight: 700, fontSize: 16, color: '#111827' }}>{formatPrice(Number(v.price))}</div>
+                  <div style={{ fontWeight: 800, fontSize: 18, color: '#0f172a' }}>{formatPrice(Number(v.price))}</div>
                 </label>
               ))}
             </div>
@@ -286,20 +308,20 @@ export default function OrderForm() {
 
           {/* Bump Offers */}
           {formData.bump_offers.length > 0 && formData.bump_offers.map((bump) => (
-            <div key={bump.id} style={{ ...styles.bumpCard, borderColor: selectedBumps.has(bump.id) ? '#2563eb' : '#e5e7eb' }}>
-              <h4 style={{ fontSize: 14, fontWeight: 700, color: '#2563eb', margin: '0 0 4px' }}>Would You Like To Add:</h4>
-              <p style={{ fontSize: 14, fontWeight: 600, color: '#111827', margin: '0 0 4px' }}>{bump.product_name} — {bump.variation_name}</p>
-              {bump.description && <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 8px' }}>{bump.description}</p>}
+            <div key={bump.id} style={{ ...styles.bumpCard, borderColor: selectedBumps.has(bump.id) ? '#2563eb' : '#9ca3af' }}>
+              <h4 style={{ fontSize: 16, fontWeight: 800, color: '#2563eb', margin: '0 0 5px' }}>Would You Like To Add:</h4>
+              <p style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: '0 0 5px' }}>{bump.product_name} — {bump.variation_name}</p>
+              {bump.description && <p style={{ fontSize: 14, fontWeight: 500, color: '#4b5563', margin: '0 0 8px' }}>{bump.description}</p>}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <span style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{formatPrice(Number(bump.special_price))}</span>
-                <span style={{ fontSize: 14, color: '#9ca3af', textDecoration: 'line-through' }}>{formatPrice(Number(bump.original_price))}</span>
+                <span style={{ fontSize: 20, fontWeight: 800, color: '#0f172a' }}>{formatPrice(Number(bump.special_price))}</span>
+                <span style={{ fontSize: 15, fontWeight: 500, color: '#6b7280', textDecoration: 'line-through' }}>{formatPrice(Number(bump.original_price))}</span>
               </div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#2563eb' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 15, fontWeight: 700, color: '#2563eb' }}>
                 <input type="checkbox" checked={selectedBumps.has(bump.id)} onChange={() => {
                   const next = new Set(selectedBumps)
                   next.has(bump.id) ? next.delete(bump.id) : next.add(bump.id)
                   setSelectedBumps(next)
-                }} />
+                }} style={{ width: 18, height: 18 }} />
                 Yes, add this to my order!
               </label>
             </div>
@@ -316,12 +338,43 @@ export default function OrderForm() {
               </button>
             </div>
             {couponValid !== null && (
-              <p style={{ fontSize: 12, color: couponValid.valid ? '#10b981' : '#ef4444', marginTop: 4 }}>
+              <p style={{ fontSize: 14, fontWeight: 600, color: couponValid.valid ? '#059669' : '#dc2626', marginTop: 6 }}>
                 {couponValid.valid ? `Coupon applied: ${couponValid.type === 'fixed' ? formatPrice(couponValid.value) : `${couponValid.value}%`} off` : 'Invalid or expired coupon code'}
               </p>
             )}
           </div>
           )}
+
+          {/* Custom Fields */}
+          {(formData.form_settings.custom_fields ?? []).map((field) => {
+            const value = customValues[field.key]
+            const setValue = (v: string | boolean) => setCustomValues((prev) => ({ ...prev, [field.key]: v }))
+            if (field.type === 'checkbox') {
+              return (
+                <div key={field.key} style={styles.fieldGroup}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
+                    <input type="checkbox" checked={value === true} onChange={(e) => setValue(e.target.checked)} required={field.required} style={{ width: 18, height: 18 }} />
+                    {field.label}{field.required ? ' *' : ''}
+                  </label>
+                </div>
+              )
+            }
+            return (
+              <div key={field.key} style={styles.fieldGroup}>
+                <label style={styles.label}>{field.label}{field.required ? ' *' : ''}</label>
+                {field.type === 'textarea' ? (
+                  <textarea style={{ ...styles.input, height: 'auto', minHeight: 80, padding: '10px 12px', resize: 'vertical' }} value={(value as string) ?? ''} onChange={(e) => setValue(e.target.value)} required={field.required} />
+                ) : field.type === 'select' ? (
+                  <select style={styles.input} value={(value as string) ?? ''} onChange={(e) => setValue(e.target.value)} required={field.required}>
+                    <option value="">Select an option</option>
+                    {(field.options ?? []).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                  </select>
+                ) : (
+                  <input style={styles.input} type={field.type === 'number' ? 'number' : 'text'} value={(value as string) ?? ''} onChange={(e) => setValue(e.target.value)} required={field.required} />
+                )}
+              </div>
+            )
+          })}
 
           {/* Order Summary */}
           {selectedVariation && (
@@ -329,7 +382,7 @@ export default function OrderForm() {
               <div style={styles.summaryRow}><span>Subtotal</span><span>{formatPrice(subtotal)}</span></div>
               {deliveryFee > 0 && <div style={styles.summaryRow}><span>Delivery ({state})</span><span>{formatPrice(deliveryFee)}</span></div>}
               {discount > 0 && <div style={{ ...styles.summaryRow, color: '#10b981' }}><span>Discount</span><span>-{formatPrice(discount)}</span></div>}
-              <div style={{ ...styles.summaryRow, fontWeight: 700, fontSize: 18, borderTop: '1px solid #e5e7eb', paddingTop: 8, marginTop: 4 }}><span>Total</span><span>{formatPrice(total)}</span></div>
+              <div style={{ ...styles.summaryRow, fontWeight: 800, fontSize: 22, color: '#0f172a', borderTop: '2px solid #cbd5e1', paddingTop: 10, marginTop: 4 }}><span>Total</span><span>{formatPrice(total)}</span></div>
             </div>
           )}
 
@@ -348,15 +401,15 @@ const styles: Record<string, React.CSSProperties> = {
   loadingWrapper: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 60, gap: 12 },
   spinner: { width: 32, height: 32, border: '3px solid #e5e7eb', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin 0.8s linear infinite' },
   fieldGroup: { marginBottom: 16 },
-  label: { display: 'block', fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 },
-  input: { display: 'block', width: '100%', height: 42, padding: '0 12px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, color: '#111827', outline: 'none', boxSizing: 'border-box', background: '#fff' },
+  label: { display: 'block', fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 6 },
+  input: { display: 'block', width: '100%', height: 48, padding: '0 14px', border: '2px solid #9ca3af', borderRadius: 8, fontSize: 16, fontWeight: 500, color: '#0f172a', outline: 'none', boxSizing: 'border-box', background: '#fff' },
   phoneRow: { display: 'flex', gap: 8 },
   phoneCode: { width: 130, flex: 'none' },
-  variationCard: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', border: '2px solid', borderRadius: 8, transition: 'all 0.15s' },
-  bumpCard: { border: '2px dashed', borderRadius: 8, padding: 16, marginBottom: 16, background: '#fafafa' },
-  couponBtn: { height: 42, padding: '0 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: 'pointer' },
-  summaryBox: { background: '#f9fafb', borderRadius: 8, padding: 16, marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 6 },
-  summaryRow: { display: 'flex', justifyContent: 'space-between', fontSize: 14, color: '#374151' },
-  submitBtn: { width: '100%', height: 48, background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, fontSize: 16, fontWeight: 700, cursor: 'pointer', transition: 'background 0.15s' },
-  errorBox: { background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 6, padding: '10px 14px', marginBottom: 16, color: '#dc2626', fontSize: 13 },
+  variationCard: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', border: '2.5px solid', borderRadius: 10, transition: 'all 0.15s' },
+  bumpCard: { border: '2.5px dashed', borderRadius: 10, padding: 18, marginBottom: 16, background: '#fafafa' },
+  couponBtn: { height: 48, padding: '0 18px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 700, cursor: 'pointer' },
+  summaryBox: { background: '#f3f4f6', borderRadius: 10, padding: 18, marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8, border: '1.5px solid #cbd5e1' },
+  summaryRow: { display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 600, color: '#0f172a' },
+  submitBtn: { width: '100%', height: 54, background: '#2563eb', color: '#fff', border: 'none', borderRadius: 10, fontSize: 18, fontWeight: 800, cursor: 'pointer', transition: 'background 0.15s' },
+  errorBox: { background: '#fef2f2', border: '2px solid #fca5a5', borderRadius: 8, padding: '12px 16px', marginBottom: 16, color: '#dc2626', fontSize: 15, fontWeight: 600 },
 }

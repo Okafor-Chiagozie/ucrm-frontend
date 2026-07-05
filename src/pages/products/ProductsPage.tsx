@@ -22,7 +22,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import Pagination from '@/components/Pagination'
 import { toast } from 'sonner'
-import { Plus, Search, Pencil, XCircle, ArrowUpDown, ArrowUp, ArrowDown, Trash2, Package, X } from 'lucide-react'
+import { Plus, Search, Pencil, XCircle, ArrowUpDown, ArrowUp, ArrowDown, Trash2, Package, X, Copy } from 'lucide-react'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 
@@ -43,6 +43,7 @@ export default function ProductsPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [editProduct, setEditProduct] = useState<Product | null>(null)
   const [deactivateProduct, setDeactivateProduct] = useState<Product | null>(null)
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null)
 
   const fetchProducts = useCallback(async () => {
     setLoading(true)
@@ -89,6 +90,19 @@ export default function ProductsPage() {
       fetchProducts()
     } catch {
       toast.error('Failed to deactivate product')
+    }
+  }
+
+  const handleDuplicate = async (product: Product) => {
+    setDuplicatingId(product.id)
+    try {
+      await api.post(`/products/${product.id}/duplicate`)
+      toast.success('Product duplicated')
+      fetchProducts()
+    } catch {
+      toast.error('Failed to duplicate product')
+    } finally {
+      setDuplicatingId(null)
     }
   }
 
@@ -157,6 +171,7 @@ export default function ProductsPage() {
               </div>
               <div className="flex gap-1">
                 {hasPermission('products.edit') && <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditProduct(p)}><Pencil className="h-3.5 w-3.5" /></Button>}
+                {hasPermission('products.create') && <Button variant="ghost" size="icon" className="h-8 w-8" disabled={duplicatingId === p.id} onClick={() => handleDuplicate(p)}><Copy className="h-3.5 w-3.5" /></Button>}
                 {hasPermission('products.delete') && p.is_active && <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeactivateProduct(p)}><XCircle className="h-3.5 w-3.5" /></Button>}
               </div>
             </div>
@@ -215,6 +230,7 @@ export default function ProductsPage() {
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">
                     {hasPermission('products.edit') && <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditProduct(p)}><Pencil className="h-3.5 w-3.5" /></Button>}
+                    {hasPermission('products.create') && <Button variant="ghost" size="icon" className="h-8 w-8" disabled={duplicatingId === p.id} onClick={() => handleDuplicate(p)} title="Duplicate"><Copy className="h-3.5 w-3.5" /></Button>}
                     {hasPermission('products.delete') && p.is_active && <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeactivateProduct(p)}><XCircle className="h-3.5 w-3.5" /></Button>}
                   </div>
                 </TableCell>
