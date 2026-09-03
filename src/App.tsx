@@ -32,8 +32,9 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          {/* Public: embeddable order form (no auth, no layout) */}
-          <Route path="/form/:productId" element={<OrderForm />} />
+          {/* Public: embeddable order form (no auth, no layout). The key is a
+              form id; a product id still works and serves its default form. */}
+          <Route path="/form/:formKey" element={<OrderForm />} />
 
           <Route path="/login" element={<LoginPage />} />
           <Route path="/change-password" element={<ChangePasswordPage />} />

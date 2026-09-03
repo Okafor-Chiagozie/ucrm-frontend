@@ -537,6 +537,7 @@ function OrderDetailDialog({ order, canUpdateStatus, canAssignAgent, onClose, on
               <div className="sm:col-span-2"><span className="text-muted-foreground">Address:</span> {order.customer_address}</div>
               <div><span className="text-muted-foreground">State:</span> {order.customer_state}</div>
               {order.ip_address && <div><span className="text-muted-foreground">IP:</span> <span className="font-mono text-xs">{order.ip_address}</span></div>}
+              {order.form_name && <div><span className="text-muted-foreground">Ordered via:</span> {order.form_name}</div>}
               {(order.custom_fields ?? []).map((field, i) => (
                 <div key={i}><span className="text-muted-foreground">{field.label}:</span> {field.value}</div>
               ))}

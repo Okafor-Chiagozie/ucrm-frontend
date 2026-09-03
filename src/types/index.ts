@@ -112,6 +112,19 @@ export interface FormSettings {
   custom_fields: CustomFormField[]
 }
 
+/** One of a product's order forms. A product can serve several, each with its own fields and link. */
+export interface ProductForm {
+  id: string
+  product_id?: string
+  name: string
+  is_active: boolean
+  sort_order: number
+  orders_count?: number
+  settings: FormSettings
+  created_at?: string
+  updated_at?: string
+}
+
 export interface Product {
   id: string
   name: string
@@ -125,7 +138,7 @@ export interface Product {
   stock: number
   low_stock_threshold: number
   low_stock: boolean
-  form_settings: FormSettings
+  forms: ProductForm[]
   variations: ProductVariation[]
   created_at: string
   updated_at?: string
@@ -146,6 +159,7 @@ export interface Order {
   order_number: string
   business_id: string
   business_name: string | null
+  form_name: string | null
   customer_name: string
   customer_phone: string
   customer_whatsapp: string | null

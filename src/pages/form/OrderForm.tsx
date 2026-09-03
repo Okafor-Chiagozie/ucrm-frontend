@@ -49,6 +49,7 @@ interface FormSettingsData {
 }
 
 interface FormData {
+  form: { id: string; name: string }
   product: { id: string; name: string; description: string | null; business_name: string | null }
   form_settings: FormSettingsData
   variations: Variation[]
@@ -66,7 +67,9 @@ const COUNTRY_CODES = [
 ]
 
 export default function OrderForm() {
-  const { productId } = useParams<{ productId: string }>()
+  // A form id, or a product id for embeds published before a product could
+  // have several forms — the API resolves both.
+  const { formKey } = useParams<{ formKey: string }>()
   const [formData, setFormData] = useState<FormData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -91,12 +94,12 @@ export default function OrderForm() {
   const [submitError, setSubmitError] = useState('')
 
   useEffect(() => {
-    axios.get(`${API}/form/${productId}`).then(({ data }) => {
+    axios.get(`${API}/form/${formKey}`).then(({ data }) => {
       setFormData(data.data)
     }).catch(() => {
       setError('Failed to load form. This product may not be available.')
     }).finally(() => setLoading(false))
-  }, [productId])
+  }, [formKey])
 
   // Notify parent iframe of height changes
   useEffect(() => {
@@ -111,7 +114,7 @@ export default function OrderForm() {
 
   const savePartial = () => {
     if (phone.length >= 7) {
-      axios.post(`${API}/form/${productId}/partial`, { phone, phone_code: phoneCode, name }).catch(() => {})
+      axios.post(`${API}/form/${formKey}/partial`, { phone, phone_code: phoneCode, name }).catch(() => {})
     }
   }
 
@@ -119,7 +122,7 @@ export default function OrderForm() {
     if (!couponCode.trim()) return
     setCouponChecking(true)
     try {
-      const { data } = await axios.post(`${API}/form/${productId}/validate-coupon`, { code: couponCode })
+      const { data } = await axios.post(`${API}/form/${formKey}/validate-coupon`, { code: couponCode })
       setCouponValid(data)
     } catch {
       setCouponValid({ valid: false, type: '', value: 0 })
@@ -152,7 +155,7 @@ export default function OrderForm() {
     setSubmitError('')
     setSubmitting(true)
     try {
-      const { data } = await axios.post(`${API}/form/${productId}/submit`, {
+      const { data } = await axios.post(`${API}/form/${formKey}/submit`, {
         name, phone, phone_code: phoneCode,
         whatsapp: whatsapp || undefined, whatsapp_code: whatsappCode,
         address, state, email: email || undefined,

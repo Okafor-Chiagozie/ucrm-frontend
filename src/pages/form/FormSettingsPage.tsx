@@ -1,21 +1,28 @@
 import { useState, useEffect } from 'react'
 import api from '@/lib/api'
-import type { Product, Business, FormSettings } from '@/types'
+import type { Product, Business, FormSettings, ProductForm } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import {
-  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Separator } from '@/components/ui/separator'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
-import { Copy, ExternalLink, Code, Pencil, ToggleLeft, ToggleRight, Plus, Trash2 } from 'lucide-react'
+import {
+  Copy, ExternalLink, Code, Pencil, ToggleLeft, ToggleRight, Plus, Trash2, Files,
+} from 'lucide-react'
 import type { CustomFormField, CustomFieldType } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -24,8 +31,10 @@ export default function FormSettingsPage() {
   const [businesses, setBusinesses] = useState<Business[]>([])
   const [businessFilter, setBusinessFilter] = useState('')
   const [loading, setLoading] = useState(true)
-  const [editProduct, setEditProduct] = useState<Product | null>(null)
-  const [embedProduct, setEmbedProduct] = useState<Product | null>(null)
+  const [editing, setEditing] = useState<{ product: Product; form: ProductForm } | null>(null)
+  const [embedding, setEmbedding] = useState<{ product: Product; form: ProductForm } | null>(null)
+  const [creatingFor, setCreatingFor] = useState<Product | null>(null)
+  const [deleting, setDeleting] = useState<{ product: Product; form: ProductForm } | null>(null)
 
   const fetchData = () => {
     setLoading(true)
@@ -42,40 +51,65 @@ export default function FormSettingsPage() {
   useEffect(() => { fetchData() }, [])
 
   const filtered = businessFilter ? products.filter((p) => p.business_id === businessFilter) : products
-  const frontendUrl = window.location.origin
 
-  const getEmbedCode = (product: Product) => {
-    const formUrl = `${frontendUrl}/form/${product.id}`
-    return `<div style="width:100%;max-width:560px;margin:0 auto;">
-  <iframe
-    src="${formUrl}"
-    frameborder="0"
-    scrolling="no"
-    width="100%"
-    style="min-height:800px;border:none;"
-    id="ucrm-form-${product.id}"
-  ></iframe>
-</div>
-<script>
-  window.addEventListener('message', function(e) {
-    if (e.data && e.data.type === 'ucrm-form-height') {
-      var frame = document.getElementById('ucrm-form-${product.id}');
-      if (frame) frame.style.height = e.data.height + 'px';
-    }
-  });
-</script>`
+  const errorMessage = (err: unknown, fallback: string) =>
+    (err as { response?: { data?: { message?: string } } }).response?.data?.message || fallback
+
+  /**
+   * Apply a change to one product's forms in place. Every write endpoint returns
+   * the affected form, so nothing needs re-fetching — the list keeps its scroll
+   * position and only the row that changed re-renders.
+   */
+  const patchForms = (productId: string, update: (forms: ProductForm[]) => ProductForm[]) => {
+    setProducts((prev) => prev.map((p) => (p.id === productId ? { ...p, forms: update(p.forms) } : p)))
   }
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-    toast.success('Embed code copied to clipboard')
+  const replaceForm = (productId: string, form: ProductForm) =>
+    patchForms(productId, (forms) => forms.map((f) => (f.id === form.id ? form : f)))
+
+  const addForm = (productId: string, form: ProductForm) =>
+    patchForms(productId, (forms) => [...forms, form])
+
+  const toggleActive = async (product: Product, form: ProductForm) => {
+    try {
+      const { data } = await api.put(`/product-forms/${form.id}`, { is_active: !form.is_active })
+      replaceForm(product.id, data.data)
+      toast.success(form.is_active ? 'Form deactivated' : 'Form activated')
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to update form'))
+    }
+  }
+
+  const duplicateForm = async (product: Product, form: ProductForm) => {
+    try {
+      const { data } = await api.post(`/product-forms/${form.id}/duplicate`)
+      addForm(product.id, data.data)
+      toast.success('Form duplicated')
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to duplicate form'))
+    }
+  }
+
+  const confirmDelete = async () => {
+    if (!deleting) return
+    const { product, form } = deleting
+    try {
+      await api.delete(`/product-forms/${form.id}`)
+      patchForms(product.id, (forms) => forms.filter((f) => f.id !== form.id))
+      setDeleting(null)
+      toast.success('Form deleted')
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to delete form'))
+    }
   }
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Order Forms</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">Customize and get embed codes for your product order forms</p>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          Build as many order forms as you need per product — each with its own fields and embed code
+        </p>
       </div>
 
       <div>
@@ -97,26 +131,74 @@ export default function FormSettingsPage() {
         <div className="space-y-3">
           {filtered.map((product) => (
             <Card key={product.id} className="border">
-              <CardContent className="p-5">
+              <CardContent className="p-5 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <h3 className="font-semibold">{product.name}</h3>
                     <p className="text-xs text-muted-foreground">
                       {product.business_name} &middot; {product.variations.length} variation{product.variations.length !== 1 ? 's' : ''}
-                      &middot; Button: "{product.form_settings.button_text}"
+                      &middot; {product.forms.length} form{product.forms.length !== 1 ? 's' : ''}
                     </p>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={() => setEditProduct(product)}>
-                      <Pencil className="mr-1 h-3.5 w-3.5" /> Customize
-                    </Button>
-                    <Button variant="outline" size="sm" className="text-xs sm:text-sm" onClick={() => window.open(`/form/${product.id}`, '_blank')}>
-                      <ExternalLink className="mr-1 h-3.5 w-3.5" /> Preview
-                    </Button>
-                    <Button size="sm" className="text-xs sm:text-sm" onClick={() => setEmbedProduct(product)}>
-                      <Code className="mr-1 h-3.5 w-3.5" /> Embed
-                    </Button>
-                  </div>
+                  <Button variant="outline" size="sm" className="text-xs sm:text-sm w-fit" onClick={() => setCreatingFor(product)}>
+                    <Plus className="mr-1 h-3.5 w-3.5" /> Add Form
+                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  {product.forms.map((form) => (
+                    <div
+                      key={form.id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-md border p-3"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-medium truncate">{form.name}</span>
+                          {!form.is_active && <Badge variant="outline" className="text-[10px] text-muted-foreground">Inactive</Badge>}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Button: "{form.settings.button_text}"
+                          {(form.settings.custom_fields?.length ?? 0) > 0 && (
+                            <> &middot; {form.settings.custom_fields.length} custom field{form.settings.custom_fields.length !== 1 ? 's' : ''}</>
+                          )}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-1.5 shrink-0">
+                        <Button variant="outline" size="sm" className="text-xs" onClick={() => setEditing({ product, form })}>
+                          <Pencil className="mr-1 h-3.5 w-3.5" /> Customize
+                        </Button>
+                        <Button variant="outline" size="sm" className="text-xs" onClick={() => window.open(`/form/${form.id}`, '_blank')}>
+                          <ExternalLink className="mr-1 h-3.5 w-3.5" /> Preview
+                        </Button>
+                        <Button size="sm" className="text-xs" onClick={() => setEmbedding({ product, form })}>
+                          <Code className="mr-1 h-3.5 w-3.5" /> Embed
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Duplicate" onClick={() => duplicateForm(product, form)}>
+                          <Files className="h-3.5 w-3.5" />
+                        </Button>
+                        <button
+                          type="button"
+                          className="cursor-pointer px-1"
+                          title={form.is_active ? 'Deactivate' : 'Activate'}
+                          onClick={() => toggleActive(product, form)}
+                        >
+                          {form.is_active
+                            ? <ToggleRight className="h-6 w-6 text-emerald-600" />
+                            : <ToggleLeft className="h-6 w-6 text-muted-foreground" />}
+                        </button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          title="Delete"
+                          onClick={() => setDeleting({ product, form })}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -124,39 +206,189 @@ export default function FormSettingsPage() {
         </div>
       )}
 
-      {editProduct && (
-        <FormBuilderDialog
-          product={editProduct}
-          onClose={() => setEditProduct(null)}
-          onSaved={() => { setEditProduct(null); fetchData() }}
+      {creatingFor && (
+        <AddFormDialog
+          product={creatingFor}
+          onClose={() => setCreatingFor(null)}
+          onCreated={(form) => { addForm(creatingFor.id, form); setCreatingFor(null) }}
         />
       )}
 
-      {embedProduct && (
-        <Dialog open onOpenChange={() => setEmbedProduct(null)}>
-          <DialogContent className="sm:max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Embed Code</DialogTitle>
-              <DialogDescription>{embedProduct.name} — paste this into your sales page HTML</DialogDescription>
-            </DialogHeader>
-            <Separator />
-            <div className="relative">
-              <pre className="bg-muted rounded-md p-4 text-xs font-mono overflow-x-auto whitespace-pre-wrap break-all max-h-60 overflow-y-auto custom-scrollbar">{getEmbedCode(embedProduct)}</pre>
-              <Button size="sm" className="absolute top-2 right-2" onClick={() => copyToClipboard(getEmbedCode(embedProduct))}>
-                <Copy className="mr-1.5 h-3.5 w-3.5" /> Copy
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+      {editing && (
+        <FormBuilderDialog
+          product={editing.product}
+          form={editing.form}
+          onClose={() => setEditing(null)}
+          onSaved={(form) => { replaceForm(editing.product.id, form); setEditing(null) }}
+        />
       )}
+
+      {embedding && <EmbedDialog product={embedding.product} form={embedding.form} onClose={() => setEmbedding(null)} />}
+
+      <AlertDialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{deleting?.form.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Its link stops working and orders placed through it lose their "ordered via" label. To take the
+              form offline but keep that history, deactivate it instead.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
 
-function FormBuilderDialog({ product, onClose, onSaved }: { product: Product; onClose: () => void; onSaved: () => void }) {
+function AddFormDialog({ product, onClose, onCreated }: {
+  product: Product
+  onClose: () => void
+  onCreated: (form: ProductForm) => void
+}) {
+  const [name, setName] = useState('')
+  const [copyFrom, setCopyFrom] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const handleSave = async () => {
+    if (!name.trim()) {
+      toast.error('Give the form a name')
+      return
+    }
+    setSaving(true)
+    try {
+      const { data } = await api.post(`/products/${product.id}/forms`, {
+        name: name.trim(),
+        copy_from: copyFrom || undefined,
+      })
+      toast.success('Form created')
+      onCreated(data.data)
+    } catch (err) {
+      toast.error((err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Failed to create form')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add Order Form</DialogTitle>
+          <DialogDescription>{product.name} — a new form with its own fields and embed code</DialogDescription>
+        </DialogHeader>
+        <Separator />
+        <div className="space-y-4 py-2">
+          <div className="space-y-1.5">
+            <Label>Form Name</Label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Facebook Ad Form"
+              className="h-10"
+              autoFocus
+            />
+            <p className="text-xs text-muted-foreground">Only you see this — it labels the form in this list and on orders.</p>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Start From</Label>
+            <Select value={copyFrom || 'blank'} onValueChange={(v) => setCopyFrom(v === 'blank' ? '' : v ?? '')}>
+              <SelectTrigger className="w-full h-10">
+                <SelectValue>
+                  {product.forms.find((f) => f.id === copyFrom)?.name ?? 'Blank form'}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="blank">Blank form</SelectItem>
+                {product.forms.map((f) => <SelectItem key={f.id} value={f.id}>Copy of "{f.name}"</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSave} disabled={saving}>{saving ? 'Creating...' : 'Create Form'}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function EmbedDialog({ product, form, onClose }: { product: Product; form: ProductForm; onClose: () => void }) {
+  const formUrl = `${window.location.origin}/form/${form.id}`
+
+  const embedCode = `<div style="width:100%;max-width:560px;margin:0 auto;">
+  <iframe
+    src="${formUrl}"
+    frameborder="0"
+    scrolling="no"
+    width="100%"
+    style="min-height:800px;border:none;"
+    id="ucrm-form-${form.id}"
+  ></iframe>
+</div>
+<script>
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'ucrm-form-height') {
+      var frame = document.getElementById('ucrm-form-${form.id}');
+      if (frame) frame.style.height = e.data.height + 'px';
+    }
+  });
+</script>`
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text)
+    toast.success(`${label} copied to clipboard`)
+  }
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Embed Code</DialogTitle>
+          <DialogDescription>
+            {product.name} — "{form.name}" — paste this into your sales page HTML
+          </DialogDescription>
+        </DialogHeader>
+        <Separator />
+        {!form.is_active && (
+          <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
+            This form is inactive, so the embed will not load for customers. Activate it first.
+          </div>
+        )}
+        <div className="space-y-1.5">
+          <Label className="text-xs">Direct link</Label>
+          <div className="flex gap-2">
+            <Input readOnly value={formUrl} className="h-9 font-mono text-xs" />
+            <Button size="sm" variant="outline" onClick={() => copyToClipboard(formUrl, 'Link')}>
+              <Copy className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+        <div className="relative">
+          <pre className="bg-muted rounded-md p-4 text-xs font-mono overflow-x-auto whitespace-pre-wrap break-all max-h-60 overflow-y-auto custom-scrollbar">{embedCode}</pre>
+          <Button size="sm" className="absolute top-2 right-2" onClick={() => copyToClipboard(embedCode, 'Embed code')}>
+            <Copy className="mr-1.5 h-3.5 w-3.5" /> Copy
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function FormBuilderDialog({ product, form, onClose, onSaved }: {
+  product: Product
+  form: ProductForm
+  onClose: () => void
+  onSaved: (form: ProductForm) => void
+}) {
   const { hasFeature } = useAuth()
   const couponsEnabled = hasFeature('coupons')
-  const [settings, setSettings] = useState<FormSettings>({ ...product.form_settings })
+  const [name, setName] = useState(form.name)
+  const [settings, setSettings] = useState<FormSettings>({ ...form.settings })
   const [saving, setSaving] = useState(false)
 
   const set = (key: keyof FormSettings, value: string | boolean) => {
@@ -185,6 +417,11 @@ function FormBuilderDialog({ product, onClose, onSaved }: { product: Product; on
   }
 
   const handleSave = async () => {
+    if (!name.trim()) {
+      toast.error('Give the form a name')
+      return
+    }
+
     // Drop fields with no label; require options for select fields.
     const cleanedFields = customFields
       .map((f) => ({ ...f, label: f.label.trim(), options: (f.options ?? []).map((o) => o.trim()).filter(Boolean) }))
@@ -197,11 +434,11 @@ function FormBuilderDialog({ product, onClose, onSaved }: { product: Product; on
 
     setSaving(true)
     try {
-      await api.put(`/products/${product.id}/form-settings`, { ...settings, custom_fields: cleanedFields })
-      toast.success('Form settings saved')
-      onSaved()
-    } catch {
-      toast.error('Failed to save settings')
+      const { data } = await api.put(`/product-forms/${form.id}`, { ...settings, name: name.trim(), custom_fields: cleanedFields })
+      toast.success('Form saved')
+      onSaved(data.data)
+    } catch (err) {
+      toast.error((err as { response?: { data?: { message?: string } } }).response?.data?.message || 'Failed to save form')
     } finally {
       setSaving(false)
     }
@@ -216,6 +453,16 @@ function FormBuilderDialog({ product, onClose, onSaved }: { product: Product; on
         </DialogHeader>
         <Separator />
         <div className="flex-1 overflow-y-auto space-y-5 py-2 custom-scrollbar">
+          <div className="space-y-1.5">
+            <Label>Form Name</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} className="h-10" />
+            <p className="text-xs text-muted-foreground">
+              Internal label — shown in this list and against orders placed through this form.
+            </p>
+          </div>
+
+          <Separator />
+
           <div className="space-y-1.5">
             <Label>Form Heading</Label>
             <Input value={settings.heading} onChange={(e) => set('heading', e.target.value)} className="h-10" />
@@ -282,7 +529,7 @@ function FormBuilderDialog({ product, onClose, onSaved }: { product: Product; on
           <div className="flex items-center justify-between">
             <div>
               <h4 className="text-sm font-semibold">Custom Fields</h4>
-              <p className="text-xs text-muted-foreground">Add extra questions that appear on this order form</p>
+              <p className="text-xs text-muted-foreground">Extra questions that appear on this form only</p>
             </div>
             <Button type="button" variant="outline" size="sm" onClick={addCustomField}>
               <Plus className="mr-1 h-3.5 w-3.5" /> Add Field
@@ -377,7 +624,7 @@ function FormBuilderDialog({ product, onClose, onSaved }: { product: Product; on
         <Separator />
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save Settings'}</Button>
+          <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save Form'}</Button>
         </div>
       </DialogContent>
     </Dialog>
