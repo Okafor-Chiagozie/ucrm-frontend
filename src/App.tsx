@@ -20,6 +20,7 @@ import UsersPage from '@/pages/users/UsersPage'
 import RolesPage from '@/pages/roles/RolesPage'
 import MarketingPage from '@/pages/marketing/MarketingPage'
 import PerformancePage from '@/pages/performance/PerformancePage'
+import FormPerformancePage from '@/pages/performance/FormPerformancePage'
 import PaymentVerificationPage from '@/pages/verification/PaymentVerificationPage'
 import DeliveryVerificationPage from '@/pages/verification/DeliveryVerificationPage'
 import VerificationReportPage from '@/pages/verification/VerificationReportPage'
@@ -55,6 +56,7 @@ export default function App() {
             <Route path="/roles" element={<RolesPage />} />
             <Route path="/marketing" element={<MarketingPage />} />
             <Route path="/performance" element={<PerformancePage />} />
+            <Route path="/form-performance" element={<FormPerformancePage />} />
             <Route path="/verify-payments" element={<PaymentVerificationPage />} />
             <Route path="/verify-deliveries" element={<DeliveryVerificationPage />} />
             <Route path="/verification-report" element={<VerificationReportPage />} />

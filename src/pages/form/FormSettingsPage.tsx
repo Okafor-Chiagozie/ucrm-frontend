@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import api from '@/lib/api'
-import type { Product, Business, FormSettings, ProductForm } from '@/types'
+import type { Product, Business, FormSettings, ProductForm, User } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -27,7 +27,11 @@ import type { CustomFormField, CustomFieldType } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
 
 export default function FormSettingsPage() {
+  const { user } = useAuth()
+  // Marketers always own what they build; everyone else can assign an owner.
+  const canAssignOwner = user?.role !== 'Marketer'
   const [products, setProducts] = useState<Product[]>([])
+  const [owners, setOwners] = useState<User[]>([])
   const [businesses, setBusinesses] = useState<Business[]>([])
   const [businessFilter, setBusinessFilter] = useState('')
   const [loading, setLoading] = useState(true)
@@ -49,6 +53,15 @@ export default function FormSettingsPage() {
   }
 
   useEffect(() => { fetchData() }, [])
+
+  // Forms are assigned to marketers, so only they are offered. Marketers
+  // themselves never see this list — they always own what they build.
+  useEffect(() => {
+    if (!canAssignOwner) return
+    api.get('/users?per_page=100&is_active=true&role=Marketer')
+      .then(({ data }) => setOwners(data.data.data))
+      .catch(() => {})
+  }, [canAssignOwner])
 
   const filtered = businessFilter ? products.filter((p) => p.business_id === businessFilter) : products
 
@@ -161,6 +174,7 @@ export default function FormSettingsPage() {
                           {(form.settings.custom_fields?.length ?? 0) > 0 && (
                             <> &middot; {form.settings.custom_fields.length} custom field{form.settings.custom_fields.length !== 1 ? 's' : ''}</>
                           )}
+                          {form.creator_name && <> &middot; Built by {form.creator_name}</>}
                         </p>
                       </div>
 
@@ -209,6 +223,8 @@ export default function FormSettingsPage() {
       {creatingFor && (
         <AddFormDialog
           product={creatingFor}
+          owners={owners}
+          canAssign={canAssignOwner}
           onClose={() => setCreatingFor(null)}
           onCreated={(form) => { addForm(creatingFor.id, form); setCreatingFor(null) }}
         />
@@ -218,6 +234,8 @@ export default function FormSettingsPage() {
         <FormBuilderDialog
           product={editing.product}
           form={editing.form}
+          owners={owners}
+          canAssign={canAssignOwner}
           onClose={() => setEditing(null)}
           onSaved={(form) => { replaceForm(editing.product.id, form); setEditing(null) }}
         />
@@ -244,13 +262,16 @@ export default function FormSettingsPage() {
   )
 }
 
-function AddFormDialog({ product, onClose, onCreated }: {
+function AddFormDialog({ product, owners, canAssign, onClose, onCreated }: {
   product: Product
+  owners: User[]
+  canAssign: boolean
   onClose: () => void
   onCreated: (form: ProductForm) => void
 }) {
   const [name, setName] = useState('')
   const [copyFrom, setCopyFrom] = useState('')
+  const [ownerId, setOwnerId] = useState('')
   const [saving, setSaving] = useState(false)
 
   const handleSave = async () => {
@@ -263,6 +284,7 @@ function AddFormDialog({ product, onClose, onCreated }: {
       const { data } = await api.post(`/products/${product.id}/forms`, {
         name: name.trim(),
         copy_from: copyFrom || undefined,
+        created_by: ownerId || undefined,
       })
       toast.success('Form created')
       onCreated(data.data)
@@ -307,6 +329,26 @@ function AddFormDialog({ product, onClose, onCreated }: {
               </SelectContent>
             </Select>
           </div>
+
+          {canAssign && (
+            <div className="space-y-1.5">
+              <Label>Assign To</Label>
+              <Select value={ownerId || 'me'} onValueChange={(v) => setOwnerId(v === 'me' ? '' : v ?? '')}>
+                <SelectTrigger className="w-full h-10">
+                  <SelectValue>{owners.find((o) => o.id === ownerId)?.name ?? 'Me'}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="me">Me</SelectItem>
+                  {owners.map((o) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {owners.length > 0
+                  ? "Orders from this form count towards the marketer it's assigned to, on Form Performance."
+                  : 'No marketers yet — this form will be assigned to you, and you can hand it over later.'}
+              </p>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
@@ -379,17 +421,30 @@ function EmbedDialog({ product, form, onClose }: { product: Product; form: Produ
   )
 }
 
-function FormBuilderDialog({ product, form, onClose, onSaved }: {
+function FormBuilderDialog({ product, form, owners, canAssign, onClose, onSaved }: {
   product: Product
   form: ProductForm
+  owners: User[]
+  canAssign: boolean
   onClose: () => void
   onSaved: (form: ProductForm) => void
 }) {
   const { hasFeature } = useAuth()
   const couponsEnabled = hasFeature('coupons')
   const [name, setName] = useState(form.name)
+  const [ownerId, setOwnerId] = useState(form.created_by ?? '')
   const [settings, setSettings] = useState<FormSettings>({ ...form.settings })
   const [saving, setSaving] = useState(false)
+
+  // Marketers are the assignable set, but a form migrated from before ownership
+  // existed sits with an admin — keep that owner selectable so opening the form
+  // doesn't silently reassign it.
+  const ownerOptions = [
+    ...owners.map((o) => ({ id: o.id, name: o.name, suffix: '' })),
+    ...(form.created_by && !owners.some((o) => o.id === form.created_by)
+      ? [{ id: form.created_by, name: form.creator_name ?? 'Current owner', suffix: ' — current owner' }]
+      : []),
+  ]
 
   const set = (key: keyof FormSettings, value: string | boolean) => {
     setSettings({ ...settings, [key]: value })
@@ -434,7 +489,13 @@ function FormBuilderDialog({ product, form, onClose, onSaved }: {
 
     setSaving(true)
     try {
-      const { data } = await api.put(`/product-forms/${form.id}`, { ...settings, name: name.trim(), custom_fields: cleanedFields })
+      const { data } = await api.put(`/product-forms/${form.id}`, {
+        ...settings,
+        name: name.trim(),
+        custom_fields: cleanedFields,
+        // Only sent when this user is allowed to reassign ownership.
+        ...(canAssign && ownerId ? { created_by: ownerId } : {}),
+      })
       toast.success('Form saved')
       onSaved(data.data)
     } catch (err) {
@@ -460,6 +521,25 @@ function FormBuilderDialog({ product, form, onClose, onSaved }: {
               Internal label — shown in this list and against orders placed through this form.
             </p>
           </div>
+
+          {canAssign && (
+            <div className="space-y-1.5">
+              <Label>Assigned To</Label>
+              <Select value={ownerId} onValueChange={(v) => setOwnerId(v ?? ownerId)}>
+                <SelectTrigger className="w-full h-10">
+                  <SelectValue>{ownerOptions.find((o) => o.id === ownerId)?.name ?? 'Select a marketer'}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {ownerOptions.map((o) => (
+                    <SelectItem key={o.id} value={o.id}>{o.name}{o.suffix}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Orders from this form count towards this marketer on Form Performance, and they can edit it.
+              </p>
+            </div>
+          )}
 
           <Separator />
 

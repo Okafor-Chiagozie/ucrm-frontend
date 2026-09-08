@@ -117,12 +117,55 @@ export interface ProductForm {
   id: string
   product_id?: string
   name: string
+  created_by: string | null
+  creator_name: string | null
   is_active: boolean
   sort_order: number
   orders_count?: number
   settings: FormSettings
   created_at?: string
   updated_at?: string
+}
+
+/** A row on the Form Performance report — what one order form brought in. */
+export interface FormPerformance {
+  id: string
+  name: string
+  is_active: boolean
+  product_id: string
+  product_name: string | null
+  business_name: string | null
+  created_by: string | null
+  creator_name: string
+  total_orders: number
+  delivered: number
+  cancelled: number
+  pending: number
+  abandoned: number
+  revenue: number
+  conversion_rate: number
+  delivery_rate: number
+  created_at: string
+}
+
+export interface FormPerformanceByCreator {
+  created_by: string | null
+  creator_name: string
+  forms_count: number
+  total_orders: number
+  delivered: number
+  abandoned: number
+  revenue: number
+  conversion_rate: number
+}
+
+export interface FormPerformanceTotals {
+  forms: number
+  total_orders: number
+  delivered: number
+  abandoned: number
+  revenue: number
+  conversion_rate: number
 }
 
 export interface Product {
