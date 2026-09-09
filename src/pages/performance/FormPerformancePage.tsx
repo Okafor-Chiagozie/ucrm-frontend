@@ -102,8 +102,8 @@ export default function FormPerformancePage() {
         <h2 className="text-2xl font-bold tracking-tight">{isPersonal ? 'My Form Performance' : 'Form Performance'}</h2>
         <p className="text-sm text-muted-foreground mt-0.5">
           {isPersonal
-            ? 'Orders and revenue from the order forms you built'
-            : 'Track which order form brought in each order, and who built it'}
+            ? 'Orders and revenue from the order forms assigned to you'
+            : 'Track which order form brought in each order, and who it is assigned to'}
         </p>
         <p className="text-xs text-muted-foreground mt-1.5">
           <span className="font-medium">Conversion</span> is orders that were actually delivered.{' '}
@@ -277,7 +277,7 @@ export default function FormPerformancePage() {
                     <TableHeader>
                       <TableRow className="bg-muted/50 hover:bg-muted/50">
                         <TableHead>Form</TableHead>
-                        {!isPersonal && <TableHead>Built by</TableHead>}
+                        {!isPersonal && <TableHead>Assigned to</TableHead>}
                         <TableHead className="text-center">Orders</TableHead>
                         <TableHead className="text-center">Delivered</TableHead>
                         <TableHead className="text-center">Pending</TableHead>
@@ -324,7 +324,7 @@ export default function FormPerformancePage() {
                           <div className="min-w-0">
                             <p className="font-medium truncate">{f.name}</p>
                             <p className="text-xs text-muted-foreground">{f.product_name}</p>
-                            {!isPersonal && <p className="text-xs text-muted-foreground mt-0.5">Built by {f.creator_name}</p>}
+                            {!isPersonal && <p className="text-xs text-muted-foreground mt-0.5">Assigned to {f.creator_name}</p>}
                           </div>
                           <Badge variant="outline" className={`font-normal shrink-0 ${rateBadge(f.conversion_rate)}`}>{f.conversion_rate}%</Badge>
                         </div>

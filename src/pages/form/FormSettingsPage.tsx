@@ -174,7 +174,7 @@ export default function FormSettingsPage() {
                           {(form.settings.custom_fields?.length ?? 0) > 0 && (
                             <> &middot; {form.settings.custom_fields.length} custom field{form.settings.custom_fields.length !== 1 ? 's' : ''}</>
                           )}
-                          {form.creator_name && <> &middot; Built by {form.creator_name}</>}
+                          {form.creator_name && <> &middot; Assigned to {form.creator_name}</>}
                         </p>
                       </div>
 
