@@ -70,6 +70,17 @@ export default function OrderForm() {
   // A form id, or a product id for embeds published before a product could
   // have several forms — the API resolves both.
   const { formKey } = useParams<{ formKey: string }>()
+
+  // Identifies this visit so repeated saves collapse into one abandonment
+  // instead of one per time the shopper leaves the phone field. randomUUID
+  // needs a secure context, so fall back where it is unavailable.
+  const [sessionId] = useState(() => {
+    try {
+      return crypto.randomUUID()
+    } catch {
+      return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+    }
+  })
   const [formData, setFormData] = useState<FormData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -114,7 +125,7 @@ export default function OrderForm() {
 
   const savePartial = () => {
     if (phone.length >= 7) {
-      axios.post(`${API}/form/${formKey}/partial`, { phone, phone_code: phoneCode, name }).catch(() => {})
+      axios.post(`${API}/form/${formKey}/partial`, { phone, phone_code: phoneCode, name, session_id: sessionId }).catch(() => {})
     }
   }
 
@@ -163,6 +174,7 @@ export default function OrderForm() {
         bump_offer_ids: Array.from(selectedBumps),
         coupon_code: couponValid?.valid ? couponCode : undefined,
         custom_fields: customValues,
+        session_id: sessionId,
       })
 
       // If a thank-you URL is configured, redirect the top window (form may be

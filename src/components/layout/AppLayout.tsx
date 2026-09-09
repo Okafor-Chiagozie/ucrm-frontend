@@ -38,7 +38,6 @@ export default function AppLayout() {
   }
 
   if (!user) return <Navigate to="/login" replace />
-  if (user.must_change_password) return <Navigate to="/change-password" replace />
 
   const initials = user.name
     .split(' ')

@@ -156,8 +156,11 @@ export default function DashboardPage() {
             <Card className="border">
               <CardContent className="p-5">
                 <h3 className="text-sm font-semibold mb-4">Orders Overview</h3>
-                <div className="h-64 sm:h-72">
-                  <ResponsiveContainer width="100%" height="100%">
+                {/* min-w-0 stops the chart's flex/grid ancestors from reporting
+                    a zero width on first measure, which makes Recharts warn
+                    about a -1 size and skip the render. */}
+                <div className="h-64 sm:h-72 w-full min-w-0">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={1}>
                     <AreaChart data={stats.chart_data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
                       <defs>
                         <linearGradient id="orderGrad" x1="0" y1="0" x2="0" y2="1">

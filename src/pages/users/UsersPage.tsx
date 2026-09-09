@@ -45,7 +45,7 @@ import { Plus, Search, ArrowUpDown, ArrowUp, ArrowDown, Pencil, UserX, Eye, EyeO
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 
-type SortField = 'name' | 'email' | 'created_at'
+type SortField = 'name' | 'username' | 'email' | 'created_at'
 type SortDir = 'asc' | 'desc'
 
 export default function UsersPage() {
@@ -144,7 +144,7 @@ export default function UsersPage() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder="Search name, email, phone..."
+              placeholder="Search name, username, email..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1) }}
               className="pl-9 h-10"
@@ -190,7 +190,7 @@ export default function UsersPage() {
       {/* Sort bar (mobile) */}
       <div className="flex md:hidden items-center gap-2">
         <span className="text-xs text-muted-foreground">Sort:</span>
-        {(['name', 'email', 'created_at'] as SortField[]).map((f) => (
+        {(['name', 'username', 'created_at'] as SortField[]).map((f) => (
           <button key={f} onClick={() => toggleSort(f)} className={`inline-flex items-center text-xs px-2 py-1 rounded-md border transition-colors ${sortField === f ? 'bg-primary/10 border-primary/30 text-primary' : 'text-muted-foreground'}`}>
             {f === 'created_at' ? 'Joined' : f.charAt(0).toUpperCase() + f.slice(1)}
             <SortIcon field={f} />
@@ -214,7 +214,7 @@ export default function UsersPage() {
                   </div>
                   <div>
                     <p className="font-medium text-sm">{u.name}</p>
-                    <p className="text-xs text-muted-foreground">{u.email}</p>
+                    <p className="text-xs text-muted-foreground">{u.username}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
@@ -233,7 +233,6 @@ export default function UsersPage() {
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <Badge variant="outline" className="font-normal border-blue-200 bg-blue-50 text-blue-700">{u.role}</Badge>
                 <Badge variant="outline" className={`font-normal ${u.is_active ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`}>{u.is_active ? 'Active' : 'Inactive'}</Badge>
-                {u.phone && <span className="text-muted-foreground">{u.phone}</span>}
                 <span className="text-muted-foreground ml-auto">{new Date(u.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
               </div>
             </div>
@@ -249,10 +248,10 @@ export default function UsersPage() {
               <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('name')}>
                 <span className="inline-flex items-center">Name <SortIcon field="name" /></span>
               </TableHead>
-              <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('email')}>
-                <span className="inline-flex items-center">Email <SortIcon field="email" /></span>
+              <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('username')}>
+                <span className="inline-flex items-center">Username <SortIcon field="username" /></span>
               </TableHead>
-              <TableHead>Phone</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="cursor-pointer select-none" onClick={() => toggleSort('created_at')}>
@@ -282,8 +281,8 @@ export default function UsersPage() {
                       <span className="font-medium">{u.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{u.email}</TableCell>
-                  <TableCell className="text-muted-foreground">{u.phone || '—'}</TableCell>
+                  <TableCell className="text-muted-foreground">{u.username}</TableCell>
+                  <TableCell className="text-muted-foreground">{u.email || '—'}</TableCell>
                   <TableCell><Badge variant="outline" className="font-normal border-blue-200 bg-blue-50 text-blue-700">{u.role}</Badge></TableCell>
                   <TableCell>
                     <Badge variant={u.is_active ? 'default' : 'destructive'} className="font-normal">
@@ -342,19 +341,19 @@ export default function UsersPage() {
 /* ─── Create User Dialog ─── */
 
 function CreateUserDialog({ open, onClose, roles, onSuccess }: { open: boolean; onClose: () => void; roles: Role[]; onSuccess: () => void }) {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', role: '' })
+  const [form, setForm] = useState({ name: '', username: '', email: '', password: '', role: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  const reset = () => { setForm({ name: '', email: '', phone: '', password: '', role: '' }); setError(''); setShowPassword(false) }
+  const reset = () => { setForm({ name: '', username: '', email: '', password: '', role: '' }); setError(''); setShowPassword(false) }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitting(true)
     setError('')
     try {
-      await api.post('/users', form)
+      await api.post('/users', { ...form, email: form.email || null })
       toast.success('User created successfully')
       reset()
       onClose()
@@ -376,10 +375,10 @@ function CreateUserDialog({ open, onClose, roles, onSuccess }: { open: boolean; 
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Create New User</DialogTitle>
-          <DialogDescription>Add a new staff member. They will be required to change their password on first login.</DialogDescription>
+          <DialogDescription>Add a new staff member. They sign in with the username and password you set here.</DialogDescription>
         </DialogHeader>
         <Separator />
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+        <form onSubmit={handleSubmit} className="space-y-4 pt-2" autoComplete="off">
           {error && (
             <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">{error}</div>
           )}
@@ -389,15 +388,17 @@ function CreateUserDialog({ open, onClose, roles, onSuccess }: { open: boolean; 
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="John Doe" required className="h-10" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-sm">Email</Label>
-              <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="john@company.com" required className="h-10" />
+              <Label className="text-sm">Username</Label>
+              <Input name="ucrm-new-username" autoComplete="off" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} placeholder="johndoe" required className="h-10" />
+              <p className="text-xs text-muted-foreground">What they sign in with. Letters, numbers, dashes and underscores.</p>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">Email <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input type="email" name="ucrm-new-email" autoComplete="off" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="john@company.com" className="h-10" />
+              <p className="text-xs text-muted-foreground">Needed only to receive email notifications.</p>
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label className="text-sm">Phone</Label>
-              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="08012345678" className="h-10" />
-            </div>
+          <div className="space-y-1.5">
             <div className="space-y-1.5">
               <Label className="text-sm">Role</Label>
               <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v ?? '' })}>
@@ -409,11 +410,13 @@ function CreateUserDialog({ open, onClose, roles, onSuccess }: { open: boolean; 
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-sm">Temporary Password</Label>
+            <Label className="text-sm">Password</Label>
             <div className="relative">
               <Input
                 type={showPassword ? 'text' : 'password'}
                 value={form.password}
+                name="ucrm-new-password"
+                autoComplete="new-password"
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 placeholder="Min. 8 characters"
                 required
@@ -424,7 +427,6 @@ function CreateUserDialog({ open, onClose, roles, onSuccess }: { open: boolean; 
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            <p className="text-xs text-muted-foreground">User will be required to change this on first login</p>
           </div>
           <Separator />
           <div className="flex justify-end gap-2">
@@ -440,7 +442,12 @@ function CreateUserDialog({ open, onClose, roles, onSuccess }: { open: boolean; 
 /* ─── Edit User Dialog ─── */
 
 function EditUserDialog({ open, onClose, user, roles, onSuccess }: { open: boolean; onClose: () => void; user: User; roles: Role[]; onSuccess: () => void }) {
-  const [form, setForm] = useState({ name: user.name, email: user.email, phone: user.phone || '', role: user.role || '', is_active: user.is_active, available_from: user.available_from || '', available_to: user.available_to || '' })
+  const { user: currentUser } = useAuth()
+  // Resetting someone else's password is a Super Admin action.
+  const canResetPassword = currentUser?.role === 'Super Admin'
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [form, setForm] = useState({ name: user.name, username: user.username, email: user.email || '', role: user.role || '', is_active: user.is_active, available_from: user.available_from || '', available_to: user.available_to || '' })
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -449,7 +456,11 @@ function EditUserDialog({ open, onClose, user, roles, onSuccess }: { open: boole
     setSubmitting(true)
     setError('')
     try {
-      await api.put(`/users/${user.id}`, form)
+      await api.put(`/users/${user.id}`, {
+        ...form,
+        email: form.email || null,
+        ...(password ? { password } : {}),
+      })
       toast.success('User updated successfully')
       onClose()
       onSuccess()
@@ -470,10 +481,10 @@ function EditUserDialog({ open, onClose, user, roles, onSuccess }: { open: boole
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Edit User</DialogTitle>
-          <DialogDescription>Editing {user.name} ({user.email})</DialogDescription>
+          <DialogDescription>Editing {user.name} ({user.username})</DialogDescription>
         </DialogHeader>
         <Separator />
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+        <form onSubmit={handleSubmit} className="space-y-4 pt-2" autoComplete="off">
           {error && (
             <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">{error}</div>
           )}
@@ -483,15 +494,41 @@ function EditUserDialog({ open, onClose, user, roles, onSuccess }: { open: boole
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="h-10" />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-sm">Email</Label>
-              <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required className="h-10" />
+              <Label className="text-sm">Username</Label>
+              <Input name="ucrm-edit-username" autoComplete="off" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} required className="h-10" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">Email <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input type="email" name="ucrm-edit-email" autoComplete="off" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="h-10" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          {canResetPassword && (
             <div className="space-y-1.5">
-              <Label className="text-sm">Phone</Label>
-              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="h-10" />
+              <Label className="text-sm">New Password <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <div className="relative">
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  name="ucrm-reset-password"
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Leave blank to keep the current password"
+                  className="h-10 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Signs them out everywhere. They sign in with this password next time and can keep using it.
+              </p>
             </div>
+          )}
+          <div className="space-y-1.5">
             <div className="space-y-1.5">
               <Label className="text-sm">Role</Label>
               <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v ?? '' })}>

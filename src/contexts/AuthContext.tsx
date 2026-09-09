@@ -7,7 +7,7 @@ interface AuthContextType {
   user: User | null
   token: string | null
   isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
+  login: (identifier: string, password: string) => Promise<void>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
   hasPermission: (permission: string) => boolean
@@ -59,8 +59,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshUser()
   }, [refreshUser])
 
-  const login = async (email: string, password: string) => {
-    const { data } = await api.post<LoginResponse>('/auth/login', { email, password })
+  const login = async (identifier: string, password: string) => {
+    // The API accepts a username or an email address in this one field.
+    const { data } = await api.post<LoginResponse>('/auth/login', { username: identifier, password })
     const { user: userData, token: newToken } = data.data
     // Already have this token's user from the login response.
     hydratedToken.current = newToken

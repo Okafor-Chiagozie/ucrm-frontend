@@ -1,8 +1,8 @@
 export interface User {
   id: string
   name: string
-  email: string
-  phone: string | null
+  username: string
+  email: string | null
   must_change_password: boolean
   is_active: boolean
   available_from: string | null
@@ -144,7 +144,7 @@ export interface FormPerformance {
   abandoned: number
   revenue: number
   conversion_rate: number
-  delivery_rate: number
+  form_completion_rate: number
   created_at: string
 }
 
@@ -157,6 +157,7 @@ export interface FormPerformanceByCreator {
   abandoned: number
   revenue: number
   conversion_rate: number
+  form_completion_rate: number
 }
 
 export interface FormPerformanceTotals {
@@ -166,6 +167,7 @@ export interface FormPerformanceTotals {
   abandoned: number
   revenue: number
   conversion_rate: number
+  form_completion_rate: number
 }
 
 export interface Product {

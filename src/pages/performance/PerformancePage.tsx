@@ -23,7 +23,6 @@ interface StaffPerformance {
   id: string
   name: string
   email: string
-  phone: string | null
   available_from: string | null
   available_to: string | null
   total_orders: number

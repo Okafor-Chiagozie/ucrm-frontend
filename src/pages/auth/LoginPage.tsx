@@ -12,7 +12,7 @@ import { Eye, EyeOff } from 'lucide-react'
 export default function LoginPage() {
   const { login, user, isLoading } = useAuth()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
@@ -20,17 +20,14 @@ export default function LoginPage() {
 
   if (isLoading) return null
 
-  if (user) {
-    if (user.must_change_password) return <Navigate to="/change-password" replace />
-    return <Navigate to="/dashboard" replace />
-  }
+  if (user) return <Navigate to="/dashboard" replace />
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
     setSubmitting(true)
     try {
-      await login(email, password)
+      await login(identifier, password)
       navigate('/dashboard')
     } catch (err) {
       const axiosError = err as AxiosError<ApiError>
@@ -86,13 +83,14 @@ export default function LoginPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email">Email address</Label>
+              <Label htmlFor="identifier">Username or email</Label>
               <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
+                id="identifier"
+                type="text"
+                autoComplete="username"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="yourname or you@company.com"
                 required
                 className="h-11"
               />

@@ -105,6 +105,11 @@ export default function FormPerformancePage() {
             ? 'Orders and revenue from the order forms you built'
             : 'Track which order form brought in each order, and who built it'}
         </p>
+        <p className="text-xs text-muted-foreground mt-1.5">
+          <span className="font-medium">Conversion</span> is orders that were actually delivered.{' '}
+          <span className="font-medium">Completed</span> is orders against everyone who reached the phone
+          field — visitors who leave before that are never recorded, so the true figure is lower.
+        </p>
       </div>
 
       {/* Filters */}
@@ -204,7 +209,7 @@ export default function FormPerformancePage() {
                     <TrendingUp className="h-4.5 w-4.5 text-violet-600" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">Conversion</p>
+                    <p className="text-xs text-muted-foreground">Conversion (delivered)</p>
                     <p className="text-lg font-bold">{totals.conversion_rate}%</p>
                   </div>
                 </CardContent>
@@ -227,6 +232,7 @@ export default function FormPerformancePage() {
                       <TableHead className="text-center">Orders</TableHead>
                       <TableHead className="text-center">Delivered</TableHead>
                       <TableHead className="text-center">Abandoned</TableHead>
+                      <TableHead className="text-center">Completed</TableHead>
                       <TableHead className="text-center">Conversion</TableHead>
                       <TableHead className="text-right">Revenue</TableHead>
                     </TableRow>
@@ -239,6 +245,7 @@ export default function FormPerformancePage() {
                         <TableCell className="text-center font-medium">{c.total_orders}</TableCell>
                         <TableCell className="text-center text-emerald-600 font-medium">{c.delivered}</TableCell>
                         <TableCell className="text-center text-orange-600 font-medium">{c.abandoned}</TableCell>
+                        <TableCell className="text-center text-muted-foreground">{c.form_completion_rate}%</TableCell>
                         <TableCell className="text-center">
                           <Badge variant="outline" className={`font-normal ${rateBadge(c.conversion_rate)}`}>{c.conversion_rate}%</Badge>
                         </TableCell>
@@ -275,6 +282,7 @@ export default function FormPerformancePage() {
                         <TableHead className="text-center">Delivered</TableHead>
                         <TableHead className="text-center">Pending</TableHead>
                         <TableHead className="text-center">Abandoned</TableHead>
+                        <TableHead className="text-center">Completed</TableHead>
                         <TableHead className="text-center">Conversion</TableHead>
                         <TableHead className="text-right">Revenue</TableHead>
                       </TableRow>
@@ -296,6 +304,7 @@ export default function FormPerformancePage() {
                           <TableCell className="text-center text-emerald-600 font-medium">{f.delivered}</TableCell>
                           <TableCell className="text-center text-blue-600 font-medium">{f.pending}</TableCell>
                           <TableCell className="text-center text-orange-600 font-medium">{f.abandoned}</TableCell>
+                          <TableCell className="text-center text-muted-foreground">{f.form_completion_rate}%</TableCell>
                           <TableCell className="text-center">
                             <Badge variant="outline" className={`font-normal ${rateBadge(f.conversion_rate)}`}>{f.conversion_rate}%</Badge>
                           </TableCell>
