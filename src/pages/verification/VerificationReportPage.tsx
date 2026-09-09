@@ -15,7 +15,7 @@ import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
-import { ShieldCheck, AlertTriangle, CheckCircle, Clock, RotateCcw, Package, DollarSign, Truck, Ban, CalendarClock, Download } from 'lucide-react'
+import { ShieldCheck, AlertTriangle, CheckCircle, Clock, RotateCcw, Package, DollarSign, Truck, Download } from 'lucide-react'
 
 interface ReportOrder {
   id: string; order_number: string; business_name: string | null; customer_name: string
@@ -155,7 +155,7 @@ export default function VerificationReportPage() {
         </Button>
       </div>
 
-      {/* Summary Cards — 3 rows */}
+      {/* Summary: the headline figures, then each verifier's own progress */}
       {summary && (
         <div className="space-y-3">
           {/* Row 1: Overview */}
@@ -186,42 +186,13 @@ export default function VerificationReportPage() {
             </Card>
           </div>
 
-          {/* Row 2: CS Status breakdown */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <Card className="border">
-              <CardContent className="p-3 flex items-center gap-2">
-                <CalendarClock className="h-4 w-4 text-amber-500 shrink-0" />
-                <div><p className="text-xs text-muted-foreground">CS Pending</p><p className="font-bold">{summary.cs_pending}</p></div>
-              </CardContent>
-            </Card>
-            <Card className="border">
-              <CardContent className="p-3 flex items-center gap-2">
-                <CalendarClock className="h-4 w-4 text-blue-500 shrink-0" />
-                <div><p className="text-xs text-muted-foreground">CS Scheduled</p><p className="font-bold">{summary.cs_scheduled}</p></div>
-              </CardContent>
-            </Card>
-            <Card className="border">
-              <CardContent className="p-3 flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
-                <div><p className="text-xs text-muted-foreground">CS Delivered</p><p className="font-bold">{summary.cs_delivered}</p></div>
-              </CardContent>
-            </Card>
-            <Card className="border">
-              <CardContent className="p-3 flex items-center gap-2">
-                <Ban className="h-4 w-4 text-red-500 shrink-0" />
-                <div><p className="text-xs text-muted-foreground">CS Cancelled</p><p className="font-bold">{summary.cs_cancelled}</p></div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Row 3: Accountant vs Logistics side by side */}
+          {/* Accountant vs Logistics side by side */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Card className="border">
               <CardContent className="p-4">
                 <p className="text-sm font-medium flex items-center gap-1.5 mb-3"><DollarSign className="w-4 h-4 text-blue-600" /> Accountant (Payment)</p>
-                <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="grid grid-cols-2 gap-2 text-center">
                   <div className="p-2 rounded bg-emerald-50"><p className="text-xs text-muted-foreground">Verified</p><p className="font-bold text-emerald-600">{summary.payment_verified}</p></div>
-                  <div className="p-2 rounded bg-red-50"><p className="text-xs text-muted-foreground">Disputed</p><p className="font-bold text-red-600">{summary.payment_disputed}</p></div>
                   <div className="p-2 rounded bg-amber-50"><p className="text-xs text-muted-foreground">Pending</p><p className="font-bold text-amber-600">{summary.payment_pending}</p></div>
                 </div>
               </CardContent>
@@ -229,9 +200,8 @@ export default function VerificationReportPage() {
             <Card className="border">
               <CardContent className="p-4">
                 <p className="text-sm font-medium flex items-center gap-1.5 mb-3"><Truck className="w-4 h-4 text-blue-600" /> Logistics (Delivery)</p>
-                <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="grid grid-cols-2 gap-2 text-center">
                   <div className="p-2 rounded bg-emerald-50"><p className="text-xs text-muted-foreground">Verified</p><p className="font-bold text-emerald-600">{summary.delivery_verified}</p></div>
-                  <div className="p-2 rounded bg-red-50"><p className="text-xs text-muted-foreground">Disputed</p><p className="font-bold text-red-600">{summary.delivery_disputed}</p></div>
                   <div className="p-2 rounded bg-amber-50"><p className="text-xs text-muted-foreground">Pending</p><p className="font-bold text-amber-600">{summary.delivery_pending}</p></div>
                 </div>
               </CardContent>
