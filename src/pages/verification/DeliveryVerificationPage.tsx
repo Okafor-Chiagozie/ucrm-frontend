@@ -120,7 +120,7 @@ export default function DeliveryVerificationPage() {
               <TableHead>Order</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Total</TableHead>
-              <TableHead>Delivery</TableHead>
+              <TableHead>Delivery Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>

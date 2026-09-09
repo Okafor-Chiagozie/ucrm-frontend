@@ -120,7 +120,7 @@ export default function PaymentVerificationPage() {
               <TableHead>Order</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Total</TableHead>
-              <TableHead>Payment</TableHead>
+              <TableHead>Payment Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
