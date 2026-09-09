@@ -144,7 +144,6 @@ export interface FormPerformance {
   abandoned: number
   revenue: number
   conversion_rate: number
-  form_completion_rate: number
   created_at: string
 }
 
@@ -157,7 +156,6 @@ export interface FormPerformanceByCreator {
   abandoned: number
   revenue: number
   conversion_rate: number
-  form_completion_rate: number
 }
 
 export interface FormPerformanceTotals {
@@ -167,7 +165,6 @@ export interface FormPerformanceTotals {
   abandoned: number
   revenue: number
   conversion_rate: number
-  form_completion_rate: number
 }
 
 export interface Product {
