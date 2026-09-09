@@ -15,17 +15,13 @@ import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { Card, CardContent } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { Search, ClipboardCheck, CheckCircle, XCircle, Clock, RotateCcw } from 'lucide-react'
+import { Search, ClipboardCheck, CheckCircle, Clock, RotateCcw } from 'lucide-react'
 
 interface VerificationOrder {
   id: string; order_number: string; business_name: string | null; customer_name: string
-  customer_phone: string; customer_state: string; total: string; cs_status: string
+  customer_phone: string; customer_state: string; total: string
   assigned_agent: string | null; accountant_status: string | null; accountant_verified_at: string | null
   created_at: string
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: 'Pending', scheduled: 'Scheduled', delivered: 'Delivered', not_picking: 'Not Picking', cancelled: 'Cancelled',
 }
 
 const formatPrice = (n: string | number) =>
@@ -63,53 +59,25 @@ export default function PaymentVerificationPage() {
   const verify = async (orderId: string, status: string) => {
     try {
       await api.put(`/verification/accountant/${orderId}`, { status })
-      const label = status === 'payment_verified' ? 'Verified' : status === 'payment_disputed' ? 'Disputed' : 'Pending'
+      const label = status === 'payment_verified' ? 'Verified' : 'Pending'
       toast.success(`Marked as ${label}`)
       fetchOrders()
     } catch { toast.error('Failed to update') }
   }
 
-  const ActionButtons = ({ order }: { order: VerificationOrder }) => {
-    const status = order.accountant_status
-
-    if (status === 'payment_verified') {
-      return (
-        <div className="flex justify-end gap-1">
-          <Button variant="ghost" size="sm" className="h-7 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50" onClick={() => verify(order.id, 'pending')}>
-            <Clock className="h-3.5 w-3.5 mr-1" /> Pending
-          </Button>
-          <Button variant="ghost" size="sm" className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => verify(order.id, 'payment_disputed')}>
-            <XCircle className="h-3.5 w-3.5 mr-1" /> Dispute
-          </Button>
-        </div>
-      )
-    }
-
-    if (status === 'payment_disputed') {
-      return (
-        <div className="flex justify-end gap-1">
-          <Button variant="ghost" size="sm" className="h-7 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" onClick={() => verify(order.id, 'payment_verified')}>
-            <CheckCircle className="h-3.5 w-3.5 mr-1" /> Verify
-          </Button>
-          <Button variant="ghost" size="sm" className="h-7 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50" onClick={() => verify(order.id, 'pending')}>
-            <Clock className="h-3.5 w-3.5 mr-1" /> Pending
-          </Button>
-        </div>
-      )
-    }
-
-    // Pending / null
-    return (
-      <div className="flex justify-end gap-1">
+  const ActionButtons = ({ order }: { order: VerificationOrder }) => (
+    <div className="flex justify-end gap-1">
+      {order.accountant_status === 'payment_verified' ? (
+        <Button variant="ghost" size="sm" className="h-7 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50" onClick={() => verify(order.id, 'pending')}>
+          <Clock className="h-3.5 w-3.5 mr-1" /> Pending
+        </Button>
+      ) : (
         <Button variant="ghost" size="sm" className="h-7 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" onClick={() => verify(order.id, 'payment_verified')}>
           <CheckCircle className="h-3.5 w-3.5 mr-1" /> Verify
         </Button>
-        <Button variant="ghost" size="sm" className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => verify(order.id, 'payment_disputed')}>
-          <XCircle className="h-3.5 w-3.5 mr-1" /> Dispute
-        </Button>
-      </div>
-    )
-  }
+      )}
+    </div>
+  )
 
   return (
     <div className="space-y-5">
@@ -136,7 +104,6 @@ export default function PaymentVerificationPage() {
             <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="pending">Not Verified</SelectItem>
             <SelectItem value="payment_verified">Verified</SelectItem>
-            <SelectItem value="payment_disputed">Disputed</SelectItem>
           </SelectContent>
         </Select>
         {hasFilters && (
@@ -153,14 +120,13 @@ export default function PaymentVerificationPage() {
               <TableHead>Order</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Total</TableHead>
-              <TableHead>CS Status</TableHead>
               <TableHead>Payment</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? <TableRow><TableCell colSpan={6} className="p-0"><LoadingState text="Loading..." /></TableCell></TableRow>
-            : orders.length === 0 ? <TableRow><TableCell colSpan={6} className="p-0"><EmptyState icon={ClipboardCheck} title="No orders" /></TableCell></TableRow>
+            {loading ? <TableRow><TableCell colSpan={5} className="p-0"><LoadingState text="Loading..." /></TableCell></TableRow>
+            : orders.length === 0 ? <TableRow><TableCell colSpan={5} className="p-0"><EmptyState icon={ClipboardCheck} title="No orders" /></TableCell></TableRow>
             : orders.map(o => (
               <TableRow key={o.id}>
                 <TableCell>
@@ -172,7 +138,6 @@ export default function PaymentVerificationPage() {
                   <p className="text-xs text-muted-foreground">{o.customer_phone}</p>
                 </TableCell>
                 <TableCell className="font-medium text-sm">{formatPrice(o.total)}</TableCell>
-                <TableCell><Badge variant="outline" className="font-normal">{STATUS_LABELS[o.cs_status] ?? o.cs_status}</Badge></TableCell>
                 <TableCell>
                   {o.accountant_status === 'payment_verified' ? (
                     <Badge variant="outline" className="font-normal border-emerald-200 bg-emerald-50 text-emerald-700">Verified</Badge>
@@ -224,7 +189,6 @@ export default function PaymentVerificationPage() {
                   <span>Agent: <span className="text-foreground">{o.assigned_agent ?? <span className="text-orange-500">Unassigned</span>}</span></span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <Badge variant="outline" className="font-normal">{STATUS_LABELS[o.cs_status] ?? o.cs_status}</Badge>
                   <ActionButtons order={o} />
                 </div>
               </CardContent>

@@ -15,7 +15,7 @@ import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
-import { ShieldCheck, AlertTriangle, CheckCircle, Clock, RotateCcw, Package, DollarSign, Truck, Ban, CalendarClock } from 'lucide-react'
+import { ShieldCheck, AlertTriangle, CheckCircle, Clock, RotateCcw, Package, DollarSign, Truck, Ban, CalendarClock, Download } from 'lucide-react'
 
 interface ReportOrder {
   id: string; order_number: string; business_name: string | null; customer_name: string
@@ -29,6 +29,7 @@ interface Summary {
   total: number; cs_delivered: number; cs_pending: number; cs_scheduled: number; cs_cancelled: number
   payment_verified: number; payment_disputed: number; payment_pending: number
   delivery_verified: number; delivery_disputed: number; delivery_pending: number
+  awaiting_verification: number
   mismatches: number; all_verified: number
 }
 
@@ -122,11 +123,36 @@ export default function VerificationReportPage() {
     setBusinessFilter(''); setReportFilter(''); setDatePreset(''); setDateFrom(''); setDateTo(''); setPage(1)
   }
 
+  const exportCsv = async () => {
+    try {
+      const params = new URLSearchParams()
+      if (businessFilter) params.set('business_id', businessFilter)
+      if (reportFilter) params.set('filter', reportFilter)
+      if (dateFrom) params.set('date_from', dateFrom)
+      if (dateTo) params.set('date_to', dateTo)
+      const { data } = await api.get(`/verification/report-export?${params}`, { responseType: 'blob' })
+      const url = URL.createObjectURL(data)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `verification-report-${new Date().toISOString().slice(0, 10)}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success('CSV downloaded')
+    } catch {
+      toast.error('Failed to export')
+    }
+  }
+
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-semibold flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-blue-600" /> Verification Report</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Cross-reference what Customer Support, Accountant, and Logistics Manager report</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-blue-600" /> Verification Report</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Cross-reference what Customer Support, Accountant, and Logistics Manager report</p>
+        </div>
+        <Button variant="outline" className="w-full sm:w-auto h-10" onClick={exportCsv}>
+          <Download className="mr-1.5 h-4 w-4" /> Export CSV
+        </Button>
       </div>
 
       {/* Summary Cards — 3 rows */}
@@ -155,7 +181,7 @@ export default function VerificationReportPage() {
             <Card className="border cursor-pointer hover:border-amber-300" onClick={() => { setReportFilter('unverified'); setPage(1) }}>
               <CardContent className="p-4 flex items-center gap-3">
                 <div className="h-9 w-9 rounded-md bg-amber-100 flex items-center justify-center shrink-0"><Clock className="h-4.5 w-4.5 text-amber-600" /></div>
-                <div><p className="text-xs text-muted-foreground">Awaiting Verification</p><p className="text-lg font-bold text-amber-600">{summary.payment_pending + summary.delivery_pending}</p></div>
+                <div><p className="text-xs text-muted-foreground">Awaiting Verification</p><p className="text-lg font-bold text-amber-600">{summary.awaiting_verification}</p></div>
               </CardContent>
             </Card>
           </div>
