@@ -27,8 +27,8 @@ interface ReportOrder {
 
 interface Summary {
   total: number; cs_delivered: number; cs_pending: number; cs_scheduled: number; cs_cancelled: number
-  payment_verified: number; payment_disputed: number; payment_pending: number
-  delivery_verified: number; delivery_disputed: number; delivery_pending: number
+  payment_verified: number; payment_pending: number
+  delivery_verified: number; delivery_pending: number
   awaiting_verification: number
   mismatches: number; all_verified: number
 }
