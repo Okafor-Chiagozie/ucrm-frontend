@@ -372,13 +372,14 @@ function CreateUserDialog({ open, onClose, roles, onSuccess }: { open: boolean; 
 
   return (
     <Dialog open={open} onOpenChange={() => { reset(); onClose() }}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Create New User</DialogTitle>
           <DialogDescription>Add a new staff member. They sign in with the username and password you set here.</DialogDescription>
         </DialogHeader>
         <Separator />
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2" autoComplete="off">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 pt-2" autoComplete="off">
+          <div className="flex-1 overflow-y-auto space-y-4 custom-scrollbar pr-1">
           {error && (
             <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">{error}</div>
           )}
@@ -428,8 +429,9 @@ function CreateUserDialog({ open, onClose, roles, onSuccess }: { open: boolean; 
               </button>
             </div>
           </div>
-          <Separator />
-          <div className="flex justify-end gap-2">
+          </div>
+          <Separator className="mt-4" />
+          <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={() => { reset(); onClose() }}>Cancel</Button>
             <Button type="submit" disabled={submitting}>{submitting ? 'Creating...' : 'Create User'}</Button>
           </div>
@@ -478,13 +480,14 @@ function EditUserDialog({ open, onClose, user, roles, onSuccess }: { open: boole
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Edit User</DialogTitle>
           <DialogDescription>Editing {user.name} ({user.username})</DialogDescription>
         </DialogHeader>
         <Separator />
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2" autoComplete="off">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 pt-2" autoComplete="off">
+          <div className="flex-1 overflow-y-auto space-y-4 custom-scrollbar pr-1">
           {error && (
             <div className="rounded-md bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">{error}</div>
           )}
@@ -563,8 +566,9 @@ function EditUserDialog({ open, onClose, user, roles, onSuccess }: { open: boole
               <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${form.is_active ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>
-          <Separator />
-          <div className="flex justify-end gap-2">
+          </div>
+          <Separator className="mt-4" />
+          <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
             <Button type="submit" disabled={submitting}>{submitting ? 'Saving...' : 'Save Changes'}</Button>
           </div>
