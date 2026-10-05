@@ -329,7 +329,9 @@ export default function SettingsPage() {
                 <div className="space-y-1.5">
                   <Label>Channel</Label>
                   <Select value={testChannel} onValueChange={(v) => setTestChannel((v as 'whatsapp' | 'sms') ?? 'whatsapp')}>
-                    <SelectTrigger className="h-10 w-full"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-10 w-full">
+                      <SelectValue>{testChannel === 'sms' ? 'SMS' : 'WhatsApp'}</SelectValue>
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="whatsapp">WhatsApp</SelectItem>
                       <SelectItem value="sms">SMS</SelectItem>

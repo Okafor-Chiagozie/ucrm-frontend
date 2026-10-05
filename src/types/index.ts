@@ -89,7 +89,7 @@ export interface ProductVariation {
   sort_order: number
 }
 
-export type CustomFieldType = 'text' | 'textarea' | 'number' | 'select' | 'checkbox'
+export type CustomFieldType = 'text' | 'textarea' | 'number' | 'select' | 'radio' | 'date' | 'month' | 'checkbox'
 
 export interface CustomFormField {
   key: string

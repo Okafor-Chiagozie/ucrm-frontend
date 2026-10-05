@@ -30,7 +30,7 @@ interface DeliveryFeeData {
 interface CustomFieldData {
   key: string
   label: string
-  type: 'text' | 'textarea' | 'number' | 'select' | 'checkbox'
+  type: 'text' | 'textarea' | 'number' | 'select' | 'radio' | 'date' | 'month' | 'checkbox'
   required: boolean
   options?: string[]
 }
@@ -58,12 +58,12 @@ interface FormData {
 }
 
 const COUNTRY_CODES = [
-  { value: '+234', label: '+234 (Nigeria)' },
+  { value: '+234', label: '+234 (NG)' },
   { value: '+1', label: '+1 (US/CA)' },
   { value: '+44', label: '+44 (UK)' },
-  { value: '+233', label: '+233 (Ghana)' },
-  { value: '+254', label: '+254 (Kenya)' },
-  { value: '+27', label: '+27 (South Africa)' },
+  { value: '+233', label: '+233 (GH)' },
+  { value: '+254', label: '+254 (KE)' },
+  { value: '+27', label: '+27 (ZA)' },
 ]
 
 export default function OrderForm() {
@@ -256,7 +256,7 @@ export default function OrderForm() {
           <div style={styles.fieldGroup}>
             <label style={styles.label}>Phone Number *</label>
             <div style={styles.phoneRow}>
-              <select style={{ ...styles.input, ...styles.phoneCode }} value={phoneCode} onChange={(e) => setPhoneCode(e.target.value)}>
+              <select style={{ ...styles.input, ...styles.select, ...styles.phoneCode }} value={phoneCode} onChange={(e) => setPhoneCode(e.target.value)}>
                 {COUNTRY_CODES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
               <input style={{ ...styles.input, flex: 1 }} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} onBlur={savePartial} placeholder="08012345678" required />
@@ -268,7 +268,7 @@ export default function OrderForm() {
           <div style={styles.fieldGroup}>
             <label style={styles.label}>WhatsApp Number</label>
             <div style={styles.phoneRow}>
-              <select style={{ ...styles.input, ...styles.phoneCode }} value={whatsappCode} onChange={(e) => setWhatsappCode(e.target.value)}>
+              <select style={{ ...styles.input, ...styles.select, ...styles.phoneCode }} value={whatsappCode} onChange={(e) => setWhatsappCode(e.target.value)}>
                 {COUNTRY_CODES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
               <input style={{ ...styles.input, flex: 1 }} type="tel" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="WhatsApp number" />
@@ -285,7 +285,7 @@ export default function OrderForm() {
           {/* State */}
           <div style={styles.fieldGroup}>
             <label style={styles.label}>State *</label>
-            <select style={styles.input} value={state} onChange={(e) => setState(e.target.value)} required>
+            <select style={{ ...styles.input, ...styles.select }} value={state} onChange={(e) => setState(e.target.value)} required>
               <option value="">Select your state</option>
               {formData.delivery_fees.map((f) => <option key={f.state} value={f.state}>{f.state}</option>)}
             </select>
@@ -299,6 +299,60 @@ export default function OrderForm() {
           </div>
           )}
 
+          {/* Custom Fields */}
+          {(formData.form_settings.custom_fields ?? []).map((field) => {
+            const value = customValues[field.key]
+            const setValue = (v: string | boolean) => setCustomValues((prev) => ({ ...prev, [field.key]: v }))
+            if (field.type === 'checkbox') {
+              return (
+                <div key={field.key} style={styles.fieldGroup}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
+                    <input type="checkbox" checked={value === true} onChange={(e) => setValue(e.target.checked)} required={field.required} style={{ width: 18, height: 18 }} />
+                    {field.label}{field.required ? ' *' : ''}
+                  </label>
+                </div>
+              )
+            }
+            return (
+              <div key={field.key} style={styles.fieldGroup}>
+                <label style={styles.label}>{field.label}{field.required ? ' *' : ''}</label>
+                {field.type === 'textarea' ? (
+                  <textarea style={{ ...styles.input, height: 'auto', minHeight: 80, padding: '10px 12px', resize: 'vertical' }} value={(value as string) ?? ''} onChange={(e) => setValue(e.target.value)} required={field.required} />
+                ) : field.type === 'select' ? (
+                  <select style={{ ...styles.input, ...styles.select }} value={(value as string) ?? ''} onChange={(e) => setValue(e.target.value)} required={field.required}>
+                    <option value="">Select an option</option>
+                    {(field.options ?? []).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                  </select>
+                ) : field.type === 'radio' ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {(field.options ?? []).map((opt) => (
+                      <label key={opt} style={{ ...styles.radioOption, borderColor: value === opt ? '#2563eb' : '#9ca3af', background: value === opt ? '#eff6ff' : '#fff' }}>
+                        <input
+                          type="radio"
+                          name={field.key}
+                          value={opt}
+                          checked={value === opt}
+                          onChange={() => setValue(opt)}
+                          required={field.required}
+                          style={{ width: 18, height: 18, flex: 'none' }}
+                        />
+                        <span style={{ fontSize: 15, fontWeight: 600, color: '#0f172a' }}>{opt}</span>
+                      </label>
+                    ))}
+                  </div>
+                ) : field.type === 'month' ? (
+                  // Birthdays only need month and year, and never a future one.
+                  <input style={styles.input} type="month" max={new Date().toISOString().slice(0, 7)} value={(value as string) ?? ''} onChange={(e) => setValue(e.target.value)} required={field.required} />
+                ) : field.type === 'date' ? (
+                  // max=today so a date of birth cannot be set in the future
+                  <input style={styles.input} type="date" max={new Date().toISOString().slice(0, 10)} value={(value as string) ?? ''} onChange={(e) => setValue(e.target.value)} required={field.required} />
+                ) : (
+                  <input style={styles.input} type={field.type === 'number' ? 'number' : 'text'} value={(value as string) ?? ''} onChange={(e) => setValue(e.target.value)} required={field.required} />
+                )}
+              </div>
+            )
+          })}
+
           {/* Variations */}
           <div style={styles.fieldGroup}>
             <label style={{ ...styles.label, fontSize: 18, fontWeight: 800, marginBottom: 10 }}>Select Your Package *</label>
@@ -310,7 +364,8 @@ export default function OrderForm() {
                   background: selectedVariation === v.id ? '#eff6ff' : '#fff',
                   cursor: 'pointer',
                 }}>
-                  <input type="radio" name="variation" value={v.id} checked={selectedVariation === v.id} onChange={() => setSelectedVariation(v.id)} style={{ display: 'none' }} />
+                  {/* Visible, so it reads as a choice rather than a static price card. */}
+                  <input type="radio" name="variation" value={v.id} checked={selectedVariation === v.id} onChange={() => setSelectedVariation(v.id)} style={{ width: 20, height: 20, flex: 'none', margin: 0, accentColor: '#2563eb', cursor: 'pointer' }} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: 16, color: '#0f172a' }}>{v.name}</div>
                     {v.description && <div style={{ fontSize: 14, fontWeight: 500, color: '#4b5563', marginTop: 3 }}>{v.description}</div>}
@@ -360,37 +415,6 @@ export default function OrderForm() {
           </div>
           )}
 
-          {/* Custom Fields */}
-          {(formData.form_settings.custom_fields ?? []).map((field) => {
-            const value = customValues[field.key]
-            const setValue = (v: string | boolean) => setCustomValues((prev) => ({ ...prev, [field.key]: v }))
-            if (field.type === 'checkbox') {
-              return (
-                <div key={field.key} style={styles.fieldGroup}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
-                    <input type="checkbox" checked={value === true} onChange={(e) => setValue(e.target.checked)} required={field.required} style={{ width: 18, height: 18 }} />
-                    {field.label}{field.required ? ' *' : ''}
-                  </label>
-                </div>
-              )
-            }
-            return (
-              <div key={field.key} style={styles.fieldGroup}>
-                <label style={styles.label}>{field.label}{field.required ? ' *' : ''}</label>
-                {field.type === 'textarea' ? (
-                  <textarea style={{ ...styles.input, height: 'auto', minHeight: 80, padding: '10px 12px', resize: 'vertical' }} value={(value as string) ?? ''} onChange={(e) => setValue(e.target.value)} required={field.required} />
-                ) : field.type === 'select' ? (
-                  <select style={styles.input} value={(value as string) ?? ''} onChange={(e) => setValue(e.target.value)} required={field.required}>
-                    <option value="">Select an option</option>
-                    {(field.options ?? []).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-                  </select>
-                ) : (
-                  <input style={styles.input} type={field.type === 'number' ? 'number' : 'text'} value={(value as string) ?? ''} onChange={(e) => setValue(e.target.value)} required={field.required} />
-                )}
-              </div>
-            )
-          })}
-
           {/* Order Summary */}
           {selectedVariation && (
             <div style={styles.summaryBox}>
@@ -412,19 +436,32 @@ export default function OrderForm() {
 
 const styles: Record<string, React.CSSProperties> = {
   container: { fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif", padding: 16, minHeight: '100vh', background: 'transparent' },
-  card: { maxWidth: 520, margin: '0 auto', background: '#fff', borderRadius: 8, border: '1px solid #e5e7eb', padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' },
+  card: { maxWidth: 600, margin: '0 auto', background: '#fff', borderRadius: 5, border: '1px solid #e5e7eb', padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' },
   loadingWrapper: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 60, gap: 12 },
   spinner: { width: 32, height: 32, border: '3px solid #e5e7eb', borderTopColor: '#2563eb', borderRadius: '50%', animation: 'spin 0.8s linear infinite' },
   fieldGroup: { marginBottom: 16 },
   label: { display: 'block', fontSize: 15, fontWeight: 700, color: '#0f172a', marginBottom: 6 },
-  input: { display: 'block', width: '100%', height: 48, padding: '0 14px', border: '2px solid #9ca3af', borderRadius: 8, fontSize: 16, fontWeight: 500, color: '#0f172a', outline: 'none', boxSizing: 'border-box', background: '#fff' },
+  input: { display: 'block', width: '100%', height: 48, padding: '0 14px', border: '2px solid #9ca3af', borderRadius: 5, fontSize: 16, fontWeight: 500, color: '#0f172a', outline: 'none', boxSizing: 'border-box', background: '#fff' },
   phoneRow: { display: 'flex', gap: 8 },
-  phoneCode: { width: 130, flex: 'none' },
-  variationCard: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', border: '2.5px solid', borderRadius: 10, transition: 'all 0.15s' },
-  bumpCard: { border: '2.5px dashed', borderRadius: 10, padding: 18, marginBottom: 16, background: '#fafafa' },
-  couponBtn: { height: 48, padding: '0 18px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 700, cursor: 'pointer' },
-  summaryBox: { background: '#f3f4f6', borderRadius: 10, padding: 18, marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8, border: '1.5px solid #cbd5e1' },
+  // Chrome insets its native select arrow far less than our text padding, so the
+  // arrow is drawn here instead and positioned to match the left-hand gap.
+  select: {
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    MozAppearance: 'none',
+    paddingRight: 38,
+    backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234b5563' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>")`,
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 14px center',
+    backgroundSize: '16px 16px',
+  },
+  phoneCode: { width: 140, flex: 'none' },
+  radioOption: { display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', border: '2px solid', borderRadius: 5, cursor: 'pointer', transition: 'all 0.15s' },
+  variationCard: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, padding: '14px 18px', border: '2.5px solid', borderRadius: 5, transition: 'all 0.15s' },
+  bumpCard: { border: '2.5px dashed', borderRadius: 5, padding: 18, marginBottom: 16, background: '#fafafa' },
+  couponBtn: { height: 48, padding: '0 18px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 5, fontSize: 15, fontWeight: 700, cursor: 'pointer' },
+  summaryBox: { background: '#f3f4f6', borderRadius: 5, padding: 18, marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8, border: '1.5px solid #cbd5e1' },
   summaryRow: { display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 600, color: '#0f172a' },
-  submitBtn: { width: '100%', height: 54, background: '#2563eb', color: '#fff', border: 'none', borderRadius: 10, fontSize: 18, fontWeight: 800, cursor: 'pointer', transition: 'background 0.15s' },
-  errorBox: { background: '#fef2f2', border: '2px solid #fca5a5', borderRadius: 8, padding: '12px 16px', marginBottom: 16, color: '#dc2626', fontSize: 15, fontWeight: 600 },
+  submitBtn: { width: '100%', height: 54, background: '#2563eb', color: '#fff', border: 'none', borderRadius: 5, fontSize: 18, fontWeight: 800, cursor: 'pointer', transition: 'background 0.15s' },
+  errorBox: { background: '#fef2f2', border: '2px solid #fca5a5', borderRadius: 5, padding: '12px 16px', marginBottom: 16, color: '#dc2626', fontSize: 15, fontWeight: 600 },
 }

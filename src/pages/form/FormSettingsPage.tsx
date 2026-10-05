@@ -22,9 +22,25 @@ import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
 import {
   Copy, ExternalLink, Code, Pencil, ToggleLeft, ToggleRight, Plus, Trash2, Files,
+  ChevronDown, CalendarDays,
 } from 'lucide-react'
 import type { CustomFormField, CustomFieldType } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
+
+/**
+ * Field type labels. The trigger needs these explicitly — a bare <SelectValue />
+ * falls back to the raw value, so it would read "month" instead of the label.
+ */
+const FIELD_TYPE_LABELS: Record<CustomFieldType, string> = {
+  text: 'Short text',
+  textarea: 'Long text',
+  number: 'Number',
+  select: 'Dropdown',
+  radio: 'Multiple choice',
+  date: 'Date',
+  month: 'Month & year (birthday)',
+  checkbox: 'Checkbox',
+}
 
 export default function FormSettingsPage() {
   const { user } = useAuth()
@@ -482,8 +498,8 @@ function FormBuilderDialog({ product, form, owners, canAssign, onClose, onSaved 
       .map((f) => ({ ...f, label: f.label.trim(), options: (f.options ?? []).map((o) => o.trim()).filter(Boolean) }))
       .filter((f) => f.label)
 
-    if (cleanedFields.some((f) => f.type === 'select' && f.options.length === 0)) {
-      toast.error('Dropdown fields need at least one option')
+    if (cleanedFields.some((f) => (f.type === 'select' || f.type === 'radio') && f.options.length === 0)) {
+      toast.error('Dropdown and multiple choice fields need at least one option')
       return
     }
 
@@ -634,18 +650,18 @@ function FormBuilderDialog({ product, form, owners, canAssign, onClose, onSaved 
                     <div className="space-y-1">
                       <Label className="text-xs">Field Type</Label>
                       <Select value={field.type} onValueChange={(v) => updateCustomField(i, { type: v as CustomFieldType })}>
-                        <SelectTrigger className="h-9 w-full"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="h-9 w-full">
+                          <SelectValue>{FIELD_TYPE_LABELS[field.type]}</SelectValue>
+                        </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="text">Short text</SelectItem>
-                          <SelectItem value="textarea">Long text</SelectItem>
-                          <SelectItem value="number">Number</SelectItem>
-                          <SelectItem value="select">Dropdown</SelectItem>
-                          <SelectItem value="checkbox">Checkbox</SelectItem>
+                          {(Object.keys(FIELD_TYPE_LABELS) as CustomFieldType[]).map((t) => (
+                            <SelectItem key={t} value={t}>{FIELD_TYPE_LABELS[t]}</SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
-                  {field.type === 'select' && (
+                  {(field.type === 'select' || field.type === 'radio') && (
                     <div className="space-y-1">
                       <Label className="text-xs">Options (comma separated)</Label>
                       <Input
@@ -679,12 +695,17 @@ function FormBuilderDialog({ product, form, owners, canAssign, onClose, onSaved 
               <PreviewField label="Delivery Address *" />
               <PreviewField label="State *" />
               {settings.show_email && <PreviewField label="Email" optional />}
+              {/* Custom questions sit with the other customer details, as on the real form. */}
+              {customFields.filter((f) => f.label.trim()).map((f) => (
+                <PreviewField key={f.key} label={`${f.label}${f.required ? ' *' : ''}`} optional={!f.required} type={f.type} options={f.options} />
+              ))}
               <div>
                 <p className="text-xs font-semibold text-gray-700 mb-2">Select Your Package *</p>
                 <div className="space-y-2">
                   {product.variations.slice(0, 3).map((v, i) => (
-                    <div key={v.id} className={`flex items-center justify-between rounded-md border-2 px-3 py-2 ${i === 0 ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
-                      <span className="text-xs font-medium text-gray-800">{v.name}</span>
+                    <div key={v.id} className={`flex items-center gap-2.5 rounded-[5px] border-2 px-3 py-2 ${i === 0 ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
+                      <div className={`h-3.5 w-3.5 flex-none rounded-full border ${i === 0 ? 'border-[5px] border-blue-600' : 'border-gray-400'}`} />
+                      <span className="flex-1 text-xs font-medium text-gray-800">{v.name}</span>
                       <span className="text-xs font-bold">₦{Number(v.price).toLocaleString()}</span>
                     </div>
                   ))}
@@ -692,9 +713,6 @@ function FormBuilderDialog({ product, form, owners, canAssign, onClose, onSaved 
                 </div>
               </div>
               {couponsEnabled && settings.show_coupon && <PreviewField label="Coupon Code" optional />}
-              {customFields.filter((f) => f.label.trim()).map((f) => (
-                <PreviewField key={f.key} label={`${f.label}${f.required ? ' *' : ''}`} optional={!f.required} />
-              ))}
               <button className="w-full h-11 rounded-md text-white font-bold text-sm mt-2" style={{ background: settings.button_color }} disabled>
                 {settings.button_text}
               </button>
@@ -711,11 +729,62 @@ function FormBuilderDialog({ product, form, owners, canAssign, onClose, onSaved 
   )
 }
 
-function PreviewField({ label, optional }: { label: string; optional?: boolean }) {
+function PreviewField({
+  label,
+  optional,
+  type = 'text',
+  options,
+}: {
+  label: string
+  optional?: boolean
+  type?: CustomFieldType
+  options?: string[]
+}) {
+  const labelClass = `text-xs font-semibold mb-1 ${optional ? 'text-gray-400' : 'text-gray-700'}`
+  const boxClass = `h-10 rounded-md border bg-gray-50 ${optional ? 'border-dashed' : ''}`
+  const choices = (options ?? []).map((o) => o.trim()).filter(Boolean)
+
+  // A checkbox has no caption of its own — the label sits beside the box.
+  if (type === 'checkbox') {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="h-4 w-4 rounded-sm border bg-gray-50" />
+        <p className={`text-xs font-semibold ${optional ? 'text-gray-400' : 'text-gray-700'}`}>{label}</p>
+      </div>
+    )
+  }
+
   return (
     <div>
-      <p className={`text-xs font-semibold mb-1 ${optional ? 'text-gray-400' : 'text-gray-700'}`}>{label}</p>
-      <div className={`h-10 rounded-md border bg-gray-50 ${optional ? 'border-dashed' : ''}`} />
+      <p className={labelClass}>{label}</p>
+      {type === 'radio' ? (
+        choices.length === 0 ? (
+          <p className="text-[11px] text-gray-400 italic">Add options to see the choices</p>
+        ) : (
+          <div className="space-y-1.5">
+            {choices.map((opt) => (
+              <div key={opt} className="flex items-center gap-2 rounded-md border bg-white px-2.5 py-1.5">
+                <div className="h-3.5 w-3.5 rounded-full border border-gray-400" />
+                <span className="text-xs font-medium text-gray-700">{opt}</span>
+              </div>
+            ))}
+          </div>
+        )
+      ) : type === 'select' ? (
+        <div className={`${boxClass} flex items-center justify-between px-2.5`}>
+          <span className="text-xs text-gray-400">{choices[0] ?? 'Select an option'}</span>
+          <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
+        </div>
+      ) : type === 'textarea' ? (
+        <div className={`h-20 rounded-md border bg-gray-50 ${optional ? 'border-dashed' : ''}`} />
+      ) : type === 'date' || type === 'month' ? (
+        <div className={`${boxClass} flex items-center justify-between px-2.5`}>
+          <span className="text-xs text-gray-400">{type === 'month' ? 'Month and year' : 'Pick a date'}</span>
+          <CalendarDays className="h-3.5 w-3.5 text-gray-400" />
+        </div>
+      ) : (
+        <div className={boxClass} />
+      )}
     </div>
   )
 }

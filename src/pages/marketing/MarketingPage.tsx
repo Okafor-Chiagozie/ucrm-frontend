@@ -17,6 +17,13 @@ import VariableTextarea from '@/components/VariableTextarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Megaphone, Send, Users, Mail, MessageSquare, Phone, Plus, Pencil, Trash2, FileText, Search, RotateCcw } from 'lucide-react'
 
+/** A bare <SelectValue /> shows the raw value, so the trigger needs these. */
+const CHANNEL_LABELS: Record<'email' | 'sms' | 'whatsapp', string> = {
+  email: 'Email',
+  sms: 'SMS',
+  whatsapp: 'WhatsApp',
+}
+
 const MARKETING_VARIABLES = [
   { key: '{customer_name}', label: 'Customer Name' },
   { key: '{customer_phone}', label: 'Phone' },
@@ -458,7 +465,9 @@ export default function MarketingPage() {
             <div className="space-y-1.5">
               <Label>Channel</Label>
               <Select value={channel} onValueChange={(v: string | null) => v && setChannel(v as 'email' | 'sms' | 'whatsapp')}>
-                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full">
+                  <SelectValue>{CHANNEL_LABELS[channel]}</SelectValue>
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="email"><span className="flex items-center gap-1.5"><Mail className="w-4 h-4" /> Email</span></SelectItem>
                   <SelectItem value="sms"><span className="flex items-center gap-1.5"><Phone className="w-4 h-4" /> SMS</span></SelectItem>
@@ -541,7 +550,9 @@ export default function MarketingPage() {
             <div className="space-y-1.5">
               <Label>Channel</Label>
               <Select value={templateChannel} onValueChange={(v: string | null) => v && setTemplateChannel(v as 'email' | 'sms' | 'whatsapp')}>
-                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full">
+                  <SelectValue>{CHANNEL_LABELS[templateChannel]}</SelectValue>
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="email">Email</SelectItem>
                   <SelectItem value="sms">SMS</SelectItem>
