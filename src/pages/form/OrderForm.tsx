@@ -54,6 +54,8 @@ interface FormData {
   form_settings: FormSettingsData
   variations: Variation[]
   delivery_fees: DeliveryFeeData[]
+  /** All 37 states, independent of whether delivery fees are configured. */
+  states?: string[]
   bump_offers: BumpOfferData[]
 }
 
@@ -287,7 +289,8 @@ export default function OrderForm() {
             <label style={styles.label}>State *</label>
             <select style={{ ...styles.input, ...styles.select }} value={state} onChange={(e) => setState(e.target.value)} required>
               <option value="">Select your state</option>
-              {formData.delivery_fees.map((f) => <option key={f.state} value={f.state}>{f.state}</option>)}
+              {/* Fall back to the fee states so an older cached payload still works. */}
+              {(formData.states ?? formData.delivery_fees.map((f) => f.state)).map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
 
