@@ -66,6 +66,12 @@ const settingsMeta: Record<string, { label: string; description: string; type: '
     type: 'text',
     group: 'General',
   },
+  outbound_brand_name: {
+    label: 'Sender Name',
+    description: 'The name customers and staff see on emails the CRM sends. Leave blank to use the app name.',
+    type: 'text',
+    group: 'Email Notifications',
+  },
   order_email_recipient: {
     label: 'Order Notification Email',
     description: 'New orders are emailed to this address only. Leave blank to email every Super Admin, Admin and the assigned agent instead.',
