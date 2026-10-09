@@ -3,6 +3,9 @@ export interface User {
   name: string
   username: string
   email: string | null
+  /** Optional, so orders can reach the rep they are assigned to. */
+  whatsapp_code?: string | null
+  whatsapp?: string | null
   must_change_password: boolean
   is_active: boolean
   available_from: string | null

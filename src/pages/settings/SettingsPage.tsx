@@ -24,6 +24,11 @@ const NOTIFICATION_VARIABLES: Record<string, { key: string; label: string }[]> =
     { key: '{order_number}', label: 'Order #' }, { key: '{customer_name}', label: 'Name' },
     { key: '{status}', label: 'Status' }, { key: '{total}', label: 'Total' },
   ],
+  whatsapp_agent_order_template: [
+    { key: '{order_number}', label: 'Order #' }, { key: '{customer_name}', label: 'Name' },
+    { key: '{customer_phone}', label: 'Phone' }, { key: '{customer_state}', label: 'State' },
+    { key: '{customer_address}', label: 'Address' }, { key: '{total}', label: 'Total' }, { key: '\n', label: 'New Line' },
+  ],
   whatsapp_new_order_template: [
     { key: '{order_number}', label: 'Order #' }, { key: '{customer_name}', label: 'Name' },
     { key: '{customer_phone}', label: 'Phone' }, { key: '{customer_state}', label: 'State' },
@@ -87,9 +92,27 @@ const settingsMeta: Record<string, { label: string; description: string; type: '
     type: 'text',
     group: 'Email Notifications',
   },
+  order_email_notify_agent: {
+    label: 'Email Assigned Sales Rep',
+    description: 'Email each order to the sales rep it is assigned to. Independent of the admin switch below.',
+    type: 'toggle',
+    group: 'Email Notifications',
+  },
+  order_whatsapp_notify_agent: {
+    label: 'WhatsApp Assigned Sales Rep',
+    description: 'Send each order to the assigned rep on WhatsApp. Needs a WhatsApp number on their user account.',
+    type: 'toggle',
+    group: 'WhatsApp Notifications',
+  },
+  whatsapp_agent_order_template: {
+    label: 'Sales Rep Message',
+    description: 'What the assigned rep receives on WhatsApp.',
+    type: 'textarea',
+    group: 'WhatsApp Notifications',
+  },
   order_email_notify_staff: {
-    label: 'Also Email Staff',
-    description: 'In addition to the address above, email new orders to Super Admins, Admins and the agent assigned to the order. In-app notifications always reach staff either way.',
+    label: 'Also Email Admins',
+    description: 'In addition to the address above, email new orders to Super Admins and Admins. In-app notifications always reach staff either way.',
     type: 'toggle',
     group: 'Email Notifications',
   },

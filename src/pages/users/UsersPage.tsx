@@ -341,19 +341,19 @@ export default function UsersPage() {
 /* ─── Create User Dialog ─── */
 
 function CreateUserDialog({ open, onClose, roles, onSuccess }: { open: boolean; onClose: () => void; roles: Role[]; onSuccess: () => void }) {
-  const [form, setForm] = useState({ name: '', username: '', email: '', password: '', role: '' })
+  const [form, setForm] = useState({ name: '', username: '', email: '', whatsapp_code: '+234', whatsapp: '', password: '', role: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  const reset = () => { setForm({ name: '', username: '', email: '', password: '', role: '' }); setError(''); setShowPassword(false) }
+  const reset = () => { setForm({ name: '', username: '', email: '', whatsapp_code: '+234', whatsapp: '', password: '', role: '' }); setError(''); setShowPassword(false) }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitting(true)
     setError('')
     try {
-      await api.post('/users', { ...form, email: form.email || null })
+      await api.post('/users', { ...form, email: form.email || null, whatsapp: form.whatsapp || null })
       toast.success('User created successfully')
       reset()
       onClose()
@@ -397,6 +397,14 @@ function CreateUserDialog({ open, onClose, roles, onSuccess }: { open: boolean; 
               <Label className="text-sm">Email <span className="text-muted-foreground font-normal">(optional)</span></Label>
               <Input type="email" name="ucrm-new-email" autoComplete="off" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="john@company.com" className="h-10" />
               <p className="text-xs text-muted-foreground">Needed only to receive email notifications.</p>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">WhatsApp <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <div className="flex gap-2">
+                <Input name="ucrm-new-wa-code" autoComplete="off" value={form.whatsapp_code} onChange={(e) => setForm({ ...form, whatsapp_code: e.target.value })} className="h-10 w-20" />
+                <Input name="ucrm-new-wa" autoComplete="off" value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} placeholder="8031234567" className="h-10 flex-1" />
+              </div>
+              <p className="text-xs text-muted-foreground">Used to send them orders assigned to them.</p>
             </div>
           </div>
           <div className="space-y-1.5">
@@ -449,7 +457,7 @@ function EditUserDialog({ open, onClose, user, roles, onSuccess }: { open: boole
   const canResetPassword = currentUser?.role === 'Super Admin'
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [form, setForm] = useState({ name: user.name, username: user.username, email: user.email || '', role: user.role || '', is_active: user.is_active, available_from: user.available_from || '', available_to: user.available_to || '' })
+  const [form, setForm] = useState({ name: user.name, username: user.username, email: user.email || '', whatsapp_code: user.whatsapp_code || '+234', whatsapp: user.whatsapp || '', role: user.role || '', is_active: user.is_active, available_from: user.available_from || '', available_to: user.available_to || '' })
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -461,6 +469,8 @@ function EditUserDialog({ open, onClose, user, roles, onSuccess }: { open: boole
       await api.put(`/users/${user.id}`, {
         ...form,
         email: form.email || null,
+        whatsapp_code: form.whatsapp ? form.whatsapp_code : null,
+        whatsapp: form.whatsapp || null,
         ...(password ? { password } : {}),
       })
       toast.success('User updated successfully')
@@ -503,6 +513,14 @@ function EditUserDialog({ open, onClose, user, roles, onSuccess }: { open: boole
             <div className="space-y-1.5">
               <Label className="text-sm">Email <span className="text-muted-foreground font-normal">(optional)</span></Label>
               <Input type="email" name="ucrm-edit-email" autoComplete="off" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="h-10" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">WhatsApp <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <div className="flex gap-2">
+                <Input name="ucrm-edit-wa-code" autoComplete="off" value={form.whatsapp_code} onChange={(e) => setForm({ ...form, whatsapp_code: e.target.value })} className="h-10 w-20" />
+                <Input name="ucrm-edit-wa" autoComplete="off" value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} placeholder="8031234567" className="h-10 flex-1" />
+              </div>
+              <p className="text-xs text-muted-foreground">Used to send them orders assigned to them.</p>
             </div>
           </div>
           {canResetPassword && (
