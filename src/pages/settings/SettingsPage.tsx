@@ -25,9 +25,13 @@ const NOTIFICATION_VARIABLES: Record<string, { key: string; label: string }[]> =
     { key: '{status}', label: 'Status' }, { key: '{total}', label: 'Total' },
   ],
   whatsapp_agent_order_template: [
-    { key: '{order_number}', label: 'Order #' }, { key: '{customer_name}', label: 'Name' },
-    { key: '{customer_phone}', label: 'Phone' }, { key: '{customer_state}', label: 'State' },
-    { key: '{customer_address}', label: 'Address' }, { key: '{total}', label: 'Total' }, { key: '\n', label: 'New Line' },
+    { key: '{order_number}', label: 'Order #' }, { key: '{items}', label: 'Items' },
+    { key: '{custom_fields}', label: 'Custom Answers' }, { key: '{customer_name}', label: 'Name' },
+    { key: '{customer_phone}', label: 'Phone' }, { key: '{customer_whatsapp}', label: 'WhatsApp' },
+    { key: '{customer_address}', label: 'Address' }, { key: '{customer_state}', label: 'State' },
+    { key: '{customer_email}', label: 'Email' }, { key: '{form_name}', label: 'Form' },
+    { key: '{subtotal}', label: 'Subtotal' }, { key: '{delivery_fee}', label: 'Delivery' },
+    { key: '{discount}', label: 'Discount' }, { key: '{total}', label: 'Total' },
   ],
   whatsapp_new_order_template: [
     { key: '{order_number}', label: 'Order #' }, { key: '{customer_name}', label: 'Name' },
@@ -39,6 +43,9 @@ const NOTIFICATION_VARIABLES: Record<string, { key: string; label: string }[]> =
     { key: '{status}', label: 'Status' }, { key: '{total}', label: 'Total' }, { key: '\\n', label: 'New Line' },
   ],
 }
+
+/** The order groups appear in on the page. Anything else follows. */
+const GROUP_ORDER = ['General', 'Email Notifications', 'WhatsApp Notifications', 'SMS Notifications', 'Test Notifications', 'Other']
 
 /** Settings that change the user payload, so the UI must re-read it. */
 const FEATURE_SETTINGS = ['coupons_enabled', 'delivery_fees_enabled']
@@ -92,27 +99,15 @@ const settingsMeta: Record<string, { label: string; description: string; type: '
     type: 'text',
     group: 'Email Notifications',
   },
-  order_email_notify_agent: {
-    label: 'Email Assigned Sales Rep',
-    description: 'Email each order to the sales rep it is assigned to. Independent of the admin switch below.',
+  order_email_notify_staff: {
+    label: 'Email Admins',
+    description: 'In addition to the address above, email new orders to Super Admins and Admins. In-app notifications always reach staff either way.',
     type: 'toggle',
     group: 'Email Notifications',
   },
-  order_whatsapp_notify_agent: {
-    label: 'WhatsApp Assigned Sales Rep',
-    description: 'Send each order to the assigned rep on WhatsApp. Needs a WhatsApp number on their user account.',
-    type: 'toggle',
-    group: 'WhatsApp Notifications',
-  },
-  whatsapp_agent_order_template: {
-    label: 'Sales Rep Message',
-    description: 'What the assigned rep receives on WhatsApp.',
-    type: 'textarea',
-    group: 'WhatsApp Notifications',
-  },
-  order_email_notify_staff: {
-    label: 'Also Email Admins',
-    description: 'In addition to the address above, email new orders to Super Admins and Admins. In-app notifications always reach staff either way.',
+  order_email_notify_agent: {
+    label: 'Email Sales Rep',
+    description: 'Email each order to the sales rep it is assigned to. Independent of the admin switch below.',
     type: 'toggle',
     group: 'Email Notifications',
   },
@@ -191,6 +186,18 @@ const settingsMeta: Record<string, { label: string; description: string; type: '
   whatsapp_order_status_template: {
     label: 'WhatsApp — Order Status Template',
     description: 'Variables: {order_number}, {customer_name}, {status}, {total}. Use \\n for line breaks.',
+    type: 'textarea',
+    group: 'WhatsApp Notifications',
+  },
+  order_whatsapp_notify_agent: {
+    label: 'WhatsApp Assigned Sales Rep',
+    description: 'Send each order to the assigned rep on WhatsApp. Needs a WhatsApp number on their user account.',
+    type: 'toggle',
+    group: 'WhatsApp Notifications',
+  },
+  whatsapp_agent_order_template: {
+    label: 'Sales Rep Message',
+    description: 'What the assigned rep receives on WhatsApp.',
     type: 'textarea',
     group: 'WhatsApp Notifications',
   },
@@ -279,13 +286,32 @@ export default function SettingsPage() {
 
   const groupedSettings = (() => {
     const groups: Record<string, [string, string][]> = {}
-    Object.entries(settings).forEach(([key, value]) => {
-      const meta = settingsMeta[key]
-      const group = meta?.group || 'Other'
+    const placed = new Set<string>()
+
+    // Declared order first, so the file controls how the page reads.
+    Object.keys(settingsMeta).forEach((key) => {
+      if (!(key in settings)) return
+      const group = settingsMeta[key].group || 'Other'
       if (!groups[group]) groups[group] = []
-      groups[group].push([key, value])
+      groups[group].push([key, settings[key]])
+      placed.add(key)
     })
-    return groups
+
+    // Then anything the server sent that has no metadata here.
+    Object.entries(settings).forEach(([key, value]) => {
+      if (placed.has(key)) return
+      if (!groups.Other) groups.Other = []
+      groups.Other.push([key, value])
+    })
+
+    // Ordered groups first, then any the list above does not mention.
+    return Object.fromEntries(
+      Object.entries(groups).sort(([a], [b]) => {
+        const ia = GROUP_ORDER.indexOf(a)
+        const ib = GROUP_ORDER.indexOf(b)
+        return (ia === -1 ? GROUP_ORDER.length : ia) - (ib === -1 ? GROUP_ORDER.length : ib)
+      }),
+    )
   })()
 
   return (
