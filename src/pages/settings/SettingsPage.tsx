@@ -54,6 +54,12 @@ const settingsMeta: Record<string, { label: string; description: string; type: '
     type: 'toggle',
     group: 'General',
   },
+  delivery_fees_enabled: {
+    label: 'Delivery Fees',
+    description: 'Charge delivery per state. When off, delivery is free everywhere and the fee is left off order forms, totals and emails.',
+    type: 'toggle',
+    group: 'General',
+  },
   default_low_stock_threshold: {
     label: 'Low Stock Threshold',
     description: 'Number of units below which a product is flagged as low stock',

@@ -18,6 +18,7 @@ import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
+import { useAuth } from '@/contexts/AuthContext'
 import { Card, CardContent } from '@/components/ui/card'
 import { Plus, Pencil, Trash2, Truck, ArrowUpDown, ArrowUp, ArrowDown, X } from 'lucide-react'
 import {
@@ -28,6 +29,7 @@ import {
 const NIGERIAN_STATES = ['Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue','Borno','Cross River','Delta','Ebonyi','Edo','Ekiti','Enugu','Gombe','Imo','Jigawa','Kaduna','Kano','Katsina','Kebbi','Kogi','Kwara','Lagos','Nasarawa','Niger','Ogun','Ondo','Osun','Oyo','Plateau','Rivers','Sokoto','Taraba','Yobe','Zamfara','Abuja']
 
 export default function DeliveryFeesPage() {
+  const { hasFeature } = useAuth()
   const [fees, setFees] = useState<DeliveryFee[]>([])
   const [businesses, setBusinesses] = useState<Business[]>([])
   const [meta, setMeta] = useState<PaginationMeta | null>(null)
@@ -72,6 +74,19 @@ export default function DeliveryFeesPage() {
   }
 
   const formatPrice = (p: string | number) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(Number(p))
+
+  // Reachable by direct link even with the nav item hidden, so guard it here too.
+  if (!hasFeature('delivery_fees')) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Delivery Fees</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">Set delivery fees per state for each business</p>
+        </div>
+        <EmptyState icon={Truck} title="Delivery fees are off" description="Delivery is free on every order. Turn delivery fees on in Settings to charge per state." />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

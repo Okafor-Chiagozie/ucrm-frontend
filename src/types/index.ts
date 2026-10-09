@@ -9,7 +9,7 @@ export interface User {
   available_to: string | null
   role: string | null
   permissions: string[]
-  features?: { coupons: boolean }
+  features?: { coupons: boolean; delivery_fees: boolean }
   created_by: string | null
   created_at: string
   updated_at?: string

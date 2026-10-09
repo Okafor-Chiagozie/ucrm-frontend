@@ -145,7 +145,8 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         ...group,
         items: group.items
           .filter((item) => hasPermission(item.permission))
-          .filter((item) => item.to !== '/coupons' || hasFeature('coupons')),
+          .filter((item) => item.to !== '/coupons' || hasFeature('coupons'))
+          .filter((item) => item.to !== '/delivery-fees' || hasFeature('delivery_fees')),
       }))
       .filter((group) => group.items.length > 0)
   ), [hasPermission, hasFeature])
