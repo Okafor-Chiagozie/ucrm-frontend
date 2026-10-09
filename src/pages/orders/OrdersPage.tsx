@@ -565,7 +565,7 @@ function OrderDetailDialog({ order, canUpdateStatus, canAssignAgent, onClose, on
           {/* Totals */}
           <div className="rounded-md border p-3 space-y-1 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>{formatPrice(order.subtotal)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Delivery Fee</span><span>{formatPrice(order.delivery_fee)}</span></div>
+            {hasFeature('delivery_fees') && <div className="flex justify-between"><span className="text-muted-foreground">Delivery Fee</span><span>{formatPrice(order.delivery_fee)}</span></div>}
             {Number(order.discount) > 0 && <div className="flex justify-between text-emerald-600"><span>Discount {hasFeature('coupons') && order.coupon_code && `(${order.coupon_code})`}</span><span>-{formatPrice(order.discount)}</span></div>}
             <Separator />
             <div className="flex justify-between font-semibold text-base"><span>Total</span><span>{formatPrice(order.total)}</span></div>

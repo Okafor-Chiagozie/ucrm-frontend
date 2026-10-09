@@ -9,7 +9,7 @@ interface AuthContextType {
   isLoading: boolean
   login: (identifier: string, password: string) => Promise<void>
   logout: () => Promise<void>
-  refreshUser: () => Promise<void>
+  refreshUser: (force?: boolean) => Promise<void>
   hasPermission: (permission: string) => boolean
   hasFeature: (feature: keyof NonNullable<User['features']>) => boolean
 }
@@ -29,13 +29,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // login — a wasted round trip before the dashboard can even start loading.
   const hydratedToken = useRef<string | null>(null)
 
-  const refreshUser = useCallback(async () => {
+  // force: re-read the payload even for a token already hydrated. Without it a
+  // feature toggled in Settings would not reach the sidebar until a reload.
+  const refreshUser = useCallback(async (force = false) => {
     if (!token) {
       hydratedToken.current = null
       setIsLoading(false)
       return
     }
-    if (hydratedToken.current === token) {
+    if (!force && hydratedToken.current === token) {
       setIsLoading(false)
       return
     }

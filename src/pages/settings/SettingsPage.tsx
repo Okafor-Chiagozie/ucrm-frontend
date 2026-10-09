@@ -35,6 +35,9 @@ const NOTIFICATION_VARIABLES: Record<string, { key: string; label: string }[]> =
   ],
 }
 
+/** Settings that change the user payload, so the UI must re-read it. */
+const FEATURE_SETTINGS = ['coupons_enabled', 'delivery_fees_enabled']
+
 const settingsMeta: Record<string, { label: string; description: string; type: 'toggle' | 'text' | 'textarea'; group?: string }> = {
   super_admin_registration_enabled: {
     label: 'Super Admin Registration',
@@ -223,8 +226,9 @@ export default function SettingsPage() {
       setSettings((prev) => ({ ...prev, [key]: value }))
       setSavedSettings((prev) => ({ ...prev, [key]: value }))
       toast.success('Setting updated')
-      // Feature-flag settings affect the current user's payload (sidebar, guards).
-      if (key === 'coupons_enabled') await refreshUser()
+      // Feature-flag settings affect the current user's payload (sidebar, guards),
+      // so refresh it rather than waiting for the next reload or sign-in.
+      if (FEATURE_SETTINGS.includes(key)) await refreshUser(true)
     } catch {
       toast.error('Failed to update setting')
     }
