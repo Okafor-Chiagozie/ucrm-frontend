@@ -71,6 +71,9 @@ function orderWithHiddenLast(order: string[], hidden: Set<string>): string[] {
   return [...order.filter((s) => !hidden.has(s)), ...order.filter((s) => hidden.has(s))]
 }
 
+/** Matches the server's fallback, so the field opens with something to edit. */
+const DEFAULT_ORDER_SUBJECT = 'New Order {order_number} · {product} · {customer_name} · {total}'
+
 /** Placeholders the order email subject understands. */
 const SUBJECT_VARIABLES = [
   { key: '{order_number}', label: 'Order #' },
@@ -573,6 +576,12 @@ function FormBuilderDialog({ product, form, owners, canAssign, onClose, onSaved 
 
     initial.section_order = orderWithHiddenLast(normalizeOrder(initial.section_order), hidden)
 
+    // Shown as real text rather than a grey placeholder, so the default can be
+    // edited in place instead of retyped from scratch.
+    if (!initial.email_subject?.trim()) {
+      initial.email_subject = DEFAULT_ORDER_SUBJECT
+    }
+
     return initial
   })
   const [saving, setSaving] = useState(false)
@@ -638,11 +647,8 @@ function FormBuilderDialog({ product, form, owners, canAssign, onClose, onSaved 
       '{brand}': 'your store',
       '{form_name}': name || form.name,
     }
-    const template = (settings.email_subject ?? '').trim()
-
-    if (!template) {
-      return `New Order ${sample['{order_number}']} · ${sample['{product}']} · ${sample['{customer_name}']} · ${sample['{total}']}`
-    }
+    // Cleared out, the server falls back to the default, so preview that.
+    const template = (settings.email_subject ?? '').trim() || DEFAULT_ORDER_SUBJECT
 
     return Object.entries(sample).reduce((out, [k, v]) => out.split(k).join(v), template)
   })()
@@ -846,7 +852,7 @@ function FormBuilderDialog({ product, form, owners, canAssign, onClose, onSaved 
             <div>
               <h4 className="text-sm font-semibold">Order Email Subject</h4>
               <p className="text-xs text-muted-foreground">
-                The subject of the email sent when this form takes an order. Leave blank for the default.
+                The subject of the email sent when this form takes an order. Edit it, or clear it to use the default.
               </p>
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -865,7 +871,7 @@ function FormBuilderDialog({ product, form, owners, canAssign, onClose, onSaved 
               ref={subjectRef}
               value={settings.email_subject ?? ''}
               onChange={(e) => set('email_subject', e.target.value)}
-              placeholder="New Order {order_number} · {product} · {customer_name} · {total}"
+              placeholder={DEFAULT_ORDER_SUBJECT}
               className="h-9"
             />
             <p className="text-xs text-muted-foreground">
