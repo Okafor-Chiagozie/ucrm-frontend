@@ -112,6 +112,8 @@ export interface FormSettings {
   custom_fields: CustomFormField[]
   /** Section layout for this form alone; other forms on the product are unaffected. */
   section_order?: string[]
+  /** Subject for the order email from this form; blank uses the default. */
+  email_subject?: string
 }
 
 /** The movable sections of the public order form, in their default order. */

@@ -71,6 +71,18 @@ function orderWithHiddenLast(order: string[], hidden: Set<string>): string[] {
   return [...order.filter((s) => !hidden.has(s)), ...order.filter((s) => hidden.has(s))]
 }
 
+/** Placeholders the order email subject understands. */
+const SUBJECT_VARIABLES = [
+  { key: '{order_number}', label: 'Order #' },
+  { key: '{product}', label: 'Product' },
+  { key: '{customer_name}', label: 'Name' },
+  { key: '{customer_phone}', label: 'Phone' },
+  { key: '{customer_state}', label: 'State' },
+  { key: '{total}', label: 'Total' },
+  { key: '{brand}', label: 'Brand' },
+  { key: '{form_name}', label: 'Form' },
+]
+
 const MOVE_MS = 260
 
 /**
@@ -592,6 +604,48 @@ function FormBuilderDialog({ product, form, owners, canAssign, onClose, onSaved 
 
   const rowRef = useReorderAnimation(visibleSections)
   const [justMoved, setJustMoved] = useState<string | null>(null)
+  const subjectRef = useRef<HTMLInputElement>(null)
+
+  const insertSubjectVariable = (key: string) => {
+    const input = subjectRef.current
+    const current = settings.email_subject ?? ''
+
+    if (!input) {
+      set('email_subject', current + key)
+      return
+    }
+
+    const start = input.selectionStart ?? current.length
+    const end = input.selectionEnd ?? current.length
+
+    set('email_subject', current.slice(0, start) + key + current.slice(end))
+
+    requestAnimationFrame(() => {
+      input.focus()
+      input.setSelectionRange(start + key.length, start + key.length)
+    })
+  }
+
+  // Mirrors what the server sends, including its fallback when nothing is set.
+  const subjectPreview = (() => {
+    const sample: Record<string, string> = {
+      '{order_number}': 'ORD-00042',
+      '{product}': product.name,
+      '{customer_name}': 'Ada Obi',
+      '{customer_phone}': '+2348012345678',
+      '{customer_state}': 'Lagos',
+      '{total}': '₦12,000',
+      '{brand}': 'your store',
+      '{form_name}': name || form.name,
+    }
+    const template = (settings.email_subject ?? '').trim()
+
+    if (!template) {
+      return `New Order ${sample['{order_number}']} · ${sample['{product}']} · ${sample['{customer_name}']} · ${sample['{total}']}`
+    }
+
+    return Object.entries(sample).reduce((out, [k, v]) => out.split(k).join(v), template)
+  })()
 
   /**
    * Flip a visibility toggle. Switching a section off also sends it to the end
@@ -785,6 +839,38 @@ function FormBuilderDialog({ product, form, owners, canAssign, onClose, onSaved 
                 </button>
               </div>
             ))}
+          </div>
+
+          <Separator />
+          <div className="space-y-2">
+            <div>
+              <h4 className="text-sm font-semibold">Order Email Subject</h4>
+              <p className="text-xs text-muted-foreground">
+                The subject of the email sent when this form takes an order. Leave blank for the default.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {SUBJECT_VARIABLES.map((v) => (
+                <button
+                  key={v.key}
+                  type="button"
+                  className="rounded border bg-muted/50 px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground hover:bg-muted cursor-pointer"
+                  onClick={() => insertSubjectVariable(v.key)}
+                >
+                  {v.label}
+                </button>
+              ))}
+            </div>
+            <Input
+              ref={subjectRef}
+              value={settings.email_subject ?? ''}
+              onChange={(e) => set('email_subject', e.target.value)}
+              placeholder="New Order {order_number} · {product} · {customer_name} · {total}"
+              className="h-9"
+            />
+            <p className="text-xs text-muted-foreground">
+              Preview: <span className="font-medium text-foreground">{subjectPreview}</span>
+            </p>
           </div>
 
           <Separator />
