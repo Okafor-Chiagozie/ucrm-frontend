@@ -66,6 +66,18 @@ const settingsMeta: Record<string, { label: string; description: string; type: '
     type: 'text',
     group: 'General',
   },
+  order_email_recipient: {
+    label: 'Order Notification Email',
+    description: 'New orders are emailed to this address only. Leave blank to email every Super Admin, Admin and the assigned agent instead.',
+    type: 'text',
+    group: 'Email Notifications',
+  },
+  order_email_notify_staff: {
+    label: 'Also Email Staff',
+    description: 'In addition to the address above, email new orders to Super Admins, Admins and the agent assigned to the order. In-app notifications always reach staff either way.',
+    type: 'toggle',
+    group: 'Email Notifications',
+  },
   sms_sender_id: {
     label: 'SMS Sender ID',
     description: 'The sender name/number that appears on SMS messages (e.g. UCRM)',
