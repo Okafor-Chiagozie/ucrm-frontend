@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import api from '@/lib/api'
 import type { Product, Business, FormSettings, ProductForm, User } from '@/types'
+import { FORM_SECTIONS, FORM_SECTION_LABELS } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -22,7 +23,7 @@ import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
 import {
   Copy, ExternalLink, Code, Pencil, ToggleLeft, ToggleRight, Plus, Trash2, Files,
-  ChevronDown, CalendarDays,
+  ChevronDown, CalendarDays, ArrowUp, ArrowDown,
 } from 'lucide-react'
 import type { CustomFormField, CustomFieldType } from '@/types'
 import { useAuth } from '@/contexts/AuthContext'
@@ -40,6 +41,109 @@ const FIELD_TYPE_LABELS: Record<CustomFieldType, string> = {
   date: 'Date',
   month: 'Month & year (birthday)',
   checkbox: 'Checkbox',
+}
+
+/** Which section each visibility toggle governs. */
+const TOGGLE_SECTIONS: Record<string, string> = {
+  show_whatsapp: 'whatsapp',
+  show_email: 'email',
+  show_coupon: 'coupon',
+}
+
+/** A stored order with unknown entries dropped and missing ones appended. */
+function normalizeOrder(stored: string[] | undefined): string[] {
+  return [...new Set([
+    ...(stored ?? []).filter((s) => (FORM_SECTIONS as readonly string[]).includes(s)),
+    ...FORM_SECTIONS,
+  ])]
+}
+
+function hiddenSectionsFor(settings: Partial<FormSettings>, couponsEnabled: boolean): Set<string> {
+  return new Set([
+    ...(settings.show_whatsapp ? [] : ['whatsapp']),
+    ...(settings.show_email ? [] : ['email']),
+    ...(settings.show_coupon && couponsEnabled ? [] : ['coupon']),
+  ])
+}
+
+/** Switched-off sections sit behind the rest, ready to join the bottom later. */
+function orderWithHiddenLast(order: string[], hidden: Set<string>): string[] {
+  return [...order.filter((s) => !hidden.has(s)), ...order.filter((s) => hidden.has(s))]
+}
+
+const MOVE_MS = 260
+
+/**
+ * Slides rows to their new places when the order changes, so a swap reads as
+ * movement rather than two labels blinking. Each row is measured after React
+ * commits, dropped back where it was, then released to its new position.
+ *
+ * Returns the ref callback to attach to each row, keyed by section.
+ */
+function useReorderAnimation(order: string[]) {
+  const rows = useRef<Map<string, HTMLElement>>(new Map())
+  const lastTops = useRef<Map<string, number>>(new Map())
+  // Cached so each row keeps the same ref callback across renders. A fresh
+  // function would make React detach and re-attach every time, losing the
+  // position the animation measures against.
+  const callbacks = useRef<Map<string, (el: HTMLElement | null) => void>>(new Map())
+
+  useLayoutEffect(() => {
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    const tops = new Map<string, number>()
+
+    rows.current.forEach((el, key) => {
+      // offsetTop, not a viewport rect: the dialog plays its own open animation
+      // on an ancestor, which would skew anything measured against the screen.
+      const top = el.offsetTop
+      tops.set(key, top)
+
+      const previous = lastTops.current.get(key)
+      const delta = previous === undefined ? 0 : previous - top
+
+      if (!delta || reduced) {
+        return
+      }
+
+      // Invert: put it back where the eye last saw it...
+      el.style.transition = 'none'
+      el.style.transform = `translateY(${delta}px)`
+      el.style.zIndex = '1'
+
+      // ...then play it forward on the next frame.
+      requestAnimationFrame(() => {
+        el.style.transition = `transform ${MOVE_MS}ms cubic-bezier(0.2, 0, 0, 1)`
+        el.style.transform = ''
+        window.setTimeout(() => {
+          el.style.transition = ''
+          el.style.zIndex = ''
+        }, MOVE_MS)
+      })
+    })
+
+    lastTops.current = tops
+  }, [order.join('|')])
+
+  return (key: string) => {
+    if (!callbacks.current.has(key)) {
+      callbacks.current.set(key, (el: HTMLElement | null) => {
+        if (el) {
+          rows.current.set(key, el)
+
+          // The dialog's content mounts after the first layout effect has run,
+          // so rows seed their own starting position as they attach. Without
+          // this the first move has nothing to animate from.
+          if (!lastTops.current.has(key)) {
+            lastTops.current.set(key, el.offsetTop)
+          }
+        } else {
+          rows.current.delete(key)
+        }
+      })
+    }
+
+    return callbacks.current.get(key)!
+  }
 }
 
 export default function FormSettingsPage() {
@@ -449,7 +553,16 @@ function FormBuilderDialog({ product, form, owners, canAssign, onClose, onSaved 
   const couponsEnabled = hasFeature('coupons')
   const [name, setName] = useState(form.name)
   const [ownerId, setOwnerId] = useState(form.created_by ?? '')
-  const [settings, setSettings] = useState<FormSettings>({ ...form.settings })
+  // Opened with switched-off sections already parked at the end, so a form
+  // saved before section ordering existed behaves like any other.
+  const [settings, setSettings] = useState<FormSettings>(() => {
+    const initial = { ...form.settings }
+    const hidden = hiddenSectionsFor(initial, couponsEnabled)
+
+    initial.section_order = orderWithHiddenLast(normalizeOrder(initial.section_order), hidden)
+
+    return initial
+  })
   const [saving, setSaving] = useState(false)
 
   // Marketers are the assignable set, but a form migrated from before ownership
@@ -464,6 +577,56 @@ function FormBuilderDialog({ product, form, owners, canAssign, onClose, onSaved 
 
   const set = (key: keyof FormSettings, value: string | boolean) => {
     setSettings({ ...settings, [key]: value })
+  }
+
+  // Normalised the same way the form renders it, so the builder and the live
+  // page can never disagree about what is where.
+  const storedOrder = normalizeOrder(settings.section_order)
+
+  // Sections a toggle currently switches off. They are left out of the reorder
+  // list entirely and parked at the end, so switching one back on brings it in
+  // at the bottom rather than somewhere it was never arranged.
+  const hiddenSections = hiddenSectionsFor(settings, couponsEnabled)
+  const sectionOrder = orderWithHiddenLast(storedOrder, hiddenSections)
+  const visibleSections = sectionOrder.filter((s) => !hiddenSections.has(s))
+
+  const rowRef = useReorderAnimation(visibleSections)
+  const [justMoved, setJustMoved] = useState<string | null>(null)
+
+  /**
+   * Flip a visibility toggle. Switching a section off also sends it to the end
+   * of the order, so turning it back on puts it at the bottom of the form.
+   */
+  const toggleSection = (key: keyof FormSettings, value: boolean) => {
+    const section = TOGGLE_SECTIONS[key as string]
+    const next = { ...settings, [key]: value }
+
+    if (section && !value) {
+      next.section_order = [...storedOrder.filter((s) => s !== section), section]
+    }
+
+    setSettings(next)
+  }
+
+  const moveSection = (index: number, delta: number) => {
+    const next = [...visibleSections]
+    const target = index + delta
+
+    if (target < 0 || target >= next.length) {
+      return
+    }
+
+    ;[next[index], next[target]] = [next[target], next[index]]
+
+    // Hidden sections stay pinned behind whatever is on show.
+    setSettings({
+      ...settings,
+      section_order: [...next, ...storedOrder.filter((s) => hiddenSections.has(s))],
+    })
+
+    // Tints the row that was picked up, so the eye can follow it.
+    setJustMoved(next[target])
+    window.setTimeout(() => setJustMoved(null), 600)
   }
 
   const customFields = settings.custom_fields ?? []
@@ -509,6 +672,9 @@ function FormBuilderDialog({ product, form, owners, canAssign, onClose, onSaved 
         ...settings,
         name: name.trim(),
         custom_fields: cleanedFields,
+        // Persisted even when nothing was moved, so a section switched off here
+        // is parked at the bottom ready for when it is switched back on.
+        section_order: sectionOrder,
         // Only sent when this user is allowed to reassign ownership.
         ...(canAssign && ownerId ? { created_by: ownerId } : {}),
       })
@@ -610,13 +776,46 @@ function FormBuilderDialog({ product, form, owners, canAssign, onClose, onSaved 
                   <p className="text-sm font-medium">{label}</p>
                   <p className="text-xs text-muted-foreground">{description}</p>
                 </div>
-                <button type="button" className="cursor-pointer" onClick={() => set(key, !settings[key])}>
+                <button type="button" className="cursor-pointer" onClick={() => toggleSection(key, !settings[key])}>
                   {settings[key] ? (
                     <ToggleRight className="h-7 w-7 text-emerald-600" />
                   ) : (
                     <ToggleLeft className="h-7 w-7 text-muted-foreground" />
                   )}
                 </button>
+              </div>
+            ))}
+          </div>
+
+          <Separator />
+          <div>
+            <h4 className="text-sm font-semibold">Section Order</h4>
+            <p className="text-xs text-muted-foreground">
+              The order sections appear in on this form. Switched-off sections are left out and join the
+              bottom if you turn them back on. The order summary and button always come last.
+            </p>
+          </div>
+          <div className="rounded-md border divide-y">
+            {visibleSections.map((section, i) => (
+              <div
+                key={section}
+                ref={rowRef(section)}
+                className={`relative flex items-center gap-3 px-3 py-2 bg-card transition-colors duration-300 ${
+                  justMoved === section ? 'bg-primary/10' : ''
+                }`}
+              >
+                <span className="w-5 text-xs tabular-nums text-muted-foreground">{i + 1}</span>
+                <span className="flex-1 text-sm">{FORM_SECTION_LABELS[section] ?? section}</span>
+                <div className="flex items-center gap-1">
+                  <Button type="button" variant="ghost" size="icon" className="h-7 w-7"
+                    disabled={i === 0} onClick={() => moveSection(i, -1)} aria-label={`Move ${section} up`}>
+                    <ArrowUp className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button type="button" variant="ghost" size="icon" className="h-7 w-7"
+                    disabled={i === visibleSections.length - 1} onClick={() => moveSection(i, 1)} aria-label={`Move ${section} down`}>
+                    <ArrowDown className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
@@ -689,30 +888,47 @@ function FormBuilderDialog({ product, form, owners, canAssign, onClose, onSaved 
               <p className="text-xs text-gray-500 mt-1">{settings.subheading}</p>
             </div>
             <div className="space-y-3">
-              <PreviewField label="Full Name *" />
-              <PreviewField label="Phone Number *" />
-              {settings.show_whatsapp && <PreviewField label="WhatsApp Number" optional />}
-              <PreviewField label="Delivery Address *" />
-              <PreviewField label="State *" />
-              {settings.show_email && <PreviewField label="Email" optional />}
-              {/* Custom questions sit with the other customer details, as on the real form. */}
-              {customFields.filter((f) => f.label.trim()).map((f) => (
-                <PreviewField key={f.key} label={`${f.label}${f.required ? ' *' : ''}`} optional={!f.required} type={f.type} options={f.options} />
-              ))}
-              <div>
-                <p className="text-xs font-semibold text-gray-700 mb-2">Select Your Package *</p>
-                <div className="space-y-2">
-                  {product.variations.slice(0, 3).map((v, i) => (
-                    <div key={v.id} className={`flex items-center gap-2.5 rounded-[5px] border-2 px-3 py-2 ${i === 0 ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
-                      <div className={`h-3.5 w-3.5 flex-none rounded-full border ${i === 0 ? 'border-[5px] border-blue-600' : 'border-gray-400'}`} />
-                      <span className="flex-1 text-xs font-medium text-gray-800">{v.name}</span>
-                      <span className="text-xs font-bold">₦{Number(v.price).toLocaleString()}</span>
-                    </div>
-                  ))}
-                  {product.variations.length > 3 && <p className="text-xs text-gray-400">+{product.variations.length - 3} more</p>}
-                </div>
-              </div>
-              {couponsEnabled && settings.show_coupon && <PreviewField label="Coupon Code" optional />}
+              {/* Driven by the same order as the real form, so this shows the layout. */}
+              {sectionOrder.map((section) => {
+                switch (section) {
+                  case 'name':
+                    return <PreviewField key={section} label="Full Name *" />
+                  case 'phone':
+                    return <PreviewField key={section} label="Phone Number *" />
+                  case 'whatsapp':
+                    return settings.show_whatsapp ? <PreviewField key={section} label="WhatsApp Number" optional /> : null
+                  case 'address':
+                    return <PreviewField key={section} label="Delivery Address *" />
+                  case 'state':
+                    return <PreviewField key={section} label="State *" />
+                  case 'email':
+                    return settings.show_email ? <PreviewField key={section} label="Email" optional /> : null
+                  case 'custom_fields':
+                    return customFields.filter((f) => f.label.trim()).map((f) => (
+                      <PreviewField key={f.key} label={`${f.label}${f.required ? ' *' : ''}`} optional={!f.required} type={f.type} options={f.options} />
+                    ))
+                  case 'package':
+                    return (
+                      <div key={section}>
+                        <p className="text-xs font-semibold text-gray-700 mb-2">Select Your Package *</p>
+                        <div className="space-y-2">
+                          {product.variations.slice(0, 3).map((v, i) => (
+                            <div key={v.id} className={`flex items-center gap-2.5 rounded-[5px] border-2 px-3 py-2 ${i === 0 ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
+                              <div className={`h-3.5 w-3.5 flex-none rounded-full border ${i === 0 ? 'border-[5px] border-blue-600' : 'border-gray-400'}`} />
+                              <span className="flex-1 text-xs font-medium text-gray-800">{v.name}</span>
+                              <span className="text-xs font-bold">₦{Number(v.price).toLocaleString()}</span>
+                            </div>
+                          ))}
+                          {product.variations.length > 3 && <p className="text-xs text-gray-400">+{product.variations.length - 3} more</p>}
+                        </div>
+                      </div>
+                    )
+                  case 'coupon':
+                    return couponsEnabled && settings.show_coupon ? <PreviewField key={section} label="Coupon Code" optional /> : null
+                  default:
+                    return null
+                }
+              })}
               <button className="w-full h-11 rounded-md text-white font-bold text-sm mt-2" style={{ background: settings.button_color }} disabled>
                 {settings.button_text}
               </button>

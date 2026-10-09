@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import type { FormEvent } from 'react'
 import { useParams } from 'react-router-dom'
 import axios from 'axios'
@@ -46,7 +46,15 @@ interface FormSettingsData {
   show_email: boolean
   show_coupon: boolean
   custom_fields?: CustomFieldData[]
+  /** The order this form lays its sections out in. */
+  section_order?: string[]
 }
+
+/** Matches the server's default, used when a form predates section ordering. */
+export const DEFAULT_SECTION_ORDER = [
+  'name', 'phone', 'whatsapp', 'address', 'state', 'email',
+  'custom_fields', 'package', 'bumps', 'coupon',
+]
 
 interface FormData {
   form: { id: string; name: string }
@@ -237,24 +245,26 @@ export default function OrderForm() {
     )
   }
 
-  return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <h2 style={{ fontSize: 26, fontWeight: 800, color: '#0f172a', margin: '0 0 6px', letterSpacing: '-0.01em' }}>{formData.form_settings.heading}</h2>
-          <p style={{ color: '#374151', fontSize: 15, fontWeight: 500, margin: 0 }}>{formData.form_settings.subheading}</p>
-        </div>
+  // Unknown sections are ignored and anything missing is appended, so a form
+  // saved before a section existed still renders all of them.
+  const stored = (formData.form_settings.section_order ?? []).filter((s) => DEFAULT_SECTION_ORDER.includes(s))
+  const sectionOrder = [...new Set([...stored, ...DEFAULT_SECTION_ORDER])]
 
-        <form onSubmit={handleSubmit}>
-          {submitError && <div style={styles.errorBox}>{submitError}</div>}
-
-          {/* Name */}
+  /**
+   * One movable section of the form. The order comes from the form's own
+   * settings, so two forms on the same product can be laid out differently.
+   */
+  const renderSection = (section: string) => {
+    switch (section) {
+      case 'name':
+        return (
           <div style={styles.fieldGroup}>
             <label style={styles.label}>Full Name *</label>
             <input style={styles.input} value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter your full name" required />
           </div>
-
-          {/* Phone */}
+        )
+      case 'phone':
+        return (
           <div style={styles.fieldGroup}>
             <label style={styles.label}>Phone Number *</label>
             <div style={styles.phoneRow}>
@@ -264,9 +274,10 @@ export default function OrderForm() {
               <input style={{ ...styles.input, flex: 1 }} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} onBlur={savePartial} placeholder="08012345678" required />
             </div>
           </div>
-
-          {/* WhatsApp */}
-          {formData.form_settings.show_whatsapp && (
+        )
+      case 'whatsapp':
+        return (
+          formData.form_settings.show_whatsapp && (
           <div style={styles.fieldGroup}>
             <label style={styles.label}>WhatsApp Number</label>
             <div style={styles.phoneRow}>
@@ -276,15 +287,17 @@ export default function OrderForm() {
               <input style={{ ...styles.input, flex: 1 }} type="tel" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="WhatsApp number" />
             </div>
           </div>
-          )}
-
-          {/* Address */}
+          )
+        )
+      case 'address':
+        return (
           <div style={styles.fieldGroup}>
             <label style={styles.label}>Delivery Address *</label>
             <input style={styles.input} value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Enter your full address" required />
           </div>
-
-          {/* State */}
+        )
+      case 'state':
+        return (
           <div style={styles.fieldGroup}>
             <label style={styles.label}>State *</label>
             <select style={{ ...styles.input, ...styles.select }} value={state} onChange={(e) => setState(e.target.value)} required>
@@ -293,17 +306,19 @@ export default function OrderForm() {
               {(formData.states ?? formData.delivery_fees.map((f) => f.state)).map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
-
-          {/* Email */}
-          {formData.form_settings.show_email && (
+        )
+      case 'email':
+        return (
+          formData.form_settings.show_email && (
           <div style={styles.fieldGroup}>
             <label style={styles.label}>Email (Optional)</label>
             <input style={styles.input} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" />
           </div>
-          )}
-
-          {/* Custom Fields */}
-          {(formData.form_settings.custom_fields ?? []).map((field) => {
+          )
+        )
+      case 'custom_fields':
+        return (
+          (formData.form_settings.custom_fields ?? []).map((field) => {
             const value = customValues[field.key]
             const setValue = (v: string | boolean) => setCustomValues((prev) => ({ ...prev, [field.key]: v }))
             if (field.type === 'checkbox') {
@@ -354,9 +369,10 @@ export default function OrderForm() {
                 )}
               </div>
             )
-          })}
-
-          {/* Variations */}
+          })
+        )
+      case 'package':
+        return (
           <div style={styles.fieldGroup}>
             <label style={{ ...styles.label, fontSize: 18, fontWeight: 800, marginBottom: 10 }}>Select Your Package *</label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -378,9 +394,10 @@ export default function OrderForm() {
               ))}
             </div>
           </div>
-
-          {/* Bump Offers */}
-          {formData.bump_offers.length > 0 && formData.bump_offers.map((bump) => (
+        )
+      case 'bumps':
+        return (
+          formData.bump_offers.length > 0 && formData.bump_offers.map((bump) => (
             <div key={bump.id} style={{ ...styles.bumpCard, borderColor: selectedBumps.has(bump.id) ? '#2563eb' : '#9ca3af' }}>
               <h4 style={{ fontSize: 16, fontWeight: 800, color: '#2563eb', margin: '0 0 5px' }}>Would You Like To Add:</h4>
               <p style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', margin: '0 0 5px' }}>{bump.product_name} — {bump.variation_name}</p>
@@ -398,10 +415,11 @@ export default function OrderForm() {
                 Yes, add this to my order!
               </label>
             </div>
-          ))}
-
-          {/* Coupon */}
-          {formData.form_settings.show_coupon && (
+          ))
+        )
+      case 'coupon':
+        return (
+          formData.form_settings.show_coupon && (
           <div style={styles.fieldGroup}>
             <label style={styles.label}>Coupon Code</label>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -416,7 +434,27 @@ export default function OrderForm() {
               </p>
             )}
           </div>
-          )}
+          )
+        )
+      default:
+        return null
+    }
+  }
+
+  return (
+    <div style={styles.container}>
+      <div style={styles.card}>
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <h2 style={{ fontSize: 26, fontWeight: 800, color: '#0f172a', margin: '0 0 6px', letterSpacing: '-0.01em' }}>{formData.form_settings.heading}</h2>
+          <p style={{ color: '#374151', fontSize: 15, fontWeight: 500, margin: 0 }}>{formData.form_settings.subheading}</p>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          {submitError && <div style={styles.errorBox}>{submitError}</div>}
+
+          {sectionOrder.map((section) => (
+            <Fragment key={section}>{renderSection(section)}</Fragment>
+          ))}
 
           {/* Order Summary */}
           {selectedVariation && (

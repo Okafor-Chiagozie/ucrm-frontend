@@ -110,6 +110,27 @@ export interface FormSettings {
   show_email: boolean
   show_coupon: boolean
   custom_fields: CustomFormField[]
+  /** Section layout for this form alone; other forms on the product are unaffected. */
+  section_order?: string[]
+}
+
+/** The movable sections of the public order form, in their default order. */
+export const FORM_SECTIONS = [
+  'name', 'phone', 'whatsapp', 'address', 'state', 'email',
+  'custom_fields', 'package', 'bumps', 'coupon',
+] as const
+
+export const FORM_SECTION_LABELS: Record<string, string> = {
+  name: 'Full Name',
+  phone: 'Phone Number',
+  whatsapp: 'WhatsApp Number',
+  address: 'Delivery Address',
+  state: 'State',
+  email: 'Email',
+  custom_fields: 'Custom Questions',
+  package: 'Package Selection',
+  bumps: 'Bump Offers',
+  coupon: 'Coupon Code',
 }
 
 /** One of a product's order forms. A product can serve several, each with its own fields and link. */
