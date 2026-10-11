@@ -72,7 +72,7 @@ function orderWithHiddenLast(order: string[], hidden: Set<string>): string[] {
 }
 
 /** Matches the server's fallback, so the field opens with something to edit. */
-const DEFAULT_ORDER_SUBJECT = 'New Order {order_number} · {product} · {customer_name} · {total}'
+const DEFAULT_ORDER_SUBJECT = '{form_name} - {order_number}'
 
 /** Placeholders the order email subject understands. */
 const SUBJECT_VARIABLES = [
