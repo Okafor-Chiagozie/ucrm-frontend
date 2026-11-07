@@ -19,6 +19,7 @@ import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
 import { Code, TrendingUp, Package, DollarSign, RotateCcw, UserRound, ShoppingCart } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { Link } from 'react-router-dom'
 
 const today = () => new Date().toISOString().slice(0, 10)
 const DATE_PRESETS = [
@@ -295,7 +296,14 @@ export default function FormPerformancePage() {
                             </div>
                           </TableCell>
                           {!isPersonal && <TableCell className="text-sm">{f.creator_name}</TableCell>}
-                          <TableCell className="text-center font-medium">{f.total_orders}</TableCell>
+                          <TableCell className="text-center font-medium">
+                            {f.total_orders > 0 ? (
+                              <Link to={`/orders?product_form_id=${f.id}`} className="text-primary underline-offset-2 hover:underline"
+                                title={`See the ${f.total_orders} orders from ${f.name}`}>
+                                {f.total_orders}
+                              </Link>
+                            ) : f.total_orders}
+                          </TableCell>
                           <TableCell className="text-center text-emerald-600 font-medium">{f.delivered}</TableCell>
                           <TableCell className="text-center text-blue-600 font-medium">{f.pending}</TableCell>
                           <TableCell className="text-center text-orange-600 font-medium">{f.abandoned}</TableCell>
@@ -325,7 +333,13 @@ export default function FormPerformancePage() {
                         <div className="grid grid-cols-3 gap-2 text-center text-sm">
                           <div>
                             <p className="text-muted-foreground text-xs">Orders</p>
-                            <p className="font-medium">{f.total_orders}</p>
+                            <p className="font-medium">
+                              {f.total_orders > 0 ? (
+                                <Link to={`/orders?product_form_id=${f.id}`} className="text-primary underline-offset-2 hover:underline">
+                                  {f.total_orders}
+                                </Link>
+                              ) : f.total_orders}
+                            </p>
                           </div>
                           <div>
                             <p className="text-muted-foreground text-xs">Delivered</p>

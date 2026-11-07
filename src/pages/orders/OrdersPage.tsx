@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import api from '@/lib/api'
 import type { Order, Business, Product, PaginationMeta, User } from '@/types'
@@ -86,6 +87,9 @@ export default function OrdersPage() {
   const [stateFilter, setStateFilter] = useState('')
   const [agentFilter, setAgentFilter] = useState('')
   const [productFilter, setProductFilter] = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [formFilter, setFormFilter] = useState(searchParams.get('product_form_id') ?? '')
+  const [forms, setForms] = useState<{ id: string; name: string; product_name?: string }[]>([])
   const [hasCoupon, setHasCoupon] = useState('')
   const [unassigned, setUnassigned] = useState(false)
   const [dateFrom, setDateFrom] = useState('')
@@ -107,11 +111,20 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true)
   const [viewOrder, setViewOrder] = useState<Order | null>(null)
 
-  const hasActiveFilters = search || businessFilter || statusFilter || stateFilter || agentFilter || productFilter || hasCoupon || unassigned || dateFrom || dateTo
+  const selectForm = (id: string) => {
+    setFormFilter(id)
+    setPage(1)
+
+    const next = new URLSearchParams(searchParams)
+    id ? next.set('product_form_id', id) : next.delete('product_form_id')
+    setSearchParams(next, { replace: true })
+  }
+
+  const hasActiveFilters = search || businessFilter || statusFilter || stateFilter || agentFilter || productFilter || formFilter || hasCoupon || unassigned || dateFrom || dateTo
 
   const clearFilters = () => {
     setSearch(''); setBusinessFilter(''); setStatusFilter(''); setStateFilter('');
-    setAgentFilter(''); setProductFilter('');
+    setAgentFilter(''); setProductFilter(''); selectForm('');
     setHasCoupon(''); setUnassigned(false); setDateFrom(''); setDateTo('');
     setShowDatePicker(false); setPage(1)
   }
@@ -126,6 +139,7 @@ export default function OrdersPage() {
       if (stateFilter) params.set('state', stateFilter)
       if (agentFilter) params.set('assigned_agent_id', agentFilter)
       if (productFilter) params.set('product_id', productFilter)
+      if (formFilter) params.set('product_form_id', formFilter)
       if (hasCoupon) params.set('has_coupon', hasCoupon)
       if (unassigned) params.set('unassigned', '1')
       if (dateFrom) params.set('date_from', dateFrom)
@@ -139,7 +153,7 @@ export default function OrdersPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, businessFilter, statusFilter, stateFilter, agentFilter, productFilter, hasCoupon, unassigned, dateFrom, dateTo, sortField, sortDir])
+  }, [page, search, businessFilter, statusFilter, stateFilter, agentFilter, productFilter, formFilter, hasCoupon, unassigned, dateFrom, dateTo, sortField, sortDir])
 
   useEffect(() => { fetchOrders() }, [fetchOrders])
 
@@ -148,10 +162,12 @@ export default function OrdersPage() {
       api.get('/businesses?per_page=100'),
       api.get('/products?per_page=200'),
       api.get('/users?role=Customer Support&per_page=100'),
-    ]).then(([biz, prod, ag]) => {
+      api.get('/product-forms'),
+    ]).then(([biz, prod, ag, frm]) => {
       setBusinesses(biz.data.data.data)
       setProducts(prod.data.data.data)
       setAgents(ag.data.data.data)
+      setForms(frm.data.data)
     }).catch(() => {})
   }, [])
 
@@ -186,6 +202,7 @@ export default function OrdersPage() {
               try {
                 const params = new URLSearchParams()
                 if (businessFilter) params.set('business_id', businessFilter)
+                if (formFilter) params.set('product_form_id', formFilter)
                 if (statusFilter) params.set('status', statusFilter)
                 if (dateFrom) params.set('date_from', dateFrom)
                 if (dateTo) params.set('date_to', dateTo)
@@ -205,6 +222,7 @@ export default function OrdersPage() {
               try {
                 const params = new URLSearchParams()
                 if (businessFilter) params.set('business_id', businessFilter)
+                if (formFilter) params.set('product_form_id', formFilter)
                 if (statusFilter) params.set('status', statusFilter)
                 if (dateFrom) params.set('date_from', dateFrom)
                 if (dateTo) params.set('date_to', dateTo)
@@ -277,6 +295,19 @@ export default function OrdersPage() {
             {agents.map((a) => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
           </SelectContent>
         </Select>
+        {forms.length > 0 && (
+        <Select value={formFilter || 'all'} onValueChange={(v) => selectForm(v === 'all' ? '' : v ?? '')}>
+          <SelectTrigger className="h-10 w-full">
+            <SelectValue>{forms.find((f) => f.id === formFilter)?.name ?? 'All Forms'}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Forms</SelectItem>
+            {forms.map((f) => (
+              <SelectItem key={f.id} value={f.id}>{f.name}{f.product_name ? ` — ${f.product_name}` : ''}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        )}
         <Select value={productFilter || 'all'} onValueChange={(v) => { setProductFilter(v === 'all' ? '' : v ?? ''); setPage(1) }}>
           <SelectTrigger className="h-10 w-full">
             <SelectValue>{products.find((p) => p.id === productFilter)?.name ?? 'All Products'}</SelectValue>
