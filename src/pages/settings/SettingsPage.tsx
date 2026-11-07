@@ -69,6 +69,12 @@ const settingsMeta: Record<string, { label: string; description: string; type: '
     type: 'toggle',
     group: 'General',
   },
+  auto_assign_orders_enabled: {
+    label: 'Auto-Assign Orders',
+    description: 'Give each new order to the staff member with the fewest open orders, preferring whoever is on shift. When off, orders arrive unassigned for someone to hand out.',
+    type: 'toggle',
+    group: 'General',
+  },
   delivery_fees_enabled: {
     label: 'Delivery Fees',
     description: 'Charge delivery per state. When off, delivery is free everywhere and the fee is left off order forms, totals and emails.',
