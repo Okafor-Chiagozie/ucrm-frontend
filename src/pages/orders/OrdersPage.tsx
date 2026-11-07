@@ -24,7 +24,7 @@ import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
-import { Search, ArrowUpDown, ArrowUp, ArrowDown, Eye, ShoppingCart, Download, FileText, RotateCcw } from 'lucide-react'
+import { Search, ArrowUpDown, ArrowUp, ArrowDown, ShoppingCart, Download, FileText, RotateCcw } from 'lucide-react'
 
 const ORDER_STATUSES = ['pending', 'scheduled', 'delivered', 'not_picking', 'cancelled']
 
@@ -480,9 +480,13 @@ export default function OrdersPage() {
                 <TableCell className="text-sm text-muted-foreground">{o.assigned_agent?.name ?? <span className="text-orange-500 text-xs">Unassigned</span>}</TableCell>
                 <TableCell className="text-muted-foreground text-sm">{new Date(o.created_at).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}</TableCell>
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewOrder(o)}>
-                    <Eye className="h-3.5 w-3.5" />
-                  </Button>
+                  <button
+                    type="button"
+                    className="text-sm font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline"
+                    onClick={() => setViewOrder(o)}
+                  >
+                    View
+                  </button>
                 </TableCell>
               </TableRow>
             ))}
