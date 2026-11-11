@@ -10,6 +10,8 @@ export interface User {
   is_active: boolean
   available_from: string | null
   available_to: string | null
+  /** Auto-assignment cap per day. Null means no cap. */
+  daily_order_limit?: number | null
   role: string | null
   /** Businesses this user is staff on. Drives order auto-assignment. */
   business_ids?: string[]

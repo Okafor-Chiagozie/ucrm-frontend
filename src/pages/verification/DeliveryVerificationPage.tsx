@@ -117,14 +117,14 @@ export default function DeliveryVerificationPage() {
           <Input placeholder="Order #, customer..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} className="pl-9 h-10" />
         </div>
         <Select value={businessFilter} onValueChange={(v: string | null) => { setBusinessFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
-          <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder="Business" /></SelectTrigger>
+          <SelectTrigger className="h-10 w-full sm:w-44"><SelectValue placeholder="Business" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Businesses</SelectItem>
             {businesses.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={logiFilter} onValueChange={(v: string | null) => { setLogiFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
-          <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="h-10 w-full sm:w-44"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
             <SelectItem value="pending">Not Verified</SelectItem>

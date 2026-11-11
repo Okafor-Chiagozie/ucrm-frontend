@@ -213,14 +213,14 @@ export default function VerificationReportPage() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-2">
         <Select value={businessFilter} onValueChange={(v: string | null) => { setBusinessFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
-          <SelectTrigger className="w-full sm:w-[160px]"><SelectValue placeholder="Business" /></SelectTrigger>
+          <SelectTrigger className="h-10 w-full sm:w-[160px]"><SelectValue placeholder="Business" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Businesses</SelectItem>
             {businesses.map(b => <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={reportFilter} onValueChange={(v: string | null) => { setReportFilter(!v || v === 'all' ? '' : v); setPage(1) }}>
-          <SelectTrigger className="w-full sm:w-[160px]"><SelectValue placeholder="Filter" /></SelectTrigger>
+          <SelectTrigger className="h-10 w-full sm:w-[160px]"><SelectValue placeholder="Filter" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Orders</SelectItem>
             <SelectItem value="mismatches">Mismatches Only</SelectItem>
@@ -229,15 +229,15 @@ export default function VerificationReportPage() {
           </SelectContent>
         </Select>
         <Select value={datePreset} onValueChange={(v: string | null) => v && applyDatePreset(v)}>
-          <SelectTrigger className="w-full sm:w-[150px]"><SelectValue placeholder="Date Range" /></SelectTrigger>
+          <SelectTrigger className="h-10 w-full sm:w-[150px]"><SelectValue placeholder="Date Range" /></SelectTrigger>
           <SelectContent>
             {DATE_PRESETS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
           </SelectContent>
         </Select>
         {datePreset === 'custom' && (
           <>
-            <Input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1) }} className="w-full sm:w-[140px]" />
-            <Input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1) }} className="w-full sm:w-[140px]" />
+            <Input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1) }} className="h-10 w-full sm:w-[140px]" />
+            <Input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1) }} className="h-10 w-full sm:w-[140px]" />
           </>
         )}
         {hasFilters && (

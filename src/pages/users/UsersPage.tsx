@@ -418,13 +418,13 @@ export default function UsersPage() {
 /* ─── Create User Dialog ─── */
 
 function CreateUserDialog({ open, onClose, roles, businesses, lockedRole, onSuccess }: { open: boolean; onClose: () => void; roles: Role[]; businesses: BusinessOption[]; lockedRole: string | null; onSuccess: () => void }) {
-  const [form, setForm] = useState({ name: '', username: '', email: '', whatsapp_code: '+234', whatsapp: '', password: '', role: lockedRole ?? '' })
+  const [form, setForm] = useState({ name: '', username: '', email: '', whatsapp_code: '+234', whatsapp: '', password: '', role: lockedRole ?? '', daily_order_limit: '' })
   const [businessIds, setBusinessIds] = useState<string[]>([])
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  const reset = () => { setForm({ name: '', username: '', email: '', whatsapp_code: '+234', whatsapp: '', password: '', role: lockedRole ?? '' }); setBusinessIds([]); setError(''); setShowPassword(false) }
+  const reset = () => { setForm({ name: '', username: '', email: '', whatsapp_code: '+234', whatsapp: '', password: '', role: lockedRole ?? '', daily_order_limit: '' }); setBusinessIds([]); setError(''); setShowPassword(false) }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -432,7 +432,7 @@ function CreateUserDialog({ open, onClose, roles, businesses, lockedRole, onSucc
     setError('')
     try {
       // lockedRole wins, in case auth resolved after this dialog mounted.
-      await api.post('/users', { ...form, role: lockedRole ?? form.role, email: form.email || null, whatsapp: form.whatsapp || null, business_ids: businessIds })
+      await api.post('/users', { ...form, role: lockedRole ?? form.role, email: form.email || null, whatsapp: form.whatsapp || null, business_ids: businessIds, daily_order_limit: form.daily_order_limit === '' ? null : Number(form.daily_order_limit) })
       toast.success('User created successfully')
       reset()
       onClose()
@@ -505,6 +505,23 @@ function CreateUserDialog({ open, onClose, roles, businesses, lockedRole, onSucc
             </div>
           </div>
           <BusinessPicker businesses={businesses} selected={businessIds} onChange={setBusinessIds} />
+          {form.role === SALES_CLOSER && (
+            <div className="space-y-1.5">
+              <Label className="text-sm">Max Orders Per Day <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input
+                type="number"
+                min={1}
+                max={500}
+                value={form.daily_order_limit}
+                onChange={(e) => setForm({ ...form, daily_order_limit: e.target.value })}
+                placeholder="No limit"
+                className="h-10"
+              />
+              <p className="text-xs text-muted-foreground">
+                Auto-assignment stops giving them orders once they hit this in a day. A manager can still assign by hand.
+              </p>
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label className="text-sm">Password</Label>
             <div className="relative">
@@ -544,7 +561,7 @@ function EditUserDialog({ open, onClose, user, roles, businesses, lockedRole, on
   const canResetPassword = currentUser?.role === 'Super Admin'
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [form, setForm] = useState({ name: user.name, username: user.username, email: user.email || '', whatsapp_code: user.whatsapp_code || '+234', whatsapp: user.whatsapp || '', role: user.role || '', is_active: user.is_active, available_from: user.available_from || '', available_to: user.available_to || '' })
+  const [form, setForm] = useState({ name: user.name, username: user.username, email: user.email || '', whatsapp_code: user.whatsapp_code || '+234', whatsapp: user.whatsapp || '', role: user.role || '', is_active: user.is_active, available_from: user.available_from || '', available_to: user.available_to || '', daily_order_limit: user.daily_order_limit?.toString() ?? '' })
   const [businessIds, setBusinessIds] = useState<string[]>(user.business_ids ?? [])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -560,6 +577,7 @@ function EditUserDialog({ open, onClose, user, roles, businesses, lockedRole, on
         whatsapp_code: form.whatsapp ? form.whatsapp_code : null,
         whatsapp: form.whatsapp || null,
         business_ids: businessIds,
+        daily_order_limit: form.daily_order_limit === '' ? null : Number(form.daily_order_limit),
         ...(password ? { password } : {}),
       })
       toast.success('User updated successfully')
@@ -657,6 +675,23 @@ function EditUserDialog({ open, onClose, user, roles, businesses, lockedRole, on
             </div>
           </div>
           <BusinessPicker businesses={businesses} selected={businessIds} onChange={setBusinessIds} />
+          {form.role === SALES_CLOSER && (
+            <div className="space-y-1.5">
+              <Label className="text-sm">Max Orders Per Day <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input
+                type="number"
+                min={1}
+                max={500}
+                value={form.daily_order_limit}
+                onChange={(e) => setForm({ ...form, daily_order_limit: e.target.value })}
+                placeholder="No limit"
+                className="h-10"
+              />
+              <p className="text-xs text-muted-foreground">
+                Auto-assignment stops giving them orders once they hit this in a day. A manager can still assign by hand.
+              </p>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-sm">Available From</Label>
