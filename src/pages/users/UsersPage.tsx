@@ -183,6 +183,10 @@ export default function UsersPage() {
   // User::assignableRoleNames() — a Supervisor only makes Sales Closers.
   const assignableRoles = visibleRoles
 
+  // A Supervisor has exactly one role to give, so the form shows it fixed
+  // rather than offering a dropdown of one.
+  const lockedRole = currentUser?.role === SUPERVISOR ? SALES_CLOSER : null
+
   const handleDeactivate = async () => {
     if (!deactivateUser) return
     try {
@@ -388,8 +392,8 @@ export default function UsersPage() {
 
       {meta && <Pagination meta={meta} page={page} onPageChange={setPage} />}
 
-      <CreateUserDialog open={showCreate} onClose={() => setShowCreate(false)} roles={assignableRoles} businesses={businesses} onSuccess={fetchUsers} />
-      {editUser && <EditUserDialog open={showEdit} onClose={() => { setShowEdit(false); setEditUser(null) }} user={editUser} roles={assignableRoles} businesses={businesses} onSuccess={() => { fetchUsers(); if (editUser.id === currentUser?.id) refreshUser() }} />}
+      <CreateUserDialog open={showCreate} onClose={() => setShowCreate(false)} roles={assignableRoles} businesses={businesses} lockedRole={lockedRole} onSuccess={fetchUsers} />
+      {editUser && <EditUserDialog open={showEdit} onClose={() => { setShowEdit(false); setEditUser(null) }} user={editUser} roles={assignableRoles} businesses={businesses} lockedRole={lockedRole} onSuccess={() => { fetchUsers(); if (editUser.id === currentUser?.id) refreshUser() }} />}
 
       <AlertDialog open={!!deactivateUser} onOpenChange={(open) => { if (!open) setDeactivateUser(null) }}>
         <AlertDialogContent>
@@ -413,21 +417,22 @@ export default function UsersPage() {
 
 /* ─── Create User Dialog ─── */
 
-function CreateUserDialog({ open, onClose, roles, businesses, onSuccess }: { open: boolean; onClose: () => void; roles: Role[]; businesses: BusinessOption[]; onSuccess: () => void }) {
-  const [form, setForm] = useState({ name: '', username: '', email: '', whatsapp_code: '+234', whatsapp: '', password: '', role: '' })
+function CreateUserDialog({ open, onClose, roles, businesses, lockedRole, onSuccess }: { open: boolean; onClose: () => void; roles: Role[]; businesses: BusinessOption[]; lockedRole: string | null; onSuccess: () => void }) {
+  const [form, setForm] = useState({ name: '', username: '', email: '', whatsapp_code: '+234', whatsapp: '', password: '', role: lockedRole ?? '' })
   const [businessIds, setBusinessIds] = useState<string[]>([])
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  const reset = () => { setForm({ name: '', username: '', email: '', whatsapp_code: '+234', whatsapp: '', password: '', role: '' }); setBusinessIds([]); setError(''); setShowPassword(false) }
+  const reset = () => { setForm({ name: '', username: '', email: '', whatsapp_code: '+234', whatsapp: '', password: '', role: lockedRole ?? '' }); setBusinessIds([]); setError(''); setShowPassword(false) }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitting(true)
     setError('')
     try {
-      await api.post('/users', { ...form, email: form.email || null, whatsapp: form.whatsapp || null, business_ids: businessIds })
+      // lockedRole wins, in case auth resolved after this dialog mounted.
+      await api.post('/users', { ...form, role: lockedRole ?? form.role, email: form.email || null, whatsapp: form.whatsapp || null, business_ids: businessIds })
       toast.success('User created successfully')
       reset()
       onClose()
@@ -484,12 +489,19 @@ function CreateUserDialog({ open, onClose, roles, businesses, onSuccess }: { ope
           <div className="space-y-1.5">
             <div className="space-y-1.5">
               <Label className="text-sm">Role</Label>
-              <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v ?? '' })}>
-                <SelectTrigger className="h-10 w-full"><SelectValue placeholder="Select role" /></SelectTrigger>
-                <SelectContent>
-                  {roles.map((r) => <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              {lockedRole ? (
+                <>
+                  <Input value={lockedRole} readOnly disabled className="h-10" />
+                  <p className="text-xs text-muted-foreground">{lockedRole} is the only role you can assign.</p>
+                </>
+              ) : (
+                <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v ?? '' })}>
+                  <SelectTrigger className="h-10 w-full"><SelectValue placeholder="Select role" /></SelectTrigger>
+                  <SelectContent>
+                    {roles.map((r) => <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
           <BusinessPicker businesses={businesses} selected={businessIds} onChange={setBusinessIds} />
@@ -526,7 +538,7 @@ function CreateUserDialog({ open, onClose, roles, businesses, onSuccess }: { ope
 
 /* ─── Edit User Dialog ─── */
 
-function EditUserDialog({ open, onClose, user, roles, businesses, onSuccess }: { open: boolean; onClose: () => void; user: User; roles: Role[]; businesses: BusinessOption[]; onSuccess: () => void }) {
+function EditUserDialog({ open, onClose, user, roles, businesses, lockedRole, onSuccess }: { open: boolean; onClose: () => void; user: User; roles: Role[]; businesses: BusinessOption[]; lockedRole: string | null; onSuccess: () => void }) {
   const { user: currentUser } = useAuth()
   // Resetting someone else's password is a Super Admin action.
   const canResetPassword = currentUser?.role === 'Super Admin'
@@ -629,12 +641,19 @@ function EditUserDialog({ open, onClose, user, roles, businesses, onSuccess }: {
           <div className="space-y-1.5">
             <div className="space-y-1.5">
               <Label className="text-sm">Role</Label>
-              <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v ?? '' })}>
-                <SelectTrigger className="h-10 w-full"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {roles.map((r) => <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              {lockedRole ? (
+                <>
+                  <Input value={lockedRole} readOnly disabled className="h-10" />
+                  <p className="text-xs text-muted-foreground">{lockedRole} is the only role you can assign.</p>
+                </>
+              ) : (
+                <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v ?? '' })}>
+                  <SelectTrigger className="h-10 w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {roles.map((r) => <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           </div>
           <BusinessPicker businesses={businesses} selected={businessIds} onChange={setBusinessIds} />
