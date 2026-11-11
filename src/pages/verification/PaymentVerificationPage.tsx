@@ -15,7 +15,7 @@ import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { Card, CardContent } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { Search, ClipboardCheck, CheckCircle, Clock, RotateCcw } from 'lucide-react'
+import { Search, ClipboardCheck, CheckCircle, Clock, RotateCcw, Download } from 'lucide-react'
 
 interface VerificationOrder {
   id: string; order_number: string; business_name: string | null; customer_name: string
@@ -56,6 +56,26 @@ export default function PaymentVerificationPage() {
   useEffect(() => { fetchOrders() }, [fetchOrders])
   useEffect(() => { api.get('/businesses?per_page=100').then(({ data }) => setBusinesses(data.data.data ?? data.data ?? [])).catch(() => {}) }, [])
 
+  // Only what this manager personally signed off, so each one downloads
+  // the records they stand behind rather than the whole queue.
+  const exportCsv = async () => {
+    try {
+      const params = new URLSearchParams()
+      if (search) params.set('search', search)
+      if (businessFilter) params.set('business_id', businessFilter)
+      const { data } = await api.get(`/verification/accountant-export?${params}`, { responseType: 'blob' })
+      const url = URL.createObjectURL(data)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `payments-verified-${new Date().toISOString().slice(0, 10)}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success('CSV downloaded')
+    } catch {
+      toast.error('Failed to export')
+    }
+  }
+
   const verify = async (orderId: string, status: string) => {
     try {
       await api.put(`/verification/accountant/${orderId}`, { status })
@@ -81,9 +101,14 @@ export default function PaymentVerificationPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-xl font-semibold flex items-center gap-2"><ClipboardCheck className="w-5 h-5 text-blue-600" /> Payment Verification</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Verify payment status of orders independently</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold flex items-center gap-2"><ClipboardCheck className="w-5 h-5 text-blue-600" /> Payment Verification</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Verify payment status of orders independently</p>
+        </div>
+        <Button variant="outline" onClick={exportCsv} className="w-full sm:w-auto h-10">
+          <Download className="mr-1.5 h-4 w-4" /> Download Verified
+        </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2">

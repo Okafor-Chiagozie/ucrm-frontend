@@ -169,8 +169,6 @@ export default function UsersPage() {
   // buttons off screens where they would only ever fail.
   const isSuperAdmin = currentUser?.role === SUPER_ADMIN
   const canManage = (u: User) => isSuperAdmin || u.role !== SUPER_ADMIN
-  const assignableRoles = isSuperAdmin ? roles : roles.filter((r) => r.name !== SUPER_ADMIN)
-
   // Everyone sees the people under them, so the Role filter only offers the
   // roles whose users would actually come back. Mirrors User::scopeVisibleTo.
   const visibleRoles = isSuperAdmin
@@ -180,6 +178,10 @@ export default function UsersPage() {
       : currentUser?.role === SUPERVISOR
         ? roles.filter((r) => r.name === SALES_CLOSER)
         : []
+
+  // What the create and edit forms may hand out. Mirrors
+  // User::assignableRoleNames() — a Supervisor only makes Sales Closers.
+  const assignableRoles = visibleRoles
 
   const handleDeactivate = async () => {
     if (!deactivateUser) return
