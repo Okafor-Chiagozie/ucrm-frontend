@@ -11,6 +11,8 @@ export interface User {
   available_from: string | null
   available_to: string | null
   role: string | null
+  /** Businesses this user is staff on. Drives order auto-assignment. */
+  business_ids?: string[]
   permissions: string[]
   features?: { coupons: boolean; delivery_fees: boolean }
   created_by: string | null

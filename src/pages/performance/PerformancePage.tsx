@@ -114,7 +114,7 @@ export default function PerformancePage() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">{isPersonal ? 'My Performance' : 'Staff Performance'}</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">{isPersonal ? 'Your delivery performance and metrics' : 'Track Customer Support staff delivery performance and metrics'}</p>
+        <p className="text-sm text-muted-foreground mt-0.5">{isPersonal ? 'Your delivery performance and metrics' : 'Track Sales Closer delivery performance and metrics'}</p>
       </div>
 
       {/* Filters */}
@@ -229,7 +229,7 @@ export default function PerformancePage() {
             </div>
           )}
 
-          {/* Personal detail view for Customer Support */}
+          {/* Personal detail view for a Sales Closer */}
           {isPersonal && staff.length > 0 && (() => {
             const s = staff[0]
             return (
@@ -320,7 +320,7 @@ export default function PerformancePage() {
                 </TableHeader>
                 <TableBody>
                   {staff.length === 0 ? (
-                    <TableRow><TableCell colSpan={10}><EmptyState icon={Users} title="No staff data" description="No Customer Support staff found" /></TableCell></TableRow>
+                    <TableRow><TableCell colSpan={10}><EmptyState icon={Users} title="No staff data" description="No Sales Closers found" /></TableCell></TableRow>
                   ) : staff.map((s) => (
                     <TableRow key={s.id}>
                       <TableCell>

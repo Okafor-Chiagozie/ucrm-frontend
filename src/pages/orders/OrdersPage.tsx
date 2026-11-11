@@ -161,7 +161,7 @@ export default function OrdersPage() {
     Promise.all([
       api.get('/businesses?per_page=100'),
       api.get('/products?per_page=200'),
-      api.get('/users?role=Customer Support&per_page=100'),
+      api.get('/users?role=Sales Closer&per_page=100'),
       api.get('/product-forms'),
     ]).then(([biz, prod, ag, frm]) => {
       setBusinesses(biz.data.data.data)
@@ -521,7 +521,7 @@ function OrderDetailDialog({ order, canUpdateStatus, canAssignAgent, onClose, on
   useEffect(() => {
     if (order.business_id) {
       api.get(`/businesses/${order.business_id}/staff`).then(({ data }) => {
-        setAgents(data.data.filter((s: any) => s.role === 'Customer Support').map((s: any) => ({ id: s.id, name: s.name })))
+        setAgents(data.data.filter((s: any) => s.role === 'Sales Closer').map((s: any) => ({ id: s.id, name: s.name })))
       }).catch(() => {})
     }
   }, [order.business_id])

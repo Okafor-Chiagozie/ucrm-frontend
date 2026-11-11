@@ -145,7 +145,7 @@ export default function MarketingPage() {
   useEffect(() => {
     api.get('/businesses').then(r => setBusinesses(r.data.data?.data ?? r.data.data ?? [])).catch(() => {})
     api.get('/products?per_page=100').then(r => setProducts(r.data.data?.data ?? r.data.data ?? [])).catch(() => {})
-    api.get('/users?role=Customer Support&per_page=100').then(r => setAgents(r.data.data?.data ?? r.data.data ?? [])).catch(() => {})
+    api.get('/users?role=Sales Closer&per_page=100').then(r => setAgents(r.data.data?.data ?? r.data.data ?? [])).catch(() => {})
     api.get('/marketing/templates').then(r => setTemplates(r.data.data ?? [])).catch(() => {})
   }, [])
 

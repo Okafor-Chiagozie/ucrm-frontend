@@ -148,7 +148,7 @@ export default function VerificationReportPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-blue-600" /> Verification Report</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Cross-reference what Customer Support, Accountant, and Logistics Manager report</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Cross-reference what the Sales Closer, Accountant, and Logistics Manager report</p>
         </div>
         <Button variant="outline" className="w-full sm:w-auto h-10" onClick={exportCsv}>
           <Download className="mr-1.5 h-4 w-4" /> Export CSV

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import api from '@/lib/api'
-import type { User, PaginationMeta, Role } from '@/types'
+import type { User, PaginationMeta, Role, Business } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -49,12 +49,54 @@ type SortField = 'name' | 'username' | 'email' | 'created_at'
 type SortDir = 'asc' | 'desc'
 
 const SUPER_ADMIN = 'Super Admin'
+const ADMIN = 'Admin'
+const SUPERVISOR = 'Supervisor'
+const SALES_CLOSER = 'Sales Closer'
+
+type BusinessOption = { id: string; name: string }
+
+/** Checkbox list of businesses, shared by the create and edit forms. */
+function BusinessPicker({ businesses, selected, onChange }: {
+  businesses: BusinessOption[]
+  selected: string[]
+  onChange: (ids: string[]) => void
+}) {
+  const toggle = (id: string) =>
+    onChange(selected.includes(id) ? selected.filter((b) => b !== id) : [...selected, id])
+
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-sm">Businesses <span className="text-muted-foreground font-normal">(optional)</span></Label>
+      {businesses.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No businesses available.</p>
+      ) : (
+        <div className="rounded-md border divide-y max-h-40 overflow-y-auto custom-scrollbar">
+          {businesses.map((b) => (
+            <label key={b.id} className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer hover:bg-muted/50">
+              <input
+                type="checkbox"
+                className="h-4 w-4"
+                checked={selected.includes(b.id)}
+                onChange={() => toggle(b.id)}
+              />
+              <span>{b.name}</span>
+            </label>
+          ))}
+        </div>
+      )}
+      <p className="text-xs text-muted-foreground">
+        Orders are auto-assigned only to a Sales Closer on the order's business.
+      </p>
+    </div>
+  )
+}
 
 export default function UsersPage() {
   const { user: currentUser, hasPermission, refreshUser } = useAuth()
   const [users, setUsers] = useState<User[]>([])
   const [meta, setMeta] = useState<PaginationMeta | null>(null)
   const [roles, setRoles] = useState<Role[]>([])
+  const [businesses, setBusinesses] = useState<BusinessOption[]>([])
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -93,8 +135,18 @@ export default function UsersPage() {
     } catch { /* ignore */ }
   }, [])
 
+  // Businesses are picked straight from the user form, so a new rep can be
+  // put on a business without a second trip to the Businesses page.
+  const fetchBusinesses = useCallback(async () => {
+    try {
+      const { data } = await api.get('/businesses?per_page=100')
+      setBusinesses(data.data.data.map((b: Business) => ({ id: b.id, name: b.name })))
+    } catch { /* ignore */ }
+  }, [])
+
   useEffect(() => { fetchUsers() }, [fetchUsers])
   useEffect(() => { fetchRoles() }, [fetchRoles])
+  useEffect(() => { fetchBusinesses() }, [fetchBusinesses])
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -118,6 +170,16 @@ export default function UsersPage() {
   const isSuperAdmin = currentUser?.role === SUPER_ADMIN
   const canManage = (u: User) => isSuperAdmin || u.role !== SUPER_ADMIN
   const assignableRoles = isSuperAdmin ? roles : roles.filter((r) => r.name !== SUPER_ADMIN)
+
+  // Everyone sees the people under them, so the Role filter only offers the
+  // roles whose users would actually come back. Mirrors User::scopeVisibleTo.
+  const visibleRoles = isSuperAdmin
+    ? roles
+    : currentUser?.role === ADMIN
+      ? roles.filter((r) => r.name !== SUPER_ADMIN)
+      : currentUser?.role === SUPERVISOR
+        ? roles.filter((r) => r.name === SALES_CLOSER)
+        : []
 
   const handleDeactivate = async () => {
     if (!deactivateUser) return
@@ -166,7 +228,7 @@ export default function UsersPage() {
             <SelectTrigger className="w-full sm:w-40"><SelectValue placeholder="All Roles" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Roles</SelectItem>
-              {roles.map((r) => <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>)}
+              {visibleRoles.map((r) => <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -324,8 +386,8 @@ export default function UsersPage() {
 
       {meta && <Pagination meta={meta} page={page} onPageChange={setPage} />}
 
-      <CreateUserDialog open={showCreate} onClose={() => setShowCreate(false)} roles={assignableRoles} onSuccess={fetchUsers} />
-      {editUser && <EditUserDialog open={showEdit} onClose={() => { setShowEdit(false); setEditUser(null) }} user={editUser} roles={assignableRoles} onSuccess={() => { fetchUsers(); if (editUser.id === currentUser?.id) refreshUser() }} />}
+      <CreateUserDialog open={showCreate} onClose={() => setShowCreate(false)} roles={assignableRoles} businesses={businesses} onSuccess={fetchUsers} />
+      {editUser && <EditUserDialog open={showEdit} onClose={() => { setShowEdit(false); setEditUser(null) }} user={editUser} roles={assignableRoles} businesses={businesses} onSuccess={() => { fetchUsers(); if (editUser.id === currentUser?.id) refreshUser() }} />}
 
       <AlertDialog open={!!deactivateUser} onOpenChange={(open) => { if (!open) setDeactivateUser(null) }}>
         <AlertDialogContent>
@@ -349,20 +411,21 @@ export default function UsersPage() {
 
 /* ─── Create User Dialog ─── */
 
-function CreateUserDialog({ open, onClose, roles, onSuccess }: { open: boolean; onClose: () => void; roles: Role[]; onSuccess: () => void }) {
+function CreateUserDialog({ open, onClose, roles, businesses, onSuccess }: { open: boolean; onClose: () => void; roles: Role[]; businesses: BusinessOption[]; onSuccess: () => void }) {
   const [form, setForm] = useState({ name: '', username: '', email: '', whatsapp_code: '+234', whatsapp: '', password: '', role: '' })
+  const [businessIds, setBusinessIds] = useState<string[]>([])
   const [showPassword, setShowPassword] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  const reset = () => { setForm({ name: '', username: '', email: '', whatsapp_code: '+234', whatsapp: '', password: '', role: '' }); setError(''); setShowPassword(false) }
+  const reset = () => { setForm({ name: '', username: '', email: '', whatsapp_code: '+234', whatsapp: '', password: '', role: '' }); setBusinessIds([]); setError(''); setShowPassword(false) }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitting(true)
     setError('')
     try {
-      await api.post('/users', { ...form, email: form.email || null, whatsapp: form.whatsapp || null })
+      await api.post('/users', { ...form, email: form.email || null, whatsapp: form.whatsapp || null, business_ids: businessIds })
       toast.success('User created successfully')
       reset()
       onClose()
@@ -427,6 +490,7 @@ function CreateUserDialog({ open, onClose, roles, onSuccess }: { open: boolean; 
               </Select>
             </div>
           </div>
+          <BusinessPicker businesses={businesses} selected={businessIds} onChange={setBusinessIds} />
           <div className="space-y-1.5">
             <Label className="text-sm">Password</Label>
             <div className="relative">
@@ -460,13 +524,14 @@ function CreateUserDialog({ open, onClose, roles, onSuccess }: { open: boolean; 
 
 /* ─── Edit User Dialog ─── */
 
-function EditUserDialog({ open, onClose, user, roles, onSuccess }: { open: boolean; onClose: () => void; user: User; roles: Role[]; onSuccess: () => void }) {
+function EditUserDialog({ open, onClose, user, roles, businesses, onSuccess }: { open: boolean; onClose: () => void; user: User; roles: Role[]; businesses: BusinessOption[]; onSuccess: () => void }) {
   const { user: currentUser } = useAuth()
   // Resetting someone else's password is a Super Admin action.
   const canResetPassword = currentUser?.role === 'Super Admin'
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [form, setForm] = useState({ name: user.name, username: user.username, email: user.email || '', whatsapp_code: user.whatsapp_code || '+234', whatsapp: user.whatsapp || '', role: user.role || '', is_active: user.is_active, available_from: user.available_from || '', available_to: user.available_to || '' })
+  const [businessIds, setBusinessIds] = useState<string[]>(user.business_ids ?? [])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -480,6 +545,7 @@ function EditUserDialog({ open, onClose, user, roles, onSuccess }: { open: boole
         email: form.email || null,
         whatsapp_code: form.whatsapp ? form.whatsapp_code : null,
         whatsapp: form.whatsapp || null,
+        business_ids: businessIds,
         ...(password ? { password } : {}),
       })
       toast.success('User updated successfully')
@@ -569,6 +635,7 @@ function EditUserDialog({ open, onClose, user, roles, onSuccess }: { open: boole
               </Select>
             </div>
           </div>
+          <BusinessPicker businesses={businesses} selected={businessIds} onChange={setBusinessIds} />
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-sm">Available From</Label>
