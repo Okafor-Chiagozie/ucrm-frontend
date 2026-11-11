@@ -48,6 +48,8 @@ import EmptyState from '@/components/EmptyState'
 type SortField = 'name' | 'username' | 'email' | 'created_at'
 type SortDir = 'asc' | 'desc'
 
+const SUPER_ADMIN = 'Super Admin'
+
 export default function UsersPage() {
   const { user: currentUser, hasPermission, refreshUser } = useAuth()
   const [users, setUsers] = useState<User[]>([])
@@ -109,6 +111,13 @@ export default function UsersPage() {
       ? <ArrowUp className="ml-1 h-3.5 w-3.5 text-primary" />
       : <ArrowDown className="ml-1 h-3.5 w-3.5 text-primary" />
   }
+
+  // A Super Admin account may only be edited, deactivated or re-roled by
+  // another Super Admin. The API enforces this too — this just keeps the
+  // buttons off screens where they would only ever fail.
+  const isSuperAdmin = currentUser?.role === SUPER_ADMIN
+  const canManage = (u: User) => isSuperAdmin || u.role !== SUPER_ADMIN
+  const assignableRoles = isSuperAdmin ? roles : roles.filter((r) => r.name !== SUPER_ADMIN)
 
   const handleDeactivate = async () => {
     if (!deactivateUser) return
@@ -218,12 +227,12 @@ export default function UsersPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  {hasPermission('users.edit') && (
+                  {hasPermission('users.edit') && canManage(u) && (
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditUser(u); setShowEdit(true) }}>
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
                   )}
-                  {hasPermission('users.delete') && u.is_active && (
+                  {hasPermission('users.delete') && u.is_active && canManage(u) && (
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeactivateUser(u)}>
                       <UserX className="h-3.5 w-3.5" />
                     </Button>
@@ -294,12 +303,12 @@ export default function UsersPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
-                      {hasPermission('users.edit') && (
+                      {hasPermission('users.edit') && canManage(u) && (
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditUser(u); setShowEdit(true) }}>
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
                       )}
-                      {hasPermission('users.delete') && u.is_active && (
+                      {hasPermission('users.delete') && u.is_active && canManage(u) && (
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeactivateUser(u)}>
                           <UserX className="h-3.5 w-3.5" />
                         </Button>
@@ -315,8 +324,8 @@ export default function UsersPage() {
 
       {meta && <Pagination meta={meta} page={page} onPageChange={setPage} />}
 
-      <CreateUserDialog open={showCreate} onClose={() => setShowCreate(false)} roles={roles} onSuccess={fetchUsers} />
-      {editUser && <EditUserDialog open={showEdit} onClose={() => { setShowEdit(false); setEditUser(null) }} user={editUser} roles={roles} onSuccess={() => { fetchUsers(); if (editUser.id === currentUser?.id) refreshUser() }} />}
+      <CreateUserDialog open={showCreate} onClose={() => setShowCreate(false)} roles={assignableRoles} onSuccess={fetchUsers} />
+      {editUser && <EditUserDialog open={showEdit} onClose={() => { setShowEdit(false); setEditUser(null) }} user={editUser} roles={assignableRoles} onSuccess={() => { fetchUsers(); if (editUser.id === currentUser?.id) refreshUser() }} />}
 
       <AlertDialog open={!!deactivateUser} onOpenChange={(open) => { if (!open) setDeactivateUser(null) }}>
         <AlertDialogContent>
