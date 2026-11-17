@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import api from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -88,7 +89,15 @@ export default function VerifyOrderDialog({ order, amountLabel, onClose, onConfi
             </Select>
             {!loadingAgents && agents.length === 0 && (
               <p className="text-xs text-amber-600">
-                No delivery agents yet. Add one from the Users page, then come back.
+                No delivery agents yet. Add one from the{' '}
+                <Link
+                  to="/users"
+                  onClick={onClose}
+                  className="text-blue-600 underline underline-offset-2 hover:text-blue-700"
+                >
+                  Users page
+                </Link>
+                , then come back.
               </p>
             )}
           </div>
