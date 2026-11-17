@@ -110,7 +110,7 @@ export default function DeliveryVerificationPage() {
   const ActionButtons = ({ order }: { order: VerificationOrder }) => (
     <div className="flex justify-end gap-1">
       {order.logistics_status === 'delivery_verified' ? (
-        <Button variant="ghost" size="sm" className="h-7 text-xs text-amber-600 underline underline-offset-2 hover:text-amber-700 hover:bg-amber-50" onClick={() => verify(order.id, 'pending')}>
+        <Button variant="ghost" size="sm" className="h-7 text-xs text-foreground underline underline-offset-2 hover:text-foreground hover:bg-muted" onClick={() => verify(order.id, 'pending')}>
           <Undo2 className="h-3.5 w-3.5 mr-1" /> Undo
         </Button>
       ) : (
