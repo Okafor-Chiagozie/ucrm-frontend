@@ -3,7 +3,6 @@ import api from '@/lib/api'
 import type { Business, PaginationMeta } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
@@ -110,11 +109,11 @@ export default function DeliveryVerificationPage() {
   const ActionButtons = ({ order }: { order: VerificationOrder }) => (
     <div className="flex justify-end gap-1">
       {order.logistics_status === 'delivery_verified' ? (
-        <Button variant="ghost" size="sm" className="h-7 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50" onClick={() => verify(order.id, 'pending')}>
+        <Button variant="ghost" size="sm" className="h-7 text-xs text-amber-600 underline underline-offset-2 hover:text-amber-700 hover:bg-amber-50" onClick={() => verify(order.id, 'pending')}>
           <Undo2 className="h-3.5 w-3.5 mr-1" /> Undo
         </Button>
       ) : (
-        <Button variant="ghost" size="sm" className="h-7 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" onClick={() => setVerifying(order)}>
+        <Button variant="ghost" size="sm" className="h-7 text-xs text-emerald-600 underline underline-offset-2 hover:text-emerald-700 hover:bg-emerald-50" onClick={() => setVerifying(order)}>
           <CheckCircle className="h-3.5 w-3.5 mr-1" /> Verify
         </Button>
       )}
@@ -167,13 +166,12 @@ export default function DeliveryVerificationPage() {
               <TableHead>Order</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Total</TableHead>
-              <TableHead>Delivery Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? <TableRow><TableCell colSpan={5} className="p-0"><LoadingState text="Loading..." /></TableCell></TableRow>
-            : orders.length === 0 ? <TableRow><TableCell colSpan={5} className="p-0"><EmptyState icon={Truck} title="No orders" /></TableCell></TableRow>
+            {loading ? <TableRow><TableCell colSpan={4} className="p-0"><LoadingState text="Loading..." /></TableCell></TableRow>
+            : orders.length === 0 ? <TableRow><TableCell colSpan={4} className="p-0"><EmptyState icon={Truck} title="No orders" /></TableCell></TableRow>
             : orders.map(o => (
               <TableRow key={o.id}>
                 <TableCell>
@@ -185,15 +183,6 @@ export default function DeliveryVerificationPage() {
                   <p className="text-xs text-muted-foreground">{o.customer_phone}</p>
                 </TableCell>
                 <TableCell className="font-medium text-sm">{formatPrice(o.total)}</TableCell>
-                <TableCell>
-                  {o.logistics_status === 'delivery_verified' ? (
-                    <Badge variant="outline" className="font-normal border-emerald-200 bg-emerald-50 text-emerald-700">Verified</Badge>
-                  ) : o.logistics_status === 'delivery_disputed' ? (
-                    <Badge variant="outline" className="font-normal border-red-200 bg-red-50 text-red-700">Disputed</Badge>
-                  ) : (
-                    <Badge variant="outline" className="font-normal border-amber-200 bg-amber-50 text-amber-600">Pending</Badge>
-                  )}
-                </TableCell>
                 <TableCell><ActionButtons order={o} /></TableCell>
               </TableRow>
             ))}
@@ -216,13 +205,6 @@ export default function DeliveryVerificationPage() {
                     <span className="font-mono text-sm font-medium">{o.order_number}</span>
                     <p className="text-xs text-muted-foreground">{o.business_name}</p>
                   </div>
-                  {o.logistics_status === 'delivery_verified' ? (
-                    <Badge variant="outline" className="font-normal border-emerald-200 bg-emerald-50 text-emerald-700">Verified</Badge>
-                  ) : o.logistics_status === 'delivery_disputed' ? (
-                    <Badge variant="outline" className="font-normal border-red-200 bg-red-50 text-red-700">Disputed</Badge>
-                  ) : (
-                    <Badge variant="outline" className="font-normal border-amber-200 bg-amber-50 text-amber-600">Pending</Badge>
-                  )}
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <div>
@@ -246,7 +228,7 @@ export default function DeliveryVerificationPage() {
       {verifying && (
         <VerifyOrderDialog
           order={verifying}
-          amountLabel="Amount Handled"
+          amountLabel="Delivery Fee"
           onClose={() => setVerifying(null)}
           onConfirm={confirmVerify}
         />

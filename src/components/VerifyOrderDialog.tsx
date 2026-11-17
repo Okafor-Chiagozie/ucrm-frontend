@@ -26,13 +26,13 @@ const formatPrice = (n: string | number) =>
 
 /**
  * Captures the two things a verifier records when confirming an order: which
- * rider handled it, and the amount they are signing off. Used by both the
+ * rider handled it, and the delivery fee they are signing off. Used by both the
  * payment and the delivery pages — each stores its own pair, so the
  * verification report can show where the two disagree.
  */
 export default function VerifyOrderDialog({ order, amountLabel, onClose, onConfirm }: {
   order: VerifiableOrder
-  /** What the amount means on this page, e.g. "Amount Collected". */
+  /** What the fee field is called on this page. */
   amountLabel: string
   onClose: () => void
   onConfirm: (deliveryAgentId: string, amount: string) => Promise<void>
@@ -62,7 +62,6 @@ export default function VerifyOrderDialog({ order, amountLabel, onClose, onConfi
     }
   }
 
-  const differs = amount !== '' && Number(amount) !== Number(order.total)
 
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
@@ -106,13 +105,7 @@ export default function VerifyOrderDialog({ order, amountLabel, onClose, onConfi
               className="h-10"
               autoFocus
             />
-            {differs ? (
-              <p className="text-xs text-amber-600">
-                This differs from the order total of {formatPrice(order.total)}. It will be recorded as entered.
-              </p>
-            ) : (
-              <p className="text-xs text-muted-foreground">Record what was actually handled, even if it differs from the total.</p>
-            )}
+            <p className="text-xs text-muted-foreground">What the delivery actually cost, as you are signing it off.</p>
           </div>
 
           <Separator />
