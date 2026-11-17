@@ -16,7 +16,7 @@ import EmptyState from '@/components/EmptyState'
 import { Card, CardContent } from '@/components/ui/card'
 import { toast } from 'sonner'
 import VerifyOrderDialog from '@/components/VerifyOrderDialog'
-import { Search, Truck, CheckCircle, Clock, RotateCcw, Download } from 'lucide-react'
+import { Search, Truck, CheckCircle, Undo2, RotateCcw, Download } from 'lucide-react'
 
 interface VerificationOrder {
   id: string; order_number: string; business_name: string | null; customer_name: string
@@ -111,7 +111,7 @@ export default function DeliveryVerificationPage() {
     <div className="flex justify-end gap-1">
       {order.logistics_status === 'delivery_verified' ? (
         <Button variant="ghost" size="sm" className="h-7 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50" onClick={() => verify(order.id, 'pending')}>
-          <Clock className="h-3.5 w-3.5 mr-1" /> Pending
+          <Undo2 className="h-3.5 w-3.5 mr-1" /> Undo
         </Button>
       ) : (
         <Button variant="ghost" size="sm" className="h-7 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" onClick={() => setVerifying(order)}>
