@@ -35,6 +35,8 @@ interface NavItem {
   label: string
   icon: typeof LayoutDashboard
   permission: string
+  /** A second permission that also opens the item, for narrow grants. */
+  altPermission?: string
 }
 
 interface NavGroup {
@@ -99,7 +101,7 @@ const navGroups: NavGroup[] = [
       { to: '/flagged-ips', label: 'Flagged IPs', icon: ShieldBan, permission: 'flagged_ips.view' },
       { to: '/users', label: 'Users', icon: Users, permission: 'users.view' },
       { to: '/roles', label: 'Roles & Permissions', icon: Shield, permission: 'roles.manage' },
-      { to: '/settings', label: 'Settings', icon: Settings, permission: 'settings.view' },
+      { to: '/settings', label: 'Settings', icon: Settings, permission: 'settings.view', altPermission: 'settings.auto_assign' },
     ],
   },
 ]
@@ -144,7 +146,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       .map((group) => ({
         ...group,
         items: group.items
-          .filter((item) => hasPermission(item.permission))
+          .filter((item) => hasPermission(item.permission) || (item.altPermission ? hasPermission(item.altPermission) : false))
           .filter((item) => item.to !== '/coupons' || hasFeature('coupons'))
           .filter((item) => item.to !== '/delivery-fees' || hasFeature('delivery_fees')),
       }))

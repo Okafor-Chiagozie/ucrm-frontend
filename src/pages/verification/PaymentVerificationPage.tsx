@@ -15,11 +15,13 @@ import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { Card, CardContent } from '@/components/ui/card'
 import { toast } from 'sonner'
+import VerifyOrderDialog from '@/components/VerifyOrderDialog'
 import { Search, ClipboardCheck, CheckCircle, Clock, RotateCcw, Download } from 'lucide-react'
 
 interface VerificationOrder {
   id: string; order_number: string; business_name: string | null; customer_name: string
   customer_phone: string; customer_state: string; total: string
+  delivery_agent_id: string | null; delivery_agent_name: string | null; amount: string | null
   assigned_agent: string | null; accountant_status: string | null; accountant_verified_at: string | null
   created_at: string
 }
@@ -76,6 +78,26 @@ export default function PaymentVerificationPage() {
     }
   }
 
+  // Confirming opens a dialog first: a verifier records which rider handled
+  // the order and the amount, not just a tick.
+  const [verifying, setVerifying] = useState<VerificationOrder | null>(null)
+
+  const confirmVerify = async (deliveryAgentId: string, amount: string) => {
+    if (!verifying) return
+    try {
+      await api.put(`/verification/accountant/${verifying.id}`, {
+        status: 'payment_verified',
+        delivery_agent_id: deliveryAgentId,
+        amount,
+      })
+      toast.success('Marked as Verified')
+      setVerifying(null)
+      fetchOrders()
+    } catch (err) {
+      toast.error((err as any).response?.data?.message ?? 'Failed to update')
+    }
+  }
+
   const verify = async (orderId: string, status: string) => {
     try {
       await api.put(`/verification/accountant/${orderId}`, { status })
@@ -92,7 +114,7 @@ export default function PaymentVerificationPage() {
           <Clock className="h-3.5 w-3.5 mr-1" /> Pending
         </Button>
       ) : (
-        <Button variant="ghost" size="sm" className="h-7 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" onClick={() => verify(order.id, 'payment_verified')}>
+        <Button variant="ghost" size="sm" className="h-7 text-xs text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" onClick={() => setVerifying(order)}>
           <CheckCircle className="h-3.5 w-3.5 mr-1" /> Verify
         </Button>
       )}
@@ -221,6 +243,15 @@ export default function PaymentVerificationPage() {
           ))
         )}
       </div>
+      {verifying && (
+        <VerifyOrderDialog
+          order={verifying}
+          amountLabel="Amount Collected"
+          onClose={() => setVerifying(null)}
+          onConfirm={confirmVerify}
+        />
+      )}
+
       {meta && <Pagination meta={meta} page={page} onPageChange={setPage} />}
     </div>
   )

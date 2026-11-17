@@ -52,6 +52,10 @@ const SUPER_ADMIN = 'Super Admin'
 const ADMIN = 'Admin'
 const SUPERVISOR = 'Supervisor'
 const SALES_CLOSER = 'Sales Closer'
+const DELIVERY_AGENT = 'Delivery Agent'
+// Accountant and Logistics Manager name a rider when they verify, so they
+// may add one. That is the whole of their reach into Users.
+const VERIFIER_ROLES = ['Accountant', 'Logistics Manager']
 
 type BusinessOption = { id: string; name: string }
 
@@ -177,15 +181,18 @@ export default function UsersPage() {
       ? roles.filter((r) => r.name !== SUPER_ADMIN)
       : currentUser?.role === SUPERVISOR
         ? roles.filter((r) => r.name === SALES_CLOSER)
-        : []
+        : VERIFIER_ROLES.includes(currentUser?.role ?? '')
+          ? roles.filter((r) => r.name === DELIVERY_AGENT)
+          : []
 
   // What the create and edit forms may hand out. Mirrors
   // User::assignableRoleNames() — a Supervisor only makes Sales Closers.
   const assignableRoles = visibleRoles
 
-  // A Supervisor has exactly one role to give, so the form shows it fixed
-  // rather than offering a dropdown of one.
-  const lockedRole = currentUser?.role === SUPERVISOR ? SALES_CLOSER : null
+  // With exactly one role to give, the form shows it fixed rather than
+  // offering a dropdown of one. That covers a Supervisor (Sales Closer) and
+  // the two verifiers (Delivery Agent).
+  const lockedRole = !isSuperAdmin && assignableRoles.length === 1 ? assignableRoles[0].name : null
 
   const handleDeactivate = async () => {
     if (!deactivateUser) return
@@ -561,7 +568,7 @@ function EditUserDialog({ open, onClose, user, roles, businesses, lockedRole, on
   const canResetPassword = currentUser?.role === 'Super Admin'
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [form, setForm] = useState({ name: user.name, username: user.username, email: user.email || '', whatsapp_code: user.whatsapp_code || '+234', whatsapp: user.whatsapp || '', role: user.role || '', is_active: user.is_active, available_from: user.available_from || '', available_to: user.available_to || '', daily_order_limit: user.daily_order_limit?.toString() ?? '' })
+  const [form, setForm] = useState({ name: user.name, username: user.username, email: user.email || '', whatsapp_code: user.whatsapp_code || '+234', whatsapp: user.whatsapp || '', role: user.role || '', is_active: user.is_active, daily_order_limit: user.daily_order_limit?.toString() ?? '' })
   const [businessIds, setBusinessIds] = useState<string[]>(user.business_ids ?? [])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -692,17 +699,6 @@ function EditUserDialog({ open, onClose, user, roles, businesses, lockedRole, on
               </p>
             </div>
           )}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label className="text-sm">Available From</Label>
-              <Input type="time" value={form.available_from} onChange={(e) => setForm({ ...form, available_from: e.target.value })} className="h-10" placeholder="e.g. 09:00" />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-sm">Available To</Label>
-              <Input type="time" value={form.available_to} onChange={(e) => setForm({ ...form, available_to: e.target.value })} className="h-10" placeholder="e.g. 17:00" />
-            </div>
-            <p className="col-span-2 text-xs text-muted-foreground -mt-2">Leave empty for always available. Used for auto-assignment of orders.</p>
-          </div>
           <div className="flex items-center justify-between rounded-md border p-3">
             <div>
               <p className="text-sm font-medium">Account Status</p>

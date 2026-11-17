@@ -215,6 +215,11 @@ export default function SettingsPage() {
   const [savedSettings, setSavedSettings] = useState<Setting>({})
   const [loading, setLoading] = useState(true)
   const canEdit = hasPermission('settings.edit')
+  // A Supervisor holds settings.auto_assign only: the one toggle, not the
+  // credentials on the rest of this page. The API enforces the same list.
+  const AUTO_ASSIGN_KEYS = ['auto_assign_orders_enabled']
+  const canEditKey = (key: string) =>
+    canEdit || (AUTO_ASSIGN_KEYS.includes(key) && hasPermission('settings.auto_assign'))
 
   // Test-message tool
   const [testChannel, setTestChannel] = useState<'whatsapp' | 'sms'>('whatsapp')
@@ -349,8 +354,8 @@ export default function SettingsPage() {
                         {meta.type === 'toggle' ? (
                           <button
                             type="button"
-                            disabled={!canEdit}
-                            className={`transition-colors ${!canEdit ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                            disabled={!canEditKey(key)}
+                            className={`transition-colors ${!canEditKey(key) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                             onClick={() => updateSetting(key, value === 'true' ? 'false' : 'true')}
                           >
                             {value === 'true' ? (
@@ -375,7 +380,7 @@ export default function SettingsPage() {
                                 <p className="text-xs whitespace-pre-wrap">{previewTemplate(value)}</p>
                               )}
                             </div>
-                            {canEdit && (
+                            {canEditKey(key) && (
                               <div className="flex justify-end">
                                 <Button size="sm" className="h-9" disabled={value === savedSettings[key]} onClick={() => updateSetting(key, value)}>Save</Button>
                               </div>
@@ -386,10 +391,10 @@ export default function SettingsPage() {
                             <Input
                               value={value}
                               onChange={(e) => setSettings((prev) => ({ ...prev, [key]: e.target.value }))}
-                              disabled={!canEdit}
+                              disabled={!canEditKey(key)}
                               className="h-10 w-32 text-sm"
                             />
-                            {canEdit && (
+                            {canEditKey(key) && (
                               <Button size="sm" className="h-10" disabled={value === savedSettings[key]} onClick={() => updateSetting(key, value)}>Save</Button>
                             )}
                           </div>

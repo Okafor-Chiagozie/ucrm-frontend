@@ -24,9 +24,12 @@ import Pagination from '@/components/Pagination'
 import LoadingState from '@/components/LoadingState'
 import EmptyState from '@/components/EmptyState'
 import { toast } from 'sonner'
-import { Search, ArrowUpDown, ArrowUp, ArrowDown, ShoppingCart, Download, FileText, RotateCcw } from 'lucide-react'
+import { Search, ArrowUpDown, ArrowUp, ArrowDown, ShoppingCart, Download, FileText, RotateCcw, Trash2, Undo2 } from 'lucide-react'
 
 const ORDER_STATUSES = ['pending', 'scheduled', 'delivered', 'not_picking', 'cancelled']
+// Deleted is a status, not a row that leaves the table. It is kept out of the
+// tab list above so it never shows for people who cannot delete.
+const DELETED = 'deleted'
 
 const STATUS_LABELS: Record<string, string> = {
   pending: 'Pending',
@@ -34,6 +37,7 @@ const STATUS_LABELS: Record<string, string> = {
   delivered: 'Delivered',
   not_picking: 'Not Picking',
   cancelled: 'Cancelled',
+  deleted: 'Deleted',
 }
 
 const statusColors: Record<string, string> = {
@@ -42,6 +46,7 @@ const statusColors: Record<string, string> = {
   delivered: 'border-emerald-200 bg-emerald-50 text-emerald-700',
   not_picking: 'border-orange-200 bg-orange-50 text-orange-700',
   cancelled: 'border-red-200 bg-red-50 text-red-700',
+  deleted: 'border-slate-300 bg-slate-100 text-slate-600',
 }
 
 const statusTabColors: Record<string, string> = {
@@ -49,6 +54,7 @@ const statusTabColors: Record<string, string> = {
   scheduled: 'bg-blue-500',
   delivered: 'bg-emerald-500',
   not_picking: 'bg-orange-500',
+  deleted: 'bg-slate-400',
   cancelled: 'bg-red-500',
 }
 
@@ -73,6 +79,7 @@ const DATE_PRESETS = [
 
 export default function OrdersPage() {
   const { hasPermission, hasFeature } = useAuth()
+  const canDelete = hasPermission('orders.delete')
   const [orders, setOrders] = useState<Order[]>([])
   const [businesses, setBusinesses] = useState<Business[]>([])
   const [products, setProducts] = useState<Product[]>([])
@@ -260,6 +267,15 @@ export default function OrdersPage() {
             {STATUS_LABELS[s]} ({statusCounts[s] ?? 0})
           </button>
         ))}
+        {canDelete && (
+          <button
+            className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors inline-flex items-center gap-1 sm:gap-1.5 ${statusFilter === DELETED ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
+            onClick={() => { setStatusFilter(statusFilter === DELETED ? '' : DELETED); setPage(1) }}
+          >
+            <Trash2 className="h-3 w-3" />
+            Deleted ({statusCounts[DELETED] ?? 0})
+          </button>
+        )}
       </div>
 
       {/* Filters grid */}
@@ -375,7 +391,7 @@ export default function OrdersPage() {
               <SelectValue>{bulkStatus ? STATUS_LABELS[bulkStatus] : 'Change status to...'}</SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {ORDER_STATUSES.map((s) => <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>)}
+              {(canDelete ? [...ORDER_STATUSES, DELETED] : ORDER_STATUSES).map((s) => <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>)}
             </SelectContent>
           </Select>
           <Button size="sm" disabled={!bulkStatus} onClick={async () => {
@@ -501,6 +517,7 @@ export default function OrdersPage() {
           order={viewOrder}
           canUpdateStatus={hasPermission('orders.update_status')}
           canAssignAgent={hasPermission('orders.assign_agent')}
+          canDelete={canDelete}
           onClose={() => setViewOrder(null)}
           onUpdated={fetchOrders}
         />
@@ -509,8 +526,8 @@ export default function OrdersPage() {
   )
 }
 
-function OrderDetailDialog({ order, canUpdateStatus, canAssignAgent, onClose, onUpdated }: {
-  order: Order; canUpdateStatus: boolean; canAssignAgent: boolean; onClose: () => void; onUpdated: () => void
+function OrderDetailDialog({ order, canUpdateStatus, canAssignAgent, canDelete, onClose, onUpdated }: {
+  order: Order; canUpdateStatus: boolean; canAssignAgent: boolean; canDelete: boolean; onClose: () => void; onUpdated: () => void
 }) {
   const { hasFeature } = useAuth()
   const [status, setStatus] = useState(order.status)
@@ -532,6 +549,20 @@ function OrderDetailDialog({ order, canUpdateStatus, canAssignAgent, onClose, on
   const statusChanged = status !== order.status
   const agentChanged = agentId !== (order.assigned_agent?.id ?? '')
   const hasChanges = statusChanged || agentChanged
+
+  const handleRestore = async () => {
+    setSaving(true)
+    try {
+      await api.put(`/orders/${order.id}/restore`)
+      toast.success('Order restored')
+      onClose()
+      onUpdated()
+    } catch (err) {
+      toast.error((err as any).response?.data?.message ?? 'Failed to restore order')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const handleSave = async () => {
     setSaving(true)
@@ -640,8 +671,25 @@ function OrderDetailDialog({ order, canUpdateStatus, canAssignAgent, onClose, on
             <p className="text-xs text-amber-600">Assign a staff member before moving to scheduled, delivered, or not picking.</p>
           )}
 
-          {order.allowed_statuses.length === 0 && (
+          {order.allowed_statuses.length === 0 && order.status !== DELETED && (
             <p className="text-xs text-muted-foreground">This order is in a terminal status and cannot be changed.</p>
+          )}
+
+          {order.status === DELETED && (
+            <div className="rounded-md border border-slate-200 bg-slate-50 p-3 space-y-2">
+              <p className="text-sm font-medium text-slate-700">This order is deleted</p>
+              <p className="text-xs text-slate-600">
+                It is hidden from the orders list, the dashboard, reports and exports, but nothing has been
+                removed from the database.
+                {order.status_deleted_at && ` Deleted ${new Date(order.status_deleted_at).toLocaleString('en-NG')}.`}
+                {order.status_before_delete && ` Restoring puts it back on ${STATUS_LABELS[order.status_before_delete] ?? order.status_before_delete}.`}
+              </p>
+              {canDelete && (
+                <Button variant="outline" size="sm" onClick={handleRestore} disabled={saving}>
+                  <Undo2 className="mr-1.5 h-3.5 w-3.5" /> {saving ? 'Restoring...' : 'Restore Order'}
+                </Button>
+              )}
+            </div>
           )}
 
           {/* Timestamps */}

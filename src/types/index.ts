@@ -254,6 +254,9 @@ export interface Order {
   items: OrderItem[]
   items_count: number
   allowed_statuses: string[]
+  /** Set only while the order sits in the deleted bin. */
+  status_before_delete?: string | null
+  status_deleted_at?: string | null
   requires_agent: boolean
   created_at: string
   updated_at?: string
